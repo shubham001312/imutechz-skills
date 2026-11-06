@@ -153,8 +153,10 @@ def most_popular(region: str = "US", n: int = 25, category: str | None = None) -
 
 
 # ------------------------------------------------------------------ search
-def _search_api(q: str, n: int, recent_days: int | None, key: str, order: str = "relevance") -> list[dict]:
+def _search_api(q: str, n: int, recent_days: int | None, key: str, order: str = "relevance", shorts: bool = False) -> list[dict]:
     p = dict(part="snippet", type="video", q=q, maxResults=min(n, 50), order=order)
+    if shorts:
+        p["videoDuration"] = "short"            # under 4 minutes; vertical-only filtering happens after
     if recent_days:
         p["publishedAfter"] = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=recent_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
     d = _api("search", key, **p)
@@ -162,7 +164,7 @@ def _search_api(q: str, n: int, recent_days: int | None, key: str, order: str = 
     return _api_videos(ids, key) if ids else []
 
 
-def _search_ytdlp(q: str, n: int, recent_days: int | None) -> list[dict]:
+def _search_ytdlp(q: str, n: int, recent_days: int | None, shorts: bool = False) -> list[dict]:
     yt = _ytdlp()
     count = n if not recent_days else min(n * 2, 60)
     opts = _base_opts(skip_download=True, ignoreerrors=True, extract_flat=False)
@@ -171,6 +173,8 @@ def _search_ytdlp(q: str, n: int, recent_days: int | None) -> list[dict]:
         # uploaded this week / month / year, sorted by views. That is what "trending now" means here.
         from urllib.parse import quote_plus
         sp = "CAMSBAgDEAE%3D" if recent_days <= 7 else "CAMSBAgEEAE%3D" if recent_days <= 31 else "CAMSBAgFEAE%3D"
+        if shorts:      # same filter plus "under 4 minutes" (protobuf field 3 = 1); without it a Shorts query returns mostly long videos
+            sp = {"CAMSBAgDEAE%3D": "CAMSBggDEAEYAQ%3D%3D", "CAMSBAgEEAE%3D": "CAMSBggEEAEYAQ%3D%3D", "CAMSBAgFEAE%3D": "CAMSBggFEAEYAQ%3D%3D"}[sp]
         target = f"https://www.youtube.com/results?search_query={quote_plus(q)}&sp={sp}"
         opts["playlistend"] = count
     else:
@@ -184,16 +188,39 @@ def _search_ytdlp(q: str, n: int, recent_days: int | None) -> list[dict]:
     return out[:n]
 
 
-def search(q: str, n: int = 20, recent_days: int | None = None) -> list[dict]:
+def search_hashtag_shorts(tag: str, n: int = 20, recent_days: int | None = None) -> list[dict]:
+    """Real Shorts from a hashtag's Shorts feed (the results page rarely lists any). Records as `search`; recent ones only."""
+    tag = re.sub(r"[^a-z0-9]", "", tag.lower())
+    if len(tag) < 3:
+        return []
+    try:
+        yt = _ytdlp()
+        opts = _base_opts(skip_download=True, ignoreerrors=True, extract_flat=False)
+        opts["playlistend"] = n
+        with yt.YoutubeDL(opts) as y:
+            res = y.extract_info(f"https://www.youtube.com/hashtag/{tag}/shorts", download=False) or {}
+    except Exception as e:
+        warn(f"hashtag feed #{tag} failed: {str(e)[:120]}")
+        return []
+    out = [normalize(e) for e in (res.get("entries") or []) if e]
+    for v in out:
+        v["is_short"] = bool(v["duration"] and v["duration"] <= 180)
+    if recent_days:
+        cut = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=recent_days)).strftime("%Y%m%d")
+        out = [v for v in out if (v["upload_date"] or "0") >= cut]
+    return out[:n]
+
+
+def search(q: str, n: int = 20, recent_days: int | None = None, shorts: bool = False) -> list[dict]:
     """Search YouTube. Records: id,title,channel,views,upload_date,duration,views_per_day,tags,url,is_short."""
     key = secret("YOUTUBE_API_KEY")
     if key:
         try:
-            return _search_api(q, n, recent_days, key)
+            return _search_api(q, n, recent_days, key, shorts=shorts)
         except fvnet.NetError as e:
             warn(f"YouTube Data API failed ({e}); falling back to yt-dlp")
     try:
-        return _search_ytdlp(q, n, recent_days)
+        return _search_ytdlp(q, n, recent_days, shorts)
     except FishError:
         raise
     except Exception as e:
@@ -221,7 +248,8 @@ def info(url: str) -> dict:
     r = normalize(e)
     r.update({"chapters": e.get("chapters") or [], "description": e.get("description") or "", "width": e.get("width"),
               "height": e.get("height"), "categories": e.get("categories") or [], "channel_url": e.get("channel_url"),
-              "channel_id": e.get("channel_id")})
+              "channel_id": e.get("channel_id"),
+              **{k: e.get(k) for k in ("track", "artist", "album", "creator") if e.get(k)}})
     return r
 
 

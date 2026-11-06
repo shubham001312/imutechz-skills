@@ -3,7 +3,8 @@
 ## The grid
 
 - At 120 BPM, one **beat** is 0.5 s and one **bar** (4 beats) is **2.0 s**. At 30 fps that is 15 frames a beat and 60 frames a bar.
-- **Every scene is a whole number of bars**, so every cut lands on a downbeat.
+- **Default (`pacing.snap: speech`): the narration drives time.** A narrated scene lasts lead-in + lines + gaps + tail exactly (gaps 0.15-0.35 s, a line's `pause:` up to 0.8 s); the music sections move to the nearest bar. The bar rules below apply only with `snap: bar` (opt-in) and to silent scenes.
+- **In bar mode every scene is a whole number of bars**, so every cut lands on a downbeat.
 - Inside a scene, **entrances land on beats**: title words at beat 1, the subtitle at beat 3, chips every half beat from beat 5.
 - `storyboard.py` sizes scenes in bars:
 

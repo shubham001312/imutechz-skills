@@ -36,11 +36,12 @@ def test_parse_prompt_defaults_to_tour_with_a_site():
     assert b["structure"] == "product-tour" and b["platforms"] == ["youtube"]
 
 
-def test_make_brief_has_default_elevenlabs_voice():
+def test_make_brief_defaults_to_the_chatterbox_soft_voice():
     b = brief.make_brief("A 30 s explainer about rainwater")
-    assert b["voice"]["provider"] == "elevenlabs"
-    assert b["voice"]["elevenlabs"]["voice_id"] == "fydPJq00SigRIaPxWgiS"
-    assert b["voice"]["fallback"]["voice"] == "en-IN-NeerjaNeural"
+    assert b["voice"]["provider"] == "chatterbox"
+    assert b["voice"]["studio"]["style"] == "chatterbox-soft"
+    assert b["pacing"] == {"max_word_gap": 0.9, "line_gap": 0.05} and b["mix"]["music_under_voice_db"] == -12
+    assert b["voice"]["elevenlabs"]["voice_id"] == "fydPJq00SigRIaPxWgiS"      # still there for a user who picks it
     assert b["length"] == 30 and b["title"]
 
 
@@ -86,6 +87,7 @@ def test_validate_catches_errors():
 
 def test_resolve_snaps_to_bars(smoke_project):
     cfg = fvcore.project_config(smoke_project)
+    cfg["pacing"]["snap"] = "bar"          # the old grid is opt-in now; narration drives time by default
     story = fvcore.load_yaml(smoke_project / "storyboard.yaml")
     tl = sb.resolve(smoke_project, "youtube", cfg, story)
     assert tl["W"] == 1920 and tl["bpm"] == 120
@@ -104,6 +106,7 @@ def test_resolve_snaps_to_bars(smoke_project):
 
 def test_resolve_uses_voice_clip_lengths(smoke_project):
     cfg = fvcore.project_config(smoke_project)
+    cfg["pacing"].update(snap="bar", lead_in=0.35, tail=0.55)          # legacy bar grid
     story = fvcore.load_yaml(smoke_project / "storyboard.yaml")
     line = sb.scene_lines(story["scenes"][0], cfg["brief"]["voice"]["pronunciations"])[0]
     clip = {"say": line["say"], "speech_end": 7.3, "wav": "x.wav", "words": [{"text": "x", "start": 0.0, "end": 7.3, "char": 0}]}
@@ -292,7 +295,7 @@ def test_interview_maps_answers_and_gates(tmp_path):
     save_yaml(tmp_path / "brief.yaml", brief.make_brief("A short about habits for YouTube Shorts"))
     assert interview.open_questions(tmp_path)[0]["round"] == "purpose"
     ans = {"topic": "Why habits stick", "goal": "story", "audience": "curious beginners", "platforms": '["shorts"]',
-           "length": "25", "style": "glow-metaphor", "hook": "visual", "palette": "mono-glow", "mode": "auto", "type": "grotesk",
+           "length": "25", "style": "glow-metaphor", "hook": "visual", "theme": "none", "palette": "mono-glow", "mode": "auto", "type": "grotesk",
            "texture": "grain", "voice_energy": "cinematic", "voice": "christopher", "music": "cinematic-swell", "sfx": "rich",
            "real_assets": "none", "screen": "none", "points": "cue\nroutine\nreward", "cta": "follow", "language": "en-US",
            "captions": "pop", "thumbnail": "frame", "checkpoints": '["final"]', "keys_have": '[]'}
@@ -304,6 +307,9 @@ def test_interview_maps_answers_and_gates(tmp_path):
     assert b["points"] == ["cue", "routine", "reward"]
     assert any("not confirmed" in e for e in interview.gate(tmp_path, "script"))
     interview.confirm(tmp_path)
+    assert any("trend research missing" in e for e in interview.gate(tmp_path, "script"))   # live research is enforced
+    import trends
+    trends.mark_unavailable(tmp_path, "offline unit test: no search")
     assert interview.gate(tmp_path, "script") == []
     # a storyboard copied from the scaffold is still blocked at render
     save_yaml(tmp_path / "storyboard.yaml", sb.scaffold(load_yaml(tmp_path / "brief.yaml")))
@@ -511,3 +517,30 @@ def test_package_slug_follows_the_current_title_not_the_prompt():
     assert package.package_slug(b) == "how-vector-search-works"
     b["title"] = "Renamed Later"
     assert package.package_slug(b) == "renamed-later"
+
+
+def test_speech_mode_cuts_follow_the_voice_and_gaps_stay_small(smoke_project):
+    cfg = fvcore.project_config(smoke_project)
+    story = fvcore.load_yaml(smoke_project / "storyboard.yaml")
+    lines = [l for s in story["scenes"] for l in sb.scene_lines(s)]
+    clips = {l["id"]: {"say": l["say"], "speech_end": 3.1, "wav": "x.wav", "words": [{"text": "x", "start": 0.0, "end": 3.1, "char": 0}]} for l in lines}
+    tl = sb.resolve(smoke_project, "shorts", cfg, story, clips)
+    assert tl["snap"] == "speech"
+    g = tl["gaps"]
+    assert g["values"] and 0.1 <= min(g["values"]) and g["max"] <= 0.6, g
+    # a planned pause is honoured and capped at 0.8 s
+    assert sb.scene_lines({"id": "x", "say": [{"text": "Wait.", "pause": 5, "tag": "reveal"}]})[0]["pause"] == 0.8
+    assert sb.scene_lines({"id": "x", "say": [{"text": "Wait.", "tag": "nonsense"}]})[0]["tag"] is None
+
+
+def test_two_projects_get_different_scores_and_the_score_is_stored(tmp_path):
+    import score
+    a, b = tmp_path / "a", tmp_path / "b"
+    a.mkdir(); b.mkdir()
+    sa = score.derive(a, {"title": "Onoda part one", "music": {"mood": "dark-drone"}})
+    sb2 = score.derive(b, {"title": "Cold brew in 60 seconds", "music": {"mood": "lofi-tech"}})
+    assert score.signature(sa) != score.signature(sb2) and sa["seed"] != 12345
+    assert (a / "score.json").exists() and score.derive(a, {"title": "changed later"}) == sa    # stored: repeatable
+    other = score.derive(tmp_path / "c", {"title": "Onoda part two", "music": {"mood": "dark-drone"}})
+    assert other["seed"] != sa["seed"]
+    assert score.derive(tmp_path / "d", {"score": {"fixed": True, "key": "G"}}, {"fixed": True, "key": "G"}) == {"key": "G"}

@@ -51,7 +51,7 @@ rounds:
         question: "Who is watching, and how much do they already know about the topic?"
         maps_to: audience
         options:
-          - {label: "Curious beginners", value: "curious beginners; no jargon, one idea at a time", description: "Plain words, analogies, slower pace"}
+          - {label: "Curious beginners (Recommended)", value: "curious beginners; no jargon, one idea at a time", description: "Plain words, analogies, slower pace"}
           - {label: "Practitioners", value: "practitioners who know the basics", description: "Skip basics, show specifics and numbers"}
           - {label: "Experts / developers", value: "experts and developers", description: "Dense, technical, code and architecture"}
           - {label: "Buyers / decision makers", value: "buyers and decision makers", description: "Outcomes, proof, cost, trust"}
@@ -62,7 +62,7 @@ rounds:
         question: "Where will it be posted? (pick all; each gets its own cut and safe zones)"
         maps_to: platforms
         options:
-          - {label: "YouTube Shorts 9:16", value: shorts, description: "1080x1920, <= 3 min, burned captions"}
+          - {label: "YouTube Shorts 9:16 (Recommended)", value: shorts, description: "1080x1920, <= 3 min, burned captions"}
           - {label: "YouTube 16:9", value: youtube, description: "1920x1080, SRT captions, chapters"}
           - {label: "Instagram Reels / TikTok", value: "reels,tiktok", description: "9:16, UI-safe layouts"}
           - {label: "LinkedIn 4:5", value: linkedin, description: "1080x1350, burned captions"}
@@ -98,7 +98,7 @@ rounds:
         question: "How should the first 1-2 seconds grab attention?"
         maps_to: hook.kind
         options:
-          - {label: "Bold claim / question", value: claim, description: "A surprising line in huge type, with an impact hit"}
+          - {label: "Bold claim / question (Recommended)", value: claim, description: "A surprising line in huge type, with an impact hit"}
           - {label: "Visual surprise", value: visual, description: "A striking image or cut-out reveal before any words"}
           - {label: "Pain point", value: pain, description: "Name the viewer's problem in their words"}
           - {label: "Result first", value: result, description: "Show the finished outcome, then rewind to how"}
@@ -106,10 +106,16 @@ rounds:
   - id: look
     title: "Round 3 - Colours, type and texture"
     questions:
+      - id: theme
+        required: true
+        header: Theme
+        question: "Which theme (type pairing, texture, layout and motion together)? Show the options; `fishvideo themes preview` renders a gallery image of each. A recipe names its recommended themes."
+        maps_to: theme
+        options_from: themes     # config/themes.yaml; the first option is the recommendation (the trend-derived theme from `fishvideo trends --derive-theme` when present; built-ins are fallbacks), "No theme" keeps the style's own palette
       - id: palette
         required: true
         header: Colours
-        question: "Which colours? Give brand hex codes, or pick a palette (previews in references/style-recipes.md)."
+        question: "Which colours? Give brand hex codes, or pick a palette (previews in references/style-recipes.md). With a theme chosen, hex codes override only its colours and a palette is ignored."
         maps_to: palette
         options_from: palettes   # config/styles.yaml palettes; "Other" = user hex codes
       - id: mode
@@ -137,7 +143,7 @@ rounds:
         question: "Surface texture and finish?"
         maps_to: texture
         options:
-          - {label: "Paper + halftone", value: paper, description: "Crumpled paper, halftone photos, soft shadows"}
+          - {label: "Paper + halftone (Recommended)", value: paper, description: "Crumpled paper, halftone photos, soft shadows"}
           - {label: "Film grain + vignette", value: grain, description: "Cinematic, moody"}
           - {label: "Clean flat", value: clean, description: "No texture; crisp UI look"}
           - {label: "Grid / blueprint", value: grid, description: "Graph paper or blueprint lines"}
@@ -195,7 +201,7 @@ rounds:
         question: "Should the video show a real screen (website, app or desktop) with cursor, click sounds and focus-zoom?"
         maps_to: screen.kind
         options:
-          - {label: "Website tour", value: website, description: "I film a URL in headless Chromium (read-only)"}
+          - {label: "Website tour (Recommended)", value: website, description: "I film a URL in headless Chromium (read-only)"}
           - {label: "Desktop / app recording", value: desktop, description: "Records your real screen; you perform the steps"}
           - {label: "I have recordings", value: files, description: "You give me .mp4 screen recordings"}
           - {label: "No screen footage", value: none, description: "Motion graphics only"}
@@ -243,7 +249,7 @@ rounds:
         question: "What should the viewer do at the end?"
         maps_to: cta.kind
         options:
-          - {label: "Follow / subscribe", value: follow, description: "Short end card, loop back to the hook"}
+          - {label: "Follow / subscribe (Recommended)", value: follow, description: "Short end card, loop back to the hook"}
           - {label: "Visit a link", value: link, description: "URL on the end card + description"}
           - {label: "Comment a keyword", value: comment, description: "Drives engagement on Shorts"}
           - {label: "No CTA", value: none, description: "End on the payoff"}
@@ -253,7 +259,7 @@ rounds:
         question: "Narration and caption language / accent?"
         maps_to: language
         options:
-          - {label: "English (US)", value: en-US, description: "Neutral US narrator"}
+          - {label: "English (US) (Recommended)", value: en-US, description: "Neutral US narrator"}
           - {label: "English (India)", value: en-IN, description: "Indian English narrator"}
           - {label: "English (UK)", value: en-GB, description: "British narrator"}
           - {label: "Hindi", value: hi-IN, description: "Devanagari captions"}
@@ -283,7 +289,7 @@ rounds:
         question: "Thumbnail approach?"
         maps_to: thumbnail.style
         options:
-          - {label: "Big 3-word text + subject", value: text_subject, description: "Cut-out subject, 3 huge words, one accent"}
+          - {label: "Headline + logo or picture tiles on a road (Recommended)", value: text_subject, description: "The house design made by `fishvideo thumbnail`: two-tone headline, tag, audience line, logos or licensed pictures on a glowing road"}
           - {label: "Best frame + title", value: frame, description: "Strongest frame of the video with a title"}
           - {label: "Before / after", value: compare, description: "Split frame showing the change"}
       - id: checkpoints
@@ -313,7 +319,7 @@ rounds:
         question: "Which of these keys can you provide now? (all optional; each has a free fallback)"
         maps_to: keys.provided
         options:
-          - {label: "ElevenLabs (best voices)", value: ELEVENLABS_API_KEY, description: "elevenlabs.io > Profile > API keys. Paid plan needed for commercial use. Without: free edge-tts / Kokoro voices"}
+          - {label: "ElevenLabs (best voices) (Recommended)", value: ELEVENLABS_API_KEY, description: "elevenlabs.io > Profile > API keys. Paid plan needed for commercial use. Without: free edge-tts / Kokoro voices"}
           - {label: "Pexels + Pixabay (stock)", value: "PEXELS_API_KEY,PIXABAY_API_KEY", description: "Free: pexels.com/api and pixabay.com/api/docs (sign up, key shown). Without: Openverse, Wikimedia, NASA (key-less)"}
           - {label: "Freesound (SFX)", value: FREESOUND_API_KEY, description: "Free: freesound.org/apiv2/apply. Without: Kenney CC0 packs + synthesised SFX"}
           - {label: "YouTube Data API", value: YOUTUBE_API_KEY, description: "Free: console.cloud.google.com > enable YouTube Data API v3 > Credentials. Without: yt-dlp search (slower, no 'most popular' chart)"}
@@ -332,7 +338,7 @@ rounds:
         question: "Install optional extras now? (each is a one-time pip install into the skill's venv)"
         maps_to: installs
         options:
-          - {label: "Background removal", value: rembg, description: "rembg (~200 MB model) for photo cut-outs; without it I use provided PNGs or framed photos"}
+          - {label: "Background removal (Recommended)", value: rembg, description: "rembg (~200 MB model) for photo cut-outs; without it I use provided PNGs or framed photos"}
           - {label: "Local natural voices", value: kokoro, description: "Kokoro-82M TTS (Apache-2.0, ~350 MB), offline"}
           - {label: "Word alignment", value: faster-whisper, description: "Align your own recorded voiceover to captions"}
           - {label: "None", value: none, description: "Use what is installed"}

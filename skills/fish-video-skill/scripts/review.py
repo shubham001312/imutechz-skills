@@ -151,12 +151,24 @@ def run_checks(video: Path, tl: dict, cfg: dict, platform: str) -> tuple[dict, l
     voice_iv = [(float(l["at"]), float(l["at"]) + float(l.get("dur", 0))) for l in lines]
     narr = sum(b - a for a, b in voice_iv)
     m["narration_share"] = round(narr / dur, 2) if dur else 0
-    gap_lim = 0.6 if shorts else 1.2
+    gap_lim = 0.6                                       # every format: the narration drives time, so unplanned silence stays small
+    gaps = []
     for k in range(len(voice_iv) - 1):
         g = voice_iv[k + 1][0] - voice_iv[k][1]
-        if g > gap_lim:
-            F.append(find("P1", voice_iv[k][1], f"line {k + 1} to {k + 2}", f"{g:.2f} s of dead air after the line (limit {gap_lim} s)",
-                          f"pull line {k + 2} earlier by {g - gap_lim:.2f} s or fill with a sound/visual beat", "dead_air_after_voice"))
+        gaps.append(g)
+        lim = gap_lim + min(float(lines[k + 1].get("pause") or 0), 0.8)     # a line may ask for a pause (`pause:` in the storyboard)
+        if g > lim:
+            F.append(find("P1", voice_iv[k][1], f"line {k + 1} to {k + 2}", f"{g:.2f} s of dead air after the line (limit {lim:.1f} s)",
+                          f"pull line {k + 2} earlier by {g - lim:.2f} s or fill with a sound/visual beat", "dead_air_after_voice"))
+    if gaps:
+        sg = sorted(gaps)
+        m["line_gap_median"] = round((sg[len(sg) // 2] if len(sg) % 2 else (sg[len(sg) // 2 - 1] + sg[len(sg) // 2]) / 2), 2)
+        m["line_gap_max"] = round(max(gaps), 2)
+    if lines:       # the hook: short, and the voice is already speaking
+        n0, st0 = len(str(lines[0].get("display", "")).split()), float(lines[0]["at"])
+        if n0 >= 10 or st0 > 0.2:
+            F.append(find("P1", st0, "first line", f"hook has {n0} words and starts at {st0:.2f} s (under 10 words, within 0.2 s)",
+                          "shorten the opening line and start it on frame 0", "weak_hook"))
     inner = []
     for a, b in zip(words, words[1:]):
         g = b["t0"] - a["t1"]
@@ -172,7 +184,7 @@ def run_checks(video: Path, tl: dict, cfg: dict, platform: str) -> tuple[dict, l
         if d > 0:
             r_ = n / d
             wps.append(round(r_, 2))
-            if r_ > 3.4:   # the reference Shorts run 2.3-2.9 words/s
+            if r_ > 3.6:   # the target pace is 2.8-3.3 words/s
                 F.append(find("P1", l["at"], f"line {k + 1}", f"{r_:.1f} words/s is too fast to follow", "split the line or cut words", "words_per_second"))
     m["words_per_second"] = wps
     tgt = brief.get("length")

@@ -1,0 +1,31 @@
+# Synthesised-score moods. Each project draws its own key, mode, progression, tempo and instrument palette from its
+# mood (scripts/score.py), seeded by the brief and the trend direction, and stores the result in <project>/score.json.
+# keys/modes/progressions/leads/arps/basses are the choices; bpm is [low, high]; drums: false = no kit; drum: four|half|broken.
+moods:
+  dark-drone:      {keys: [D, C, E, G], modes: [minor, phrygian], progressions: [i-VI-III-VII, i-i-VI-VII, i-iv-i-VII], bpm: [76, 96], drums: false, leads: [pluck, bell], drum: half}
+  hiphop-groove:   {keys: [F, G, Bb, A], modes: [minor, dorian], progressions: [i-VII-VI-VII, i-iv-VII-VI, i-VI-VII-i], bpm: [86, 98], drums: true, leads: [pluck, glass], drum: broken}
+  dark-build:      {keys: [E, B, F#, A], modes: [minor, phrygian], progressions: [i-i-VI-VII, i-VI-iv-V, i-VII-VI-VII], bpm: [92, 108], drums: false, leads: [pluck, bell, none], drum: half}
+  cinematic-swell: {keys: [C, A, D, F], modes: [minor, dorian], progressions: [i-VI-III-VII, i-VII-VI-v, VI-VII-i-i], bpm: [64, 84], drums: false, leads: [bell, glass], drum: half}
+  lofi-tech:       {keys: [A, E, D, G], modes: [dorian, minor], progressions: [i-IV-i-VII, i-iv-VII-III, ii-V-i-i], bpm: [78, 92], drums: true, leads: [glass, pluck, bell], drum: broken}
+  calm-pulse:      {keys: [D, G, C, A], modes: [major, lydian], progressions: [I-V-vi-IV, I-IV-V-IV, vi-IV-I-V], bpm: [100, 116], drums: true, leads: [pluck, glass], drum: four}
+  phonk-loop:      {keys: [G, F, A, C], modes: [minor, phrygian], progressions: [i-i-VI-VII, i-VI-VII-i, i-VII-i-VI], bpm: [132, 146], drums: true, leads: [pluck, bell], drum: broken}
+  upbeat-promo:    {keys: [G, C, D, A], modes: [major, mixolydian], progressions: [I-V-vi-IV, I-IV-I-V, I-vi-IV-V], bpm: [112, 126], drums: true, leads: [pluck, glass, bell], drum: four}
+  noir-pulse:      {keys: [F#, C#, B, G], modes: [phrygian, minor], progressions: [i-ii-i-VII, i-VI-ii-i, i-i-ii-VII], bpm: [80, 90], drums: true, leads: [bell, none, pluck], drum: half}
+  sunrise-lift:    {keys: [E, A, D, B], modes: [lydian, major], progressions: [I-II-vi-V, I-V-IV-V, I-iii-IV-V], bpm: [106, 120], drums: true, leads: [glass, pluck], drum: four}
+  retro-arcade:    {keys: [A, E, C, G], modes: [mixolydian, major], progressions: [I-VII-IV-I, I-IV-VII-IV, I-V-VII-IV], bpm: [122, 134], drums: true, leads: [pluck, glass], drum: four}
+  wistful-keys:    {keys: [D, Bb, G, E], modes: [dorian, minor], progressions: [i-IV-VII-i, i-iv-i-V, VI-VII-i-III], bpm: [68, 80], drums: false, leads: [glass, bell], drum: half}
+  tension-minimal: {keys: [C#, G, D, F], modes: [phrygian, minor], progressions: [i-i-ii-i, i-ii-VII-i, i-i-i-VII], bpm: [66, 78], drums: false, leads: [none, bell], drum: half}
+# words in the trend direction / brief that pick a mood when the brief names none
+keywords:
+  dark-drone: [war, history, crime, mystery, true story, documentary, dark]
+  noir-pulse: [noir, detective, heist, thriller]
+  tension-minimal: [tension, countdown, secret, conspiracy]
+  hiphop-groove: [hip hop, rap, street, bold]
+  phonk-loop: [gym, phonk, fitness, drift]
+  upbeat-promo: [launch, promo, product, startup, sale]
+  sunrise-lift: [morning, hope, motivation, wellness]
+  retro-arcade: [game, gaming, retro, pixel]
+  lofi-tech: [tutorial, coding, tech, how to, productivity]
+  cinematic-swell: [space, nature, emotional, epic]
+  wistful-keys: [memory, nostalgia, loss, lonely]
+  calm-pulse: [finance, business, explainer]

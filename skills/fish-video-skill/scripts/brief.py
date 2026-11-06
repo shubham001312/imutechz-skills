@@ -148,7 +148,7 @@ def new_project(out: Path | str, prompt: str = "", force: bool = False, **over) 
     for d in ("assets", "research", "reference", "build", "out"):
         (out / d).mkdir(parents=True, exist_ok=True)
     save_yaml(out / "brief.yaml", b)
-    (out / ".gitignore").write_text("build/\n.env\nreference/src.*\n", encoding="utf-8")
+    (out / ".gitignore").write_text("build/\n.env\nreference/src.*\nresearch/trend-thumbs/\nresearch/trends-contact.jpg\nresearch/trends.json\n", encoding="utf-8")
     log(f"new project: {out}  ({b['structure']}, {b.get('length')} s, {', '.join(b['platforms'])}, {b.get('language')})")
     return out
 

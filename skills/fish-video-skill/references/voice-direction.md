@@ -69,6 +69,8 @@ Put recurring words in `voice.pronunciations` once. They are applied to every li
 
 ## Chatterbox: a free local voice with emotion control
 
+**Recommended default: the `chatterbox-soft` preset** (recipe and measurements in [local voices](local-voices.md)). The settings below are the recipe it implements.
+
 Use it when the user wants a natural voice with no paid plan and no GPU. In one audition, a user chose this route over the free edge voices; that is one listener and not a blind test, so always audition.
 
 **Setup, in its own environment.** Its pinned dependencies conflict with the skill's venv:

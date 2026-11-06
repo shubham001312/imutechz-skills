@@ -1,344 +1,70 @@
 ---
 name: fish-video-skill
-description: Make a premium, upload-ready Short, Reel, TikTok, YouTube or LinkedIn video on any topic. Use it when someone asks for a video, explainer, promo, product or app tour, screen-recorded tutorial, motivational Short, or "a video like this one" (a reference link). It starts with one strict interview (topic, platforms, style, colours, voice, music, SFX, assets, screen recording, API keys), then never asks again until the final review. It researches trends and facts, dissects reference videos, collects licensed real assets and memes, records the screen with focus zooms and click sounds, and renders deterministic motion graphics with a 3D camera: paper collage, kinetic type, neon diagrams, glow metaphors, whiteboards. It adds a natural voice, a mix balanced for phone speakers and word-pop captions, runs QA and a self-review, packages videos, thumbnails, titles, descriptions, tags and credits, and cleans up only with permission.
-version: 2.4.0
+description: Make a premium, upload-ready Short, Reel, TikTok, YouTube or LinkedIn video on any topic, with any model on any device. Use it when someone asks for a video, explainer, roadmap video, story Short, promo, product or app tour, screen-recorded tutorial, or "a video like this one". It starts from a recipe (roadmap-explainer, story-short, bold-short) and one of 14 themes, runs one strict interview, collects licensed real images and footage, narrates with the recommended Chatterbox soft voice, renders deterministic motion graphics, then enforces measured gates: image coverage, a frame-sheet sign-off, and a required designed thumbnail (headline plus logo or picture tiles on a glowing road). It packages videos, thumbnails, titles, descriptions and credits, and cleans up only with permission.
+version: 2.5.0
 license: MIT
 author: ImuTechz
-compatibility: Python 3.10+ (3.12 recommended), Node 18+, a Chromium browser (Brave/Chrome/Edge/Chromium), ffmpeg (bundled via npm). Windows, macOS, Linux. Optional keys ELEVENLABS_API_KEY, PEXELS_API_KEY, PIXABAY_API_KEY, FREESOUND_API_KEY, YOUTUBE_API_KEY; every one has a key-less fallback.
+compatibility: Python 3.10+ (3.12 recommended), Node 18+, a Chromium browser (Brave/Chrome/Edge/Chromium), ffmpeg (bundled via npm). Windows, macOS, Linux. Optional Chatterbox voice (one command), and keys ELEVENLABS_API_KEY, PEXELS_API_KEY, PIXABAY_API_KEY, FREESOUND_API_KEY, YOUTUBE_API_KEY; every key has a key-less fallback.
 ---
 
-# Fish Video Skill v2
-
-You make one video from one conversation. It must reach the quality of the top Shorts dissected in [reference breakdowns](references/reference-breakdowns.md):
-- something new on screen every ~1 s
-- real assets with depth (texture, contact shadows, glow)
-- type with a 3× hero-word contrast
-- object-as-portal transitions
-- a swish that lands *before* every move, risers that *end* on reveals, impacts on flash cuts
-- a voice that sits on top of an audible music bed
-
-A slideshow with a generic voice is a failure even when QA passes.
-
-## Router: load the guide when you reach the task
-
-Read only what the current step needs:
-
-- The user gave only a word, or wants topic ideas, or you are writing the script → [topic to video](references/topic-to-video.md)
-- Choosing a style, palette or look → [style recipes](references/style-recipes.md), `config/styles.yaml`
-- An idea needs explaining, or choosing colours by mood → [diagram design](references/diagram-design.md)
-- Writing any scene → [scene catalogue](references/scene-catalogue.md), including Motion rules and Camera
-- Anything about music, SFX or levels, or "I can't hear the music on my phone" → [sound design](references/sound-design.md)
-- Choosing or directing a voice → [voice direction](references/voice-direction.md)
-- Free local voices (male or female, airy, soft, pace control, `voice setup|audition|check|redo`) → [local voices](references/local-voices.md)
-- Captions and type → [captions & typography](references/captions-and-typography.md)
-- A website or app on screen → [website-tour capture](references/website-tour-capture.md)
-- A reference video to match → [reference breakdowns](references/reference-breakdowns.md), [reference-video analysis](references/reference-video-analysis.md), [trending analysis](references/trending-analysis.md)
-- Reviewing frames (sheet, lint, guides, variants, palette, compare) or designing, checking and picking thumbnails → [frame design](references/frame-design.md)
-- Platform sizes and limits → [platform specs](references/platform-specs.md)
-- A long video that walks through stages (a roadmap, a learning path), or memes without copyright claims → [long roadmap videos](references/long-roadmap-videos.md)
-- Memes (Indian and world), reaction clips, cue sounds, website screenshots, logos, icons, emoji, or the `meme` scene → [memes and real assets](references/memes-and-real-assets.md)
-- Which open-source tool to reach for → [field guide](references/open-source-field-guide.md)
-
-## Non-negotiable workflow
-
-```
-0 doctor ─▶ 1 INTERVIEW (all questions, once) ─▶ confirm ─▶ 2 research + trends + references (parallel)
-  ─▶ 3 assets + screen capture + voice (parallel) ─▶ 4 storyboard (you write every word) ─▶ gate
-  ─▶ 5 stills (look) ─▶ 6 render ─▶ 7 QA + REVIEW loop (fix, re-render, repeat) ─▶ 8 package ─▶ 9 final review ─▶ 10 clean (ask)
-```
-
-Rules:
-- **One interview, at the start.** Every question that needs the user is asked in step 1, including voice and tone, colours, the screen steps, API keys (with how to get each one) and the optional extras to install. After `fishvideo interview <dir> --confirm`, you do **not** ask questions. Decide from the answers and the style recipe. Contact the user again only in these cases:
-  - (a) an optional stop they chose in `checkpoints`
-  - (b) a desktop recording they must perform; they agreed to it in the interview, and you tell them exactly when to start
-  - (c) the final review
-  - (d) permission to clean up
-
-  If the user later says something different, follow the user.
-- **Never write a script before the interview is confirmed.** `fishvideo script`, `all` and full `render` refuse until `fishvideo gate` passes.
-- **Never ship template text.** The scaffold is a skeleton of TODOs. You write every on-screen word and every narration line fresh for this video, so the gate blocks TODOs, v1 stock phrases ("X, explained", "in 60 seconds", "Thanks for watching") and any line copied from `examples/`. Examples show structure, never content.
-- **Explainers get a diagram.** Any `goal: explain` video needs at least one `diagram`, `whiteboard`, `neonline` or `split`-reveal mechanism scene. A list of bullets is not an explanation.
-
-## Step 0: doctor
-
-Setup (first time only) is in `README.md`: `npm install`, a venv, and `pip install -r requirements.txt`. Then run:
-
-```bash
-.venv/Scripts/python scripts/fishvideo.py doctor --keys      # Windows (macOS/Linux: .venv/bin/python)
-```
-
-Note which keys and extras are missing. You ask about exactly those in interview round 8.
-
-> **Setup for the best result (do this, don't skip it):**
-> - **Install the extras yourself.** If `doctor` shows a missing extra, install it into the skill's venv without making the user do it: `pip install "rembg[cpu]"` (cut-outs), `pip install kokoro soundfile` (natural local voices) and `pip install faster-whisper` (aligns the user's own voiceover). Also run `fishvideo assets sfx-pack` once if the SFX library is missing. Tell the user in one line what you are installing and why. Only skip an extra the user declines in round 8.
-> - **Ask for the API keys.** They are **optional**: everything works without them through the free fallbacks. They do give the best result: ElevenLabs gives the most natural voices, Pexels/Pixabay give the most stock photos and video, Freesound gives the most SFX, and the YouTube Data API gives the trending charts. In round 8, ask for the ones that matter for this video, say how to get each one (free sign-up links are in `doctor --keys`), and accept "no" or "later" without pushing. Do this in the interview only, never once creation has started.
-
-## Step 1: the interview (strict)
-
-```bash
-fishvideo new projects/<slug> --prompt "<the user's request, verbatim>"
-fishvideo interview projects/<slug>            # JSON: the open questions, grouped in 8 rounds
-```
-
-The question bank is [config/interview.yaml](config/interview.yaml). It has 8 rounds and about 30 questions:
-
-| Round | Covers |
-|---|---|
-| 1 | purpose |
-| 2 | shape and style |
-| 3 | colours, type, texture |
-| 4 | voice, delivery, music, SFX |
-| 5 | real assets and screen recording |
-| 6 | content, facts, CTA, language |
-| 7 | captions, thumbnail, approvals |
-| 8 | API keys and extras |
-
-**Only a word or an area?** Before round 1, generate 5 trending angles: `yt suggest`, `yt search --recent-days 30` and `trends` (haiku subagents, in parallel), following [topic to video](references/topic-to-video.md). Offer them as the `topic` question. The chosen angle drives everything after it.
-
-How to ask:
-- Ask **one round per `AskUserQuestion` call** (up to 4 questions), using the options exactly as listed. Recommended options come first. "Other" is always available.
-- Free-text questions (`free_text: true`) go in a normal message for that round, together with the round's multiple-choice call.
-- Skip a question only when the prompt already answers it unambiguously (`from_prompt` shows what was detected), and record it anyway.
-- Record each answer: `fishvideo interview <dir> --set style=paper-collage --set platforms='["shorts"]'`. Answers map into `brief.yaml`: the palette goes to `brand.colors`, the mood to the score and tempo, the voice and delivery to the voice config and post chain, and the style to texture, pacing and motif.
-- **Voice:** after rounds 4 and 6 (once the language and delivery are known), run `fishvideo voices <dir> --audition`. Give the user the file paths in `build/auditions/` so they can play them, and let them pick. This is still part of the interview.
-- **Keys:** offer only the missing keys that matter for their answers. Explain how to get each one (the text in the bank) and what happens without it. If they paste keys, record them with `--set keys_paste=...`. Keys go to the skill's gitignored `.env` and are never echoed, logged or committed. If they choose extras, install them into the venv now (`pip install "rembg[cpu]"`, `kokoro soundfile`, `faster-whisper`).
-- Finally, read `fishvideo interview <dir> --summary` back to the user. Ask for a plain "yes, go", then run `--confirm`.
-
-## Step 2: research, trends and references (run in parallel)
-
-Spawn these as parallel subagents. Model routing: **haiku** for fetch and lookup sweeps, **sonnet** for analysis and routine code, and you (**opus**) for the script, storyboard, design judgement and final review. Brief each agent with the project path and the exact output file it must produce. Subagents may not be able to write report files; then they return the text and you save it.
-
-| Task | Command | Agent |
-|---|---|---|
-| Facts and sources | web search, then `fishvideo research <dir> --url ...` → `research/facts.md` | haiku |
-| Trends | `fishvideo trends <dir> --topic "<topic>" --region <IN/US>` → `research/trends.md` (title formulas, tags, hooks, ideal length from what is ranking now) | haiku |
-| YouTube look-ups | `fishvideo yt search "<q>" -n 20 [--recent-days 30]`, `yt info`, `yt subs`, `yt suggest` | haiku |
-| Reference dissection (each link the user gave, plus 1–2 top trending examples in the chosen style) | `fishvideo yt download <url> --purpose reference --project <dir>`, then `fishvideo dissect <dir>/reference/<file>.mp4 --out <dir>/reference/dissect --fps 4 [--vtt subs.vtt]`. Read **every** sheet, the spectrogram and `timeline.md`, then write `reference/analysis.md` with the nine sections of [reference-video analysis](references/reference-video-analysis.md) | sonnet (vision) |
-
-From the dissections, take numbers: change rate, swish timing and level, voice-over-bed dB, duck depth, loudness, caption style. Write them into `brief.yaml → match:` so the storyboard and mix can follow them. **Copy craft, never content.**
-
-## Step 3: assets, screen and voice (run in parallel)
-
-**Real assets** (when `assets.policy` is `mixed`):
-- Search: `fishvideo assets search <dir> "<noun>" --kind photo|video|music|sfx [--providers wikimedia,pexels]`. Open the previews in `assets/_candidates/` and look at them.
-- Download what you pick: `fishvideo assets get <dir> <ids>`. Every file is logged to `assets/credits.json` with its licence.
-- Make cut-outs: `fishvideo assets cutout in.jpg out.png` (rembg with `isnet-general-use`; never the non-commercial default model).
-- Prepare b-roll: `fishvideo assets clip <dir> <file> <clip_id> --start S --dur S` gives frames for the `footage` scene.
-- Get a CC-BY YouTube section: `fishvideo yt clip <url> <start> <end> <dest> --project <dir>`. It refuses non-CC videos.
-- Licences allowed: CC0, PD, Pexels/Pixabay licences, CC-BY and CC-BY-SA (credited). Never NC or ND. Never a non-CC YouTube video, a reference video's footage, a logo you redraw, or a real person's likeness in a misleading way.
-- One opt-in exception (2.3): memes and viral sounds have no verifiable licence. They are tier `unverified` and refused unless the user chose `viral` in the `memes` interview question (`memes.policy` in the brief) or you pass `--accept-risk` for that one file. Tell the user the risk (claim, mute, takedown). QA warns and the credits list each one as not verified. Details: [memes and real assets](references/memes-and-real-assets.md).
-
-**Screen:**
-- `website`: list the shots under `captures:` and run `fishvideo capture <dir>`. It films read-only in virtual time.
-- `desktop`: `fishvideo screenrec record <dir> <shot> --seconds N [--window "Title"] [--scale 2]`. Before it starts, tell the user exactly which steps to perform. F8 drops a mark and F9 stops.
-- `files`: `fishvideo screenrec import <dir> <shot> recording.mp4`.
-
-All three produce the same capture folder. The `tour` scene (`frame: inset`) adds the glow cursor, click ripples and click SFX, a 1.6–2× zoom to the cursor, a spotlight and STEP cards. Record at scale 2 so zooms stay sharp.
-
-**Music:**
-- A library track: `assets search <dir> "<brief.music.search>" --kind music`, then `assets get`, and put the file in `assets/music/`.
-- Or leave the synthesised score. Set `music.source: synth` to force it.
-
-**SFX:** run `fishvideo assets sfx-pack` once (Kenney CC0). Add more with `assets search --kind sfx` (Freesound CC0) into `assets/sfx/<cue-type>/`.
-
-**Voice:** write the narration (step 4), then run `fishvideo voice <dir>`. Re-run the storyboard so scenes re-time to the real clips. If the user recorded their own narration, run `fishvideo voiceover <dir> recording.wav` instead: it aligns the recording to the script with faster-whisper and cuts it per line. Without `faster-whisper`, transcribe elsewhere and add `--words words.json`.
-
-**Emotion:** give each scene a `mood:` (`curious`, `tense`, `urgent`, `excited`, `warm`, `serious`, `reflective`, `triumphant`, `neutral`). It sets speed and pitch per line, and style on ElevenLabs. Punctuation shapes the delivery on every engine: `...` pauses, `?` and `!` lift, short sentences punch. Vary mood across beats: one flat tone for 40 seconds is the "generic voice" complaint. Silent stretches inside a line are cut automatically (`pacing.max_word_gap`).
-
-**Music timing:** for a library track, run `fishvideo beats <track>`. Set the storyboard `bpm` to its tempo and `music.offset` so a beat or the drop lands on your biggest reveal.
-
-**Screen recordings:** run `fishvideo screenrec tighten <dir> <shot>` to speed through idle stretches. Never make the viewer wait for a loading spinner.
-
-## Step 4: storyboard (you write it)
-
-Run `fishvideo script <dir>`. It scaffolds `storyboard.yaml` from the style recipe ([config/styles.yaml](config/styles.yaml), [style recipes](references/style-recipes.md)) as a beat skeleton full of TODOs. Its timings are placeholders. Then write it properly, in this order:
-
-1. Replace every TODO: copy, params and narration. The table at the top of the [scene catalogue](references/scene-catalogue.md) lists the required params.
-2. Write `brief.publish` and check the fields the interview cannot fill: `title`, `facts` (`{text, value, source}`), `sources`, `cta`.
-3. Run `fishvideo voice <dir>`, then `fishvideo storyboard <dir>`. Only now are the scene lengths real. Anything timed in beats (`at`) is set against the spoken words *after* this step.
-4. Run `fishvideo gate <dir>`.
-
-**Variety.** Never use the same scene type twice in a row in a Short, and never three stats or charts in a row. A real photo must never appear unprocessed. Use `assets cutout` and a treatment, because a dull rectangle kills the frame.
-
-**One character.** Choose one recurring object or figure before writing any beat: a phone, a box, a dot, a letter. Everything in the video happens to it, and it appears in every scene (`anchor` / `carry`, and `match` transitions). This is the clearest difference between trending videos and generated slideshows: see [trending analysis](references/trending-analysis.md).
-
-**Diagrams evolve.** Keep one persistent element and let it re-label, grow or travel (`neonline` with `follow`, `diagram` with `morph`, camera push-throughs). Don't assemble unrelated static nodes.
-
-**Beats.** Split the idea into 4–8 meaning beats: hook, claim, human moment, concept, escalation, turn, payoff, end. Use one scene per beat, and repeat beats for screen steps.
-
-**Style bible lock.** Every scene uses:
-- the same palette, one accent, one type family
-- the style's motif
-- rising intensity until the payoff
-
-**Hook.** Frame 0 is already full: a subject, a title slam or a striking cut-out. Nothing appears before it (no logo, no fade-in). Within the first 1–2 s it delivers the hook kind the user chose.
-
-**Change rate.** Something new every `pacing.change_every` seconds (0.75–1.2 s for Shorts): an element entrance, a camera move, a reveal or a word pop. Never hold a static frame for more than 2 s on a Short.
-
-**Copy:**
-- Narration runs about 3 words/s (`punchy`), 2.4 (`calm`) or 2.2 (`cinematic`).
-- One idea per sentence. Concrete nouns.
-- No "revolutionary", "seamless" or "leverage".
-- Respell numbers and acronyms with `{shown|spoken}`.
-
-**On-screen text** is a subset of the narration, at most 6 words per line, with one `*accent*` word.
-
-**Transitions.** Prefer object-as-portal transitions (`zoom`, `flip`, `split`, `defocus`) and `flash` for impact cuts. Avoid plain `fade`.
-
-**Sound comes from cues.** Scenes emit cues automatically. Add explicit `cues:` for story moments:
-- a `riser` that ends on the reveal
-- an `impact` on the title slam
-- a `boom` on the payoff
-- silence after the final hit when the style calls for it
-
-**Script from the topic.** Follow [topic to video](references/topic-to-video.md): one-sentence summary, beats, hook, open loop, payoff, then read it aloud and cut 10%.
-
-**Diagrams and theme.** Choose the diagram from the sentence (flow, anatomy, cycle, split, chart, zoom-in layers, lanes, architecture), reveal its parts in narration order, and put the accent on one element per beat. When the user picked "style default", choose the style, palette, music and delivery from the script's mood. All of this is in [diagram design](references/diagram-design.md), and the mood table is `config/styles.yaml → mood_map`.
-
-**Facts.** Every number on screen or in the narration must be in `brief.facts` with a source; `factcheck` enforces this.
-
-**Publishing copy:**
-- 5 title options in `brief.publish.titles`, using the formulas from `research/trends.md`. Keep each ≤ 60 chars with the hook word first.
-- `publish.description`, the first 2 lines of which are the hook.
-- `publish.tags` (≤ 15) and `publish.hashtags` (3–5).
-- The `thumbnail:` block.
-
-The scene catalogue, with params and examples for every scene, is [scene catalogue](references/scene-catalogue.md). The motion and sound rules are in [sound design](references/sound-design.md), [pacing & music](references/pacing-and-music.md) and [captions & typography](references/captions-and-typography.md).
-
-Then run `fishvideo gate <dir>`. It must say `ready`.
-
-## Step 5: stills (look at them)
-
-Run `fishvideo stills <dir> --scenes` for every platform and **open every still**. Check:
-- depth: texture, shadows, glow
-- hierarchy: 3× contrast between the hero word and small text
-- the safe area: no text under the Shorts/Reels UI
-- that the caption plate is legible on busy frames
-- that nothing looks like a default template
-
-Fix the problems and look again. If the user chose the `stills` checkpoint, show them now.
-
-## Step 6: render
-
-Preview the hardest 10 s first: `fishvideo render <dir> --platform shorts --scale 0.5 --fast --from 8 --to 18`. Then run the full render: `fishvideo render <dir>`.
-
-The audio is **three stems**:
-- **voice** at −16 LUFS
-- **music** 10 dB under the voice, mid-carved and ducked about 6 dB while speaking, present from frame 0 and faded at the end
-- **sfx**, made of real samples plus synth, never ducked, placed by cue: swishes 0.1 s early, risers ending on the cue, at most one SFX per 80 ms
-
-The master is −12 LUFS with −1 dBTP on Shorts, Reels and TikTok, and −14 LUFS with −1.5 dBTP on the other platforms. The knobs are `mix:` in `brief.yaml`.
-
-## Step 7: QA and the review loop
-
-Run `fishvideo qa <dir>`. Fix every FAIL, and treat every WARN as a fix unless you can justify it to the user. Then run the review loop **at least twice**:
-
-1. `fishvideo review <dir> --platform <p>` writes `REVIEW.md` (measured numbers and findings tagged P0/P1/P2) and three sheets in `build/<p>/review/`: beats at phone width, a strip around each cut, and the hook.
-2. Open every sheet. Under "What I looked at", describe each beat frame in one sentence and name every object. **An object that needs explaining is a P0.** Name the weakest shot.
-3. Write notes as `t=4.2s · where · problem → exact change`. Fix P0s and worthwhile P1s in this order: text, timing, detail.
-4. Re-render only what changed, and repeat. Read `REVIEW.md` before changing anything.
-
-Never score the video out of 10; a score finds nothing to fix. Where the numbers and your eyes disagree, trust the numbers. You cannot hear, so audio is measured with commands.
-
-Also:
-- Open each `build/<platform>/contact.png`.
-- Run `fishvideo dissect build/<platform>/final.mp4 --out build/<platform>/self-check`. Compare its balance and event density with the reference numbers:
-  - voice over bed of 6–14 dB
-  - music audible in gaps (above −38 dBFS)
-  - a swish within 0.15 s before most cuts
-  - SFX density matching the chosen level
-- Check `speaker translation` in the QA report. `build/<p>/phone-monitor.wav` is what a phone plays. If the music or SFX vanish there, fix the mix (see [sound design](references/sound-design.md)); never ship a mix that only works on headphones.
-- Watch the first 3 s and the end. Would this hold attention next to the references? If not, go back to step 4.
-
-## Step 8: package
-
-Run `fishvideo package <dir>`. It produces `out/<date>_<slug>/` containing:
-- `README.md` (the index and an upload checklist)
-- `video/`
-- `captions/`
-- `thumbnails/` (1280×720 plus vertical covers)
-- `metadata/` (titles, per-platform post text with chapters, sources and credits, tags, transcript, `credits.txt` with every licence and the AI disclosure, `metadata.json`)
-- `qa/`
-
-## Step 9: final review
-
-Send the user:
-- the path to `out/<date>_<slug>/`
-- the main video file
-- the thumbnail
-- the 5 titles
-- the measured loudness and mix balance
-- anything still open, such as an estimated voice or a WARN
-
-Ask for approval or changes. On changes, edit and re-render only what changed.
-
-## Step 10: clean up (only with permission)
-
-After the user approves the final video:
-1. Run `fishvideo clean <dir>` (a dry run). It lists what would be deleted (`build/`, reference downloads, unpicked candidates, raw pages) and what is kept (brief, storyboard, the assets used with their credits, research notes, and `out/`).
-2. **Ask the user** whether to delete it, and give the size.
-3. Only on a yes, run `fishvideo clean <dir> --yes` (add `--keep-voice` if they may re-render).
-
-Never delete without that yes.
+# Fish Video Skill
+
+You make one video from one conversation. Quality comes from the tools, not from your taste: follow the numbered path, run each command, and stop where it says STOP. Every frame needs a real image, footage or drawn graphic, never only words.
+
+Run commands with the skill's venv: `.venv/bin/python scripts/fishvideo.py <cmd>` (Windows: `.venv/Scripts/python`). Below, `fv` means that.
+
+## The path (do not skip, do not reorder)
+
+1. **Setup.** `fv doctor --keys`. Install what it lists as missing (`npm install` also fetches the theme fonts; render stops if they are missing). If `chatterbox` is missing, tell the user and run `fv voice setup --engine chatterbox` (one command, the recommended voice). STOP if `doctor` shows no browser or no ffmpeg.
+2. **Pick a recipe and a theme.** `fv recipes`, then `fv themes`. Roadmap, guide or "how to become" = `roadmap-explainer`. True story, history, people = `story-short`. Facts, rules, deadlines with no photos = `bold-short`. A recipe is a starting default (beats, pacing, gates), not a fixed structure: the live trend direction (step 4) may change it. Theme choice happens in the interview, after step 4 (`fv themes preview` renders a gallery of the built-ins).
+3. **Create.** `fv new projects/<slug> --recipe <id> --prompt "<the user's words>"`. You get a brief, a storyboard skeleton full of TODOs and `assets/PLAN.md`.
+4. **Research live trends (required; this sets the direction).** `fv trends projects/<slug>` searches the topic in its format over the last 30 days (90 if thin), ranks by views per day, separates Shorts from long videos, and writes `research/trends.json`, `research/trends.md` and a contact sheet `research/trends-contact.jpg`. OPEN the contact sheet and read the table, then replace every TODO in the Analysis of `research/trends.md` with facts from this run (cite result numbers): the common hook, pacing, thumbnail and colour patterns, the closest built-in theme and why, what this video takes, and the `direction:` block (hook, pacing, layout, thumbnail, palette). With fewer than 5 results say the data is thin and claim no trend; never invent one. Then `fv trends <dir> --derive-theme` builds a project theme from the fetched thumbnails (offered first in the interview; the 14 built-in themes are fallbacks). The direction may change beat order, pacing, scene types and layouts; every quality gate still applies. These files are analysis only: never use a result's script, images or look, never commit or package them. `gate` fails if the research is missing, older than 14 days, thin, or the analysis is empty. Only if search is really down: `fv trends <dir> --unavailable "<reason>"` (recorded; built-in themes are used; tell the user in the final report).
+4b. **Pick the audio (required, right after `trends`).** `fv trends <dir> --sounds` lists the sounds or music named in the trending videos' own metadata (title, description, tags, music fields) and the common style, into `research/trend-sounds.md`; where the data names nothing it says so. Popular tracks and viral sounds are copyrighted: they are never downloaded or embedded. To use a trending sound the licensed way, the user attaches it in YouTube's own Shorts editor ("Add sound") at upload. Inside the video: `fv music source <dir>` finds a CC0 or CC BY track matching the trend style, confirms the licence on the track's own API record, and writes the credit; with none found it says the synthesised score is used. Each project gets its own score (mood, key, mode, progression, BPM, instruments, seed) from `scripts/score.py`, stored in `<dir>/score.json`, and the music changes by section with scene energy and thins under `reveal`/`punchline` lines. A track the user supplies goes in through `assets adopt` with the licence-risk label. Sound effects: the licensed `sfx` library or the opt-in manual route, nothing automatic.
+5. **Interview, once.** `fv interview projects/<slug>`, ask every open question (every question has a Recommended option; with no question tool such as AskUserQuestion, ask in one plain message listing the options with the recommended one first, wait for the reply, then record it with `--set`; never answer for the user) (theme and voice included; the voice option "Chatterbox soft (Recommended)" comes first), record answers with `--set`, read `--summary` back, then `--confirm`. After this, ask nothing until the final review. STOP until confirmed.
+6. **Collect real assets, beat by beat.** `fv assets source <dir> "<what the beat shows>" --beat <id>` searches Wikimedia Commons, NASA, the Library of Congress (plus Pexels/Pixabay when keyed), keeps only licences the API confirms, downloads, records source, licence and author in `assets/credits.json` (they flow into every post text) and points the beat at the file, labelled `illustrative`; add `--depicts "<who or what>"` only when the picture truly shows it (label `archive photo`). `fv assets plan <dir>` lists beats still without an image. Also `fv capture`, `fv thumb logos --find <brand>`. Open the previews and look. STOP if most beats have no real image; text-only beats are a small minority.
+7. **Write the storyboard.** Replace every TODO: narration (short concrete lines, one surprise per line, tease before the pay-off, no filler; the first line under 10 words; tag a line `{text, tag: hook|setup|reveal|punchline, pause: 0.5}` to shape its delivery within the voice preset's range, `pause` only for a reveal and at most 0.8 s), on-screen words (6 words or fewer, one `*accent*`), params. Use `story`, `site`, `cards`, `flow`, `roadmap`, `bold` scenes ([scene catalogue](references/scene-catalogue.md)). Facts need `brief.facts` with a source. Follow the `direction` from step 4 for beat order, pacing and layouts (new scenes and custom layouts are allowed when it calls for them; the gates apply to whatever you make). Write `brief.publish` (5 titles, description, tags) and the `thumbnail:` block (below).
+8. **Gate the script.** `fv gate projects/<slug>` must say `ready`, and `fv gates projects/<slug>` must PASS (it also runs inside `gate`/render for every video): most beats have a real image or footage that exists and is credited (source, licence, author), photos of people or events carry `label: archive photo|illustrative`, a site screenshot is never the main visual, and images keep arriving. The only opt-out is `visuals: {mode: abstract, user_asked: true, reason: "<the user's words>"}` when the user asked for an abstract or text-led video. STOP and fix on any BLOCKED or FAIL: add real images to text scenes, split long scenes, use `srcs:` to swap photos inside a scene.
+9. **Voice.** First `fv budget <dir>` (words per beat slot, before any minutes-long voice run). Then `fv voice projects/<slug>` (Chatterbox soft by default; only changed lines are re-voiced). If the words check flags a homophone ("emus" heard as "emos"), `fv voice words <dir> --add emos=emus`; no re-voicing needed. Then `fv storyboard projects/<slug>`. If Chatterbox is not installed the command stops and prints the setup command; it never switches voice silently. If the user picks another voice, say what changes.
+10. **Look before rendering.** `fv stills projects/<slug> --scenes`, open every still. Fix empty frames, text under the platform UI, unreadable captions.
+11. **Render.** Narration drives time: scene cuts follow the last word and the next line starts 0.15-0.35 s later (`pacing.snap: speech`, the default; `bar` is the old 2 s grid, opt-in). The music moves to the speech, never the voice to the music. `fv qa` reports the median and maximum gap between lines and fails an unplanned gap over 0.6 s. Preview the hardest 10 s: `fv render <dir> --scale 0.5 --fast --from 8 --to 18`. Then `fv render <dir>`.
+12. **QA and the frame sheet (required).** `fv qa <dir>`, then `fv review <dir> --platform <p>` and `fv signoff <dir> --platform <p>`. Open every sheet and `build/<p>/contact.png`. Fill `build/<p>/review/SIGNOFF.md`: for every scene one sentence naming every object you see (4+ words) and a verdict `ok` or `fix`; tick the checklist. Fix every `fix`, re-render, sign again. Check with `fv signoff <dir> --check`. STOP until it passes. Never score a video out of 10; list the changes instead.
+13. **Thumbnail (required).** Keep the headline-and-road design, but its words, palette and tile choice come from the direction. Put the brands the video is about in `storyboard.yaml -> thumbnail: {title, accent, tag, sub, logos: [slug, ...]}` (find slugs with `fv thumb logos --find <name>`; a topic with no brands uses its licensed pictures automatically). Run `fv thumbnail <dir>` (`fishvideo thumbnail`): it draws the headline-and-road design (plus a 9:16 cover for Shorts), runs the checks and picks it. Open the PNG. `package` refuses without it. `--no-thumbnail` only if the user asks for none. A website screenshot is never a thumbnail or cover.
+14. **Package.** `fv package <dir>`. It refuses, naming the failing checks, if QA has any FAIL, or if the thumbnail or sign-off is missing. Fix and re-run `fv qa`. Only if the user explicitly accepts a failure: `--accept-qa-fail "<their words>"` (recorded in the package).
+15. **Final review.** Send the user: the folder path, the video, the thumbnail, 5 titles, measured loudness, anything still open (a WARN, an estimated voice). Ask for approval or changes.
+16. **Clean up, only with a yes.** `fv clean <dir>` (dry run), tell the user the size, ask, then `fv clean <dir> --yes`.
+
+## The defaults you must not change without the user asking
+
+- **Voice:** `chatterbox-soft`: Chatterbox default voice, one sentence at a time, exaggeration 0.32-0.55 by sentence, cfg_weight 0.25, temperature 0.75, seed 11, pauses 0.35-0.55 s, then the post chain and `loudnorm=I=-18:TP=-2:LRA=9`, 48 kHz. Brief: `pacing.max_word_gap: 0.9`, `line_gap: 0.05`, `mix.music_under_voice_db: -12`. Details: [local voices](references/local-voices.md).
+- **Looks:** the trend-derived theme from step 4 (`--derive-theme`), else one of the 14 built-in themes (`theme:` in the brief); `theme_overrides:` changes single values. [Recipes and themes](references/recipes-and-themes.md).
+- **Imagery:** the recipe's gate thresholds (`fv gates`). A text-card video fails.
+- **Thumbnail:** `fv thumbnail`. Logos must relate to the video's content; they are trademarks of their owners.
 
 ## Hard rules
 
-- Never invent facts, numbers, quotes, customers or logos. Unsourced numbers fail the build.
-- References are for analysis only. Never cut a reference's footage, music or voice into the video. Downloads stay in `reference/` and are cleaned afterwards.
-- Every third-party asset is in `assets/credits.json` with its licence and risk tier. Licence-safe projects hold only licences that allow commercial reuse; opted-in non-safe assets are listed apart. The package credits all of it.
-- Film websites read-only: no logins, no form submits, no purchases, no private data. Desktop recordings never log typed text, only modifier combos.
-- Keys live in `.env` and environment variables only. Never print or commit them.
-- Never max out the user's machine. Renders run below normal priority under a CPU cap (`FISH_CPU_LIMIT`, default 60%), so they take longer but the PC stays usable. Don't raise it unless the user asks. Run heavy jobs one at a time, as tracked background tasks, so nothing is left running.
-- Scene code is deterministic: no `Math.random`, `Date`, CSS animations or rAF.
-- Do not upload or publish anything. The deliverable is the local folder.
-- `--no-gate` exists for the test suite. Never use it for a user's video.
+- One interview at the start; never write a script before it is confirmed. Never ship template text: the gate blocks TODOs, lines copied from `examples/`, example image files, and a scene sequence identical to the recipe skeleton or a bundled example (apply the trend direction).
+- `examples/` are past outputs and a quality bar, not templates; the skill does not need them to run. Set the direction from live `trends` first; open an example only afterwards, to compare quality. Never copy its structure, words, images or look because it is there.
+- Explainers need a diagram (`diagram`, `whiteboard`, `neonline`, `flow`, `roadmap` or a `split` reveal).
+- Never invent facts, numbers, quotes or logos; every number is in `brief.facts` with a source.
+- Licences: never NC or ND, never a non-CC YouTube video, never a reference video's footage. Memes and viral sounds only with the user's opt-in (`memes.policy`). Every asset is in `assets/credits.json`.
+- Film websites read-only. Keys live in `.env` only; never print or commit them.
+- Renders run at low priority under a CPU cap; run heavy jobs one at a time. Scene code is deterministic (no `Math.random`, `Date`, CSS animation).
+- Do not upload or publish. `--no-gate` and `--no-thumbnail` are for tests and explicit user requests only.
 
-## Failure modes (v1 lessons)
+## Load only what the current step needs
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| Every video says "X, explained… in 60 seconds" | The v1 scaffold wrote copy | Scaffold is skeleton-only, and the gate blocks stock or example lines |
-| Questions trickle in mid-render, or none are asked | There was no interview contract | One 8-round interview, confirmed before scripting |
-| BGM inaudible; risers and clicks vanish | One bus, −5 dB bed, ratio-6 duck that also ducked the SFX | Three stems: music −10 dB re voice with a 6 dB duck; SFX unducked |
-| Swishes feel late and mushy | 0.55 s whooshes placed on the cut | 150 ms swish, starting 0.1 s before the move |
-| Looks flat, like a template | Vector boxes only, no assets, no texture | Real cut-outs (`assets cutout`), `texture: paper/grain`, contact shadows, glow; collage/split/neon scenes |
-| A generic narrator | Fixed default voice | A delivery preset plus auditions in the interview, with ElevenLabs, Kokoro and edge Multilingual voices |
-| A planned sound never plays | Explicit `cues:` were dropped before the stage | Fixed; QA now fails if a hand-placed cue is missing. Measure the SFX stem to confirm |
-| Half the frame sits empty, QA still passes | Technical checks cannot see it. The `bare frame` check is a heuristic (twice a second, 1.5 s): it misses busy backgrounds and cannot tell a title card from a gap | ALWAYS tile the video and open the frame sheet, whatever `qa` says |
-| Imported voiceover lost its pauses | `pacing.max_word_gap` trims them | Raise it for a performance you approved |
-| Soft zooms in screen tutorials | Recorded at 1× | `screenrec --scale 2`, `capture` at DPR 2 |
-| Captions unreadable over busy frames | No plate | `captions.style: pop` adds an automatic 40% plate |
-| Plus every v1 renderer issue | | See [website-tour capture](references/website-tour-capture.md) (virtual time, fonts, decode, faststart, loudnorm) |
+- Recipes, themes, gates, thumbnail design: [recipes and themes](references/recipes-and-themes.md)
+- The long form of every step above: [pipeline details](references/pipeline-details.md)
+- Script ideas and trending angles: [topic to video](references/topic-to-video.md), [trending analysis](references/trending-analysis.md)
+- Scenes, motion, camera: [scene catalogue](references/scene-catalogue.md), [long roadmap videos](references/long-roadmap-videos.md)
+- Style, colours, type, diagrams: [style recipes](references/style-recipes.md), [diagram design](references/diagram-design.md), [captions and typography](references/captions-and-typography.md)
+- Voice and sound: [local voices](references/local-voices.md), [voice direction](references/voice-direction.md), [sound design](references/sound-design.md), [pacing and music](references/pacing-and-music.md)
+- Memes, logos, icons, real assets: [memes and real assets](references/memes-and-real-assets.md)
+- Frames and thumbnails: [frame design](references/frame-design.md)
+- A website or app on screen: [website-tour capture](references/website-tour-capture.md)
+- A reference video to match: [reference breakdowns](references/reference-breakdowns.md), [reference-video analysis](references/reference-video-analysis.md)
+- Platform sizes: [platform specs](references/platform-specs.md). Tools: [field guide](references/open-source-field-guide.md)
 
 ## Files
 
-- `scripts/`:
-  - `fishvideo.py` (CLI)
-  - `interview.py` (interview, gate, approvals, auditions)
-  - `youtube.py`, `trends.py`, `assets.py`, `screenrec.py`, `dissect.py`
-  - `sfx.py` (sample SFX)
-  - `music.mjs` (score plus synth SFX stem)
-  - `render.py` (stem mix)
-  - `qa.py` (including mix balance)
-  - `package.py`, `clean.py`
-  - `research.py`, `reference.py`, `storyboard.py`, `voice.py` (ElevenLabs, edge-tts, Kokoro), `captions.py`, `fvcore.py`, `fvnet.py`
-  - the stage: `stage/` (scenes, transitions, textures, captions)
-- `config/`: `interview.yaml`, `styles.yaml` (style bibles, palettes, music moods), `voices.yaml` (voice shortlist, delivery presets), `defaults.yaml`.
-- `references/`:
-  - [reference breakdowns](references/reference-breakdowns.md)
-  - [topic to video](references/topic-to-video.md)
-  - [diagram design](references/diagram-design.md)
-  - [sound design](references/sound-design.md)
-  - [style recipes](references/style-recipes.md)
-  - [scene catalogue](references/scene-catalogue.md)
-  - [memes and real assets](references/memes-and-real-assets.md)
-  - [pacing & music](references/pacing-and-music.md)
-  - [captions & typography](references/captions-and-typography.md)
-  - [voice direction](references/voice-direction.md)
-  - [platform specs](references/platform-specs.md)
-  - [reference-video analysis](references/reference-video-analysis.md)
-  - [website-tour capture](references/website-tour-capture.md)
-  - [storyboard templates](references/storyboard-templates.md)
-- `sfx/library/`: Kenney CC0 interface, impact and UI packs plus `index.json`.
-- `examples/`: `why-you-cant-put-it-down/` (the full narrated target: watch `sample-short-720p.mp4` and read its `storyboard.yaml`), `showcase/` (style demo: collage, split, neon, coin flip, glow tunnel) and `imutechz-explainer/` (a v1 production storyboard; structure only, never reuse its lines).
-- `tests/`: unit tests (`test_units.py`, `test_tools.py`), node tests, and e2e smoke renders.
+`scripts/` (CLI `fishvideo.py`, `recipes.py`, `themes.py`, `gates.py`, `thumbs.py`, `voicelab.py`, the stage in `stage/`), `config/` (`recipes.yaml`, `themes.yaml`, `voicelab.yaml`, `styles.yaml`, `interview.yaml`), `references/`, `examples/` (past outputs, a quality bar only), `tests/`.

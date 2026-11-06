@@ -1,0 +1,173 @@
+title: Hiroo Onoda, Part 1 v2
+style: glow-metaphor
+bpm: 120
+custom_scenes:
+- scenes/custom.js
+hud:
+  chapter: false
+  rail: false
+sfx:
+  density: standard
+scenes:
+- id: s1
+  type: onoda_img
+  say: He fought a war that had already ended.
+  transition: cut
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/onoda_young.jpg
+      mode: card
+      ar: 0.82
+      w: 0.7
+      label: HIROO ONODA · ARCHIVE PORTRAIT
+      z0: 1.0
+      z1: 1.1
+      origin: 50% 35%
+    lines:
+    - text: A WAR THAT *ENDED*
+      at: -0.5
+      size: 96
+    block: 0.12
+  lead: 0
+- id: s2
+  type: onoda_img
+  say: 'December 1944. Officer Hiroo Onoda reaches Lubang, a Philippine island, with one order: never surrender.'
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/jp47.jpg
+      mode: card
+      ar: 1.499
+      w: 0.96
+      label: ARCHIVE PHOTO · JAPANESE ARMY IN THE PHILIPPINES, c.1942
+      z0: 1.0
+      z1: 1.12
+    - src: assets/photo2/lub03.jpg
+      mode: cover
+      word: Lubang
+      pos: 55% 40%
+      label: LUBANG ISLAND, TODAY
+      dx: 1
+    - src: assets/photo2/lub13.jpg
+      mode: cover
+      t: 5.0
+      pos: 45% 50%
+      label: LUBANG ISLAND, TODAY
+      dx: -1
+    lines:
+    - text: DECEMBER 1944
+      word: December
+      size: 70
+      dim: true
+    - text: '*NEVER SURRENDER*'
+      word: never
+      size: 88
+    block: 0.2
+- id: s3
+  type: onoda_img
+  say: Japan surrendered. Leaflets fell. His family called to him through loudspeakers.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/missouri.jpg
+      mode: cover
+      pos: 33% 50%
+      label: JAPAN SIGNS ITS SURRENDER, 2 SEPTEMBER 1945
+      z0: 1.05
+      z1: 1.2
+    - src: assets/photo2/leaflet.jpg
+      mode: card
+      ar: 0.672
+      t: 1.7
+      w: 0.6
+      label: WWII SURRENDER LEAFLET · ILLUSTRATIVE
+    - src: assets/photo2/onoda_bro.jpg
+      mode: card
+      ar: 0.687
+      t: 3.4
+      w: 0.6
+      label: ONODA (RIGHT) AND HIS BROTHER, 1944
+    motif: leaflets
+    lines:
+    - text: JAPAN *SURRENDERED*
+      word: Japan
+      size: 62
+    - text: '*LEAFLETS* FELL'
+      word: Leaflets
+      size: 62
+    - text: HIS *FAMILY* CALLED
+      word: family
+      size: 62
+    block: 0.27
+- id: s4
+  type: onoda_img
+  say: Onoda decided it was all enemy tricks, and stayed hidden.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/jungle.jpg
+      mode: cover
+      pos: 55% 50%
+      label: ILLUSTRATIVE · PHILIPPINE JUNGLE (PALAWAN)
+    - src: assets/photo2/lub02.jpg
+      mode: cover
+      t: 1.8
+      pos: 50% 30%
+      label: LUBANG ISLAND, TODAY
+    lines:
+    - text: ENEMY *TRICKS?*
+      word: enemy
+      size: 96
+    block: 0.12
+- id: s5
+  type: onoda_img
+  say: Then in 1974, a young traveler found him. He still refused.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/lub04.jpg
+      mode: cover
+      pos: 50% 45%
+      label: LUBANG ISLAND, TODAY
+    - src: assets/photo2/onoda_lindsay.jpg
+      mode: cover
+      t: 2.4
+      pos: 30% 25%
+      label: ONODA, LATER IN LIFE · ARCHIVE PHOTO
+      bright: 0.85
+    lines:
+    - text: IN *1974*
+      at: 0.3
+      size: 84
+      dim: true
+    - text: HE *REFUSED*
+      word: refused
+      size: 96
+    block: 0.2
+- id: s6
+  type: onoda_img
+  say: Only one man could end it. Part two.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 1 OF 2
+    slides:
+    - src: assets/photo2/onoda_young.jpg
+      mode: card
+      ar: 0.82
+      w: 0.6
+      label: HIROO ONODA · ARCHIVE PORTRAIT
+      z0: 1.0
+      z1: 1.08
+      origin: 50% 35%
+    lines:
+    - text: ONLY ONE MAN COULD END IT
+      word: Only
+      size: 64
+    block: 0.12
+    stamp: PART 2
+    stamp_word: Part

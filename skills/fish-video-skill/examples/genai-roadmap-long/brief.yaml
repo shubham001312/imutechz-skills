@@ -1,0 +1,213 @@
+title: The GenAI Engineer Roadmap
+prompt: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+  i wnat a long video on this
+goal: explain
+audience: curious beginners; no jargon, one idea at a time
+structure: explainer
+length: 600
+platforms:
+- youtube
+language: en-US
+tone: warm, precise, confident; no hype words
+brand:
+  name: ''
+  url: ''
+  tagline: ''
+  logo: ''
+  mode: dark
+  colors:
+    bg: '#0f0f10'
+    surface: '#17171a'
+    paper: '#121214'
+    ink: '#f5f5f5'
+    fg: '#eeeeee'
+    muted: '#9a9a9a'
+    dim: '#5c5c5c'
+    accent: '#f2b722'
+    accent2: '#ffe600'
+  fonts:
+    sans: Inter
+    serif: Fraunces
+    mono: JetBrains Mono
+    hand: Caveat
+  font_files: []
+points:
+- Foundations first; each step builds on the last; do not try to learn every tool;
+  build small things as you go
+facts:
+- text: The roadmap article has seven numbered steps, after two prerequisites
+  value: '7'
+  source: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+- text: The article was last updated on 23 July 2025
+  value: '2025'
+  source: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+- text: The article lists four example applications
+  value: '4'
+  source: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+sources:
+- https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+website:
+  url: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+  theme: light
+  pages: []
+  hide: []
+  storage: {}
+reference:
+  src: ''
+cta:
+  text: Follow for more
+  url: ''
+  kind: follow
+voice:
+  provider: edge-tts
+  language: en-US
+  elevenlabs:
+    voice_id: ""
+    model_id: eleven_multilingual_v2
+    voice_settings:
+      stability: 0.42
+      similarity_boost: 0.8
+      style: 0.18
+      use_speaker_boost: true
+      speed: 0.96
+  fallback:
+    provider: edge-tts
+    voice: en-GB-RyanNeural
+    rate: -4%
+    pitch: +0Hz
+  pronunciations: {}
+  pick: ryan
+  post: highpass=f=80,equalizer=f=280:t=q:w=1.2:g=-2,equalizer=f=4800:t=q:w=1.4:g=1.5,highshelf=f=9000:g=2.5,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2,aecho=0.9:0.9:23|41:0.07|0.04
+  delivery: calm
+score:
+  key: A
+  mode: dorian
+  progression: i-IV-i-VII
+  seed: 12345
+  drums: true
+captions:
+  burn: false
+  style: none
+  min_cue: 1.3
+hashtags: []
+slug: this
+interview:
+  answers:
+    topic: 'A high-level roadmap for becoming a GenAI Engineer, based on the GeeksforGeeks
+      Roadmap to Generative AI article: what each stage is for and the order to learn
+      them, so a curious beginner finishes knowing what to learn next and why.'
+    goal: explain
+    audience: curious beginners; no jargon, one idea at a time
+    platforms:
+    - youtube
+    length: 600
+    hook: pain
+    real_assets: mixed
+    sfx: standard
+    voice: ryan
+    language: en-US
+    style: neon-diagram
+    theme: none
+    references: none
+    palette: neon-amber
+    mode: dark
+    type: grotesk
+    texture: grid
+    voice_energy: calm
+    music: lofi-tech
+    screen: none
+    brand_files: none
+    points: Foundations first; each step builds on the last; do not try to learn every
+      tool; build small things as you go
+    facts: none
+    cta: follow
+    captions: none
+    channel: none
+    thumbnail: frame
+    checkpoints: &id001
+    - final
+    keys_have: &id002 []
+    optional_installs: &id003
+    - none
+  confirmed: true
+summary: This video shows the order to learn GenAI engineering so that a beginner
+  knows what each stage is for and what to learn next.
+pacing:
+  snap: beat
+  lead_in: 0.1
+  tail: 0.2
+  max_word_gap: 0.9
+  line_gap: 0.05
+  change_every: 0.75
+  hard_cuts_per_15s: 1
+  transitions:
+  - zoom
+  - flash
+  - cut
+hook:
+  kind: pain
+assets:
+  policy: mixed
+sfx:
+  density: standard
+style: neon-diagram
+palette: neon-amber
+type_feel: grotesk
+texture: grid
+music:
+  mood: lofi-tech
+  search: lofi chill tech background
+screen:
+  kind: none
+thumbnail:
+  title: GENAI *ROADMAP*
+approvals:
+  required: *id001
+keys:
+  provided: *id002
+installs: *id003
+motif: one glowing line that keeps drawing across scenes
+tempo:
+  bpm: 85
+mix:
+  music_under_voice_db: -12
+  sfx_levels:
+    trombone: -14
+    laugh: -16
+    applause: -16
+publish:
+  titles:
+  - 'GenAI Engineer Roadmap: What to Learn, in Order'
+  - 'How to Become a GenAI Engineer: 7 Steps, Explained'
+  - Lost in AI Tools? The GenAI Engineer Roadmap
+  - 'GenAI Roadmap for Beginners: From Basics to Cloud'
+  - 'Stop Chasing AI Tools: Follow This GenAI Roadmap'
+  description: 'Lost in all the AI tools? Here''s the order to learn them.
+
+    A calm, high-level walk through the GenAI engineer roadmap: the foundations, seven
+    steps, and what you can build.
+
+
+    Based on the GeeksforGeeks guide, last updated 23 July 2025: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/'
+  tags:
+  - genai roadmap
+  - generative ai
+  - ai engineer roadmap
+  - genai engineer
+  - langchain
+  - vector database
+  - prompt engineering
+  - llamaindex
+  - fine tuning
+  - learn ai
+  - ai for beginners
+  - rag
+  - embeddings
+  - transformers
+  - hugging face
+  hashtags:
+  - '#genai'
+  - '#aiengineer'
+  - '#langchain'
+  - '#learnai'
+  cta: Subscribe for the next one

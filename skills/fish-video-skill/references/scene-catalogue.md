@@ -29,6 +29,12 @@ Pick by what the beat has to do. Everything else on this page is detail. A scene
 | `image` | `src`; `title`, `caption`, `credit`; `treat: none`, `frame: cover\|card` | a real photo that proves the point | a dull photo; no title |
 | `roadmap` | `nodes: [{tag, label, src\|glyph}]`, `visits: [{i, word\|t}]` | a recurring map in a long explainer; chapter openers | a short video with few stops |
 | `pile` | `cards: [{src, url, x, y, w}]`, `title`, `title_word` | "too many things": real sites burying the viewer | fewer than 3 cards |
+| `story` | `src` or `srcs: [{src, word\|at}]`, `kicker`, `lines: [{text, word\|at, size, dim}]`, `motif: none\|date\|stamp\|route\|rings\|dust`, `pan`, `contain` | the photo leads the frame: slow push-in, small text low; the main scene of a story Short | no real photo (use `bold`) |
+| `statement` | `lines`, `src` (optional dimmed photo), `floor` | a calm claim; later lines are visible but dimmed from frame 0 | three in a row |
+| `cards` | `items: [{tag, t, d, src, word\|at}]`, `cols`, `kicker`, `title` | 3-6 ideas, each lighting on its word; all visible dimmed from frame 0 | over 6 items |
+| `flow` | `nodes: [{glyph, label, sub, src, word\|at}]`, `kicker`, `title` | a pipeline of 3-4 boxes joined by glowing arrows | over 4 nodes |
+| `site` | `shots: [{src, url, word\|at}]`, `notes`, `kicker`, `title` | a real site in a browser frame with notes beside it (never a thumbnail) | no screenshot to show |
+| `bold` | `lines: [{text, word\|at, size, color}]`, `shape: circle\|burst\|bar\|none`, `g` | typographic Shorts: flat colour, one big shape, huge words springing in | long sentences |
 | `footage` | `clip` or `frames` | real moving pictures | stock with nothing happening |
 | `meme` | `src` or `clip`; `top`, `bottom`, `inset`, `punch`, `sound`, `credit` | a joke beat with a picture or clip and captions: see [memes and real assets](memes-and-real-assets.md) | the gag needs explaining; a picture with no credit |
 | `tour` | `shot` (a capture) | software and websites | no clicks to follow |
@@ -594,3 +600,8 @@ Layers can be set per item: `z:` on collage items and labels, `bg_z`, `title_z` 
 ```
 
 In a custom scene, call `L.layer(el, z)` after building `el` under the scene root. Set `cam: "paper"` (or any style or preset) on the scene definition to give it a default move, and set `st.camHint = {x, y}` (stage px) in `update` to give the `follow` styles a target.
+
+
+## Theme-aware scenes
+
+`story`, `statement`, `cards`, `flow`, `site`, `bold` and `roadmap` read the theme (`brief.theme`): colours, the display font, kicker style, card style, radius, shadow, caps and motion speed. They show dimmed content from the first frame (`L.T.dim`), so no frame starts empty. Reveals land on `word` (a spoken word), else `at` (seconds), else are spread evenly. Do not name a project scene after a built-in one; `storyboard` warns.

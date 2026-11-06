@@ -68,7 +68,7 @@ hook(3) title(4) | 01 process(5) ui(4) | 02 fishTitle(2) fishMmap(3) fishQuant(3
 ```
 
 - The LinkedIn 4:5 cut (1:12, 36 bars) keeps: hook, title, ui, fishMmap, fishAvx, fishKv, agents, tourHome, tourDocs, install and end.
-- The full reproduction brief is in `examples/imutechz-explainer/`.
+- The original ImuTechz brief is no longer shipped (it is in git history). For a current long-form reference, see `examples/genai-roadmap-long/`.
 
 ## storyboard.yaml anatomy
 

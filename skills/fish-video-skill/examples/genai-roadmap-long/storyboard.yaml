@@ -1,0 +1,1327 @@
+title: The GenAI Engineer Roadmap
+style: neon-diagram
+bpm: 120
+custom_scenes:
+- scenes/custom.js
+hud:
+  chapter: false
+  rail: true
+sfx:
+  density: standard
+scenes:
+- id: hook
+  type: pile
+  say: If you want to become a GenAI engineer... it's easy to feel lost.
+  transition: cut
+  lead: 0
+  params:
+    title: IT'S EASY TO FEEL LOST
+    title_word: it's
+    title_cue: swell
+    chip_every: 0.4
+    chips:
+    - Transformers
+    - RAG
+    - Vector DBs
+    - Prompting
+    - Fine-tuning
+    - Agents
+    cards:
+    - src: assets/shots/langchain.jpg
+      url: langchain.com
+      x: 0.27
+      y: 0.33
+      w: 0.46
+      rot: -5
+    - src: assets/shots/huggingface.jpg
+      url: huggingface.co
+      x: 0.73
+      y: 0.31
+      w: 0.46
+      rot: 4
+    - src: assets/shots/ollama.jpg
+      url: ollama.com
+      x: 0.3
+      y: 0.7
+      w: 0.46
+      rot: 4
+    - src: assets/shots/llamaindex.jpg
+      url: llamaindex.ai
+      x: 0.71
+      y: 0.69
+      w: 0.46
+      rot: -4
+- id: m_chase
+  type: footage
+  say: Every single week, there's a new tool everyone says you have to learn!
+  transition: cut
+  params:
+    clip: chase
+    frames: 216
+    fps: 30
+    speed: 1
+    loop: false
+    title: ME vs *EVERY NEW AI TOOL*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.5
+  cues:
+  - lt: 0
+    type: boom
+    lvl: 3
+  - lt: 3.32
+    type: trombone
+    lvl: 3
+- id: map0
+  type: roadmap
+  say: So... let's slow down. And walk through the roadmap together, one step at a
+    time.
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: &id001
+    - tag: BEFORE YOU START
+      label: Data science + ML
+      src: assets/shots/sklearn.jpg
+    - tag: STEP 1
+      label: Key concepts
+      src: assets/shots/attention.jpg
+    - tag: STEP 2
+      label: LangChain
+      src: assets/shots/langchain.jpg
+    - tag: STEP 3
+      label: Vector stores
+      src: assets/shots/pinecone_c.jpg
+    - tag: STEP 4
+      label: Prompt engineering
+      src: assets/shots/promptguide.jpg
+    - tag: STEP 5
+      label: LlamaIndex
+      src: assets/shots/llamaindex.jpg
+    - tag: STEP 6
+      label: Fine-tuning
+      src: assets/shots/huggingface.jpg
+    - tag: STEP 7
+      label: Cloud deploy
+      src: assets/shots/bedrock.jpg
+    visits:
+    - i: 0
+      t: 0
+    - i: 1
+      word: walk
+      t: 2
+    - i: 2
+      word: together
+      t: 3
+    pull_word: time
+    pull_dur: 1.1
+    reveal_all: true
+- id: source
+  type: site
+  say: This roadmap comes from a GeeksforGeeks guide, written for beginners and working
+    professionals. It goes from the foundations, all the way to building real applications.
+  transition: defocus
+  params:
+    src: assets/shots/article.jpg
+    url: geeksforgeeks.org
+    kicker: OUR SOURCE
+    title: A roadmap to *Generative AI*
+    notes:
+    - text: For beginners and working professionals
+      word: beginners
+    - text: From foundations to real applications
+      word: foundations
+- id: promise
+  type: statement
+  say: By the end of this video, you won't know everything. Nobody does. But you'll
+    know what each stage is for, why it comes in this order, and what to learn next.
+  transition: defocus
+  params:
+    lines:
+    - text: You won't know *everything*
+      word: won't
+    - text: But you'll know what each stage is for
+      word: But
+      size: 64
+    - text: why it comes in this order
+      word: why
+      size: 64
+    - text: and *what to learn next*
+      word: what
+      size: 64
+- id: overview
+  type: roadmap
+  say: There are two foundations to learn before you start, then seven steps, and
+    at the end, the kinds of things you can actually build.
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    visits:
+    - i: 0
+      t: 0
+    - i: 1
+      word: seven
+      t: 3.5
+    - i: 7
+      word: build
+      t: 7
+    pull_word: end
+    pull_dur: 1.4
+    reveal_all: true
+    move: 1.2
+- id: along
+  type: statement
+  say: And along the way, I'll point out small things you can build, so none of this
+    stays theory.
+  transition: defocus
+  params:
+    lines:
+    - text: Small things you can *build*
+      word: small
+      size: 96
+    - text: So none of this stays theory
+      word: none
+      size: 64
+- id: skip
+  type: statement
+  say: Let's start before the first step, because this is the part everyone wants
+    to skip.
+  transition: defocus
+  params:
+    lines:
+    - text: The part *everyone* wants to skip
+      word: part
+    size: 96
+  chapter: 'Before you start: the foundations'
+- id: m_skip
+  type: footage
+  say: Skipping it feels fast... right up until it doesn't.
+  transition: cut
+  params:
+    clip: tumble
+    frames: 150
+    fps: 30
+    speed: 1
+    loop: false
+    title: ME SKIPPING *THE BASICS*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.25
+  cues:
+  - lt: 2.53
+    type: impact
+    lvl: 3
+  - lt: 2.83
+    type: trombone
+    lvl: 3
+- id: ds
+  type: site
+  say: The guide starts with two foundations. The first is data science. That simply
+    means using statistics, analysis, and code, to pull useful insights out of data,
+    whether it's tidy tables or messy text.
+  transition: defocus
+  params:
+    src: assets/shots/sklearn.jpg
+    url: scikit-learn.org
+    kicker: FOUNDATION 1
+    title: Data science
+    notes:
+    - text: Statistics and analysis
+      word: statistics
+    - text: Pull *insights* out of data
+      word: insights
+    - text: Tidy tables or messy text
+      word: tables
+- id: ml
+  type: flow
+  say: The second is machine learning, where you don't write the rules yourself. You
+    show a computer examples, and it learns to make predictions from them.
+  transition: defocus
+  params:
+    kicker: FOUNDATION 2
+    title: Machine learning
+    nodes:
+    - label: Examples
+      glyph: '[ ]'
+      sub: data you show it
+      word: examples
+    - label: Learning
+      glyph: f(x)
+      sub: no hand-written rules
+      word: learns
+    - label: Predictions
+      glyph: => ?
+      sub: on data it has not seen
+      word: predictions
+- id: whybasics
+  type: statement
+  say: Why bother? Because everything later is built on these ideas. When a model
+    gives you a strange answer, this is the knowledge that helps you work out why.
+    The guide asks for solid foundations here, so take your time. Get comfortable,
+    and then move on.
+  transition: defocus
+  params:
+    lines:
+    - text: Everything later is *built on this*
+      word: everything
+    - text: A strange answer? This helps you work out why
+      word: strange
+      size: 58
+    - text: So *take your time*
+      word: take
+      size: 72
+- id: s1
+  type: roadmap
+  say: Step one is the key concepts. These are the ideas inside modern generative
+    models, and you'll keep running into them.
+  chapter: 'Step 1: Key concepts'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 0
+      t: 0
+    - i: 1
+      t: 1.0
+      word: key
+- id: att1
+  type: attention
+  say: Let's begin with attention. When you read a long sentence, you don't give every
+    word the same focus. You lean on the words that matter. Attention lets a model
+    do the same thing.
+  transition: defocus
+  params:
+    kicker: ATTENTION
+    title: Focus on the words *that matter*
+    sentence:
+    - The
+    - cat
+    - sat
+    - 'on'
+    - the
+    - mat
+    - because
+    - it
+    - was
+    - tired
+    focus: 7
+    links:
+    - to: 1
+      weight: 1
+    - to: 9
+      weight: 0.5
+    - to: 5
+      weight: 0.18
+    from_word: lean
+- id: trans
+  type: site
+  say: That idea powers transformers, the backbone of models like GPT, BERT, and T5.
+    Older models read text one piece at a time. Transformers use self attention to
+    connect words across long distances, and that helps their output stay coherent.
+  transition: defocus
+  params:
+    src: assets/shots/attention.jpg
+    url: arxiv.org
+    kicker: TRANSFORMERS
+    title: The backbone of *GPT, BERT, T5*
+    title_size: 60
+    notes:
+    - text: 'Older models: one piece at a time'
+      word: older
+    - text: 'Self-attention: connect words across long distances'
+      word: self
+    - text: Output that stays *coherent*
+      word: coherent
+- id: gan
+  type: versus
+  say: Next, GANs, or generative adversarial networks. Picture two networks in competition.
+    The generator creates new data, like an image. The discriminator judges whether
+    it looks real. As they compete, the results become highly realistic.
+  transition: defocus
+  params:
+    kicker: GANs
+    title: Two networks in *competition*
+    image: assets/photo/wikimedia-61684334.jpg
+    left_word: generator
+    right_word: discriminator
+    real_word: realistic
+- id: m_gan
+  type: footage
+  say: It's basically a very productive argument.
+  transition: cut
+  params:
+    clip: planks
+    frames: 150
+    fps: 30
+    speed: 1
+    loop: false
+    title: GENERATOR vs *DISCRIMINATOR*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 1.75
+  cues:
+  - lt: 0.2
+    type: hit
+    lvl: 3
+  - lt: 1.89
+    type: laugh
+    lvl: 3
+- id: ae
+  type: hourglass
+  say: Then, autoencoders. They squeeze data down into a smaller form, and then rebuild
+    it. That's useful for compression, for removing noise, and for spotting anomalies.
+  transition: defocus
+  params:
+    kicker: AUTOENCODERS
+    title: Squeeze it down, then *rebuild it*
+    labels:
+    - t: Input
+      word: data
+    - t: Smaller form
+      word: smaller
+    - t: '*Rebuilt*'
+      word: rebuild
+- id: vae
+  type: cards
+  say: A variational autoencoder adds probability to that squeeze. So instead of only
+    copying, it can generate new data that's similar to what it learned from.
+  transition: defocus
+  params:
+    kicker: VARIATIONAL AUTOENCODERS
+    title: From *copying* to *creating*
+    cols: 2
+    items:
+    - tag: AUTOENCODER
+      t: Compress and rebuild
+      d: Learns a smaller version of its input
+      word: squeeze
+    - tag: VAE
+      t: Adds probability
+      d: Generates new data similar to what it learned
+      word: generate
+- id: s1end
+  type: statement
+  say: You don't have to build these from scratch today. Just understand the idea
+    behind each one, because the tools in the next steps depend on them.
+  transition: defocus
+  params:
+    lines:
+    - text: Don't build these *from scratch*
+      word: build
+    - text: Just understand the idea behind each one
+      word: understand
+      size: 62
+- id: s2
+  type: roadmap
+  say: Step two is where you start building. Knowing how a model works is one thing.
+    Getting it inside a real app is another.
+  chapter: 'Step 2: LangChain'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 1
+      t: 0
+    - i: 2
+      t: 1.0
+      word: building
+- id: lc
+  type: site
+  say: LangChain is a framework for exactly that. It handles the plumbing around a
+    language model, so you can bring in data, process your text, and talk to the model.
+  transition: defocus
+  params:
+    src: assets/shots/langchain.jpg
+    url: langchain.com
+    kicker: STEP 2
+    title: LangChain
+    notes:
+    - text: Bring in data
+      word: data
+    - text: Process your text
+      word: process
+    - text: Talk to the *model*
+      word: talk
+- id: lcparts
+  type: flow
+  say: Its key pieces have names you'll see everywhere. Document loaders, embeddings,
+    and vector stores. We'll come back to those last two very soon.
+  transition: defocus
+  params:
+    kicker: STEP 2
+    title: Names you'll see *everywhere*
+    nodes:
+    - label: Document loaders
+      glyph: PDF
+      sub: bring your data in
+      word: document
+    - label: Embeddings
+      glyph: vec
+      sub: meaning as numbers
+      word: embeddings
+    - label: Vector stores
+      glyph: '[ ]'
+      sub: search by meaning
+      word: vector
+- id: models
+  type: site
+  say: You'll also connect to the models themselves. The guide mentions OpenAI and
+    Ollama as widely used options, and models like GPT, Claude, LLaMA, and Falcon.
+  transition: defocus
+  params:
+    src: assets/shots/ollama.jpg
+    url: ollama.com
+    kicker: STEP 2
+    title: Connect to *real models*
+    notes:
+    - text: OpenAI and Ollama
+      word: OpenAI
+    - text: GPT, Claude, LLaMA, Falcon
+      word: models
+- id: m_cart
+  type: footage
+  say: And yes, your first app will probably look something like this.
+  transition: cut
+  params:
+    clip: cart
+    frames: 180
+    fps: 30
+    speed: 1
+    loop: false
+    title: MY FIRST APP *AFTER ONE TUTORIAL*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.25
+  cues:
+  - lt: 2.73
+    type: laugh
+    lvl: 3
+- id: ls
+  type: site
+  say: That's why the guide also points to LangSmith. It lets you track and debug
+    your app, watch each workflow, and find problems early.
+  transition: defocus
+  params:
+    src: assets/shots/langsmith.jpg
+    url: langchain.com/langsmith
+    kicker: STEP 2
+    title: Watch what your app *really does*
+    title_size: 58
+    notes:
+    - text: Track and debug
+      word: track
+    - text: Watch each workflow
+      word: workflow
+    - text: Find problems early
+      word: problems
+- id: chatbot
+  type: statement
+  say: A good first project here is a simple chatbot web app. It's small, it's real,
+    and it teaches you how the pieces connect.
+  transition: defocus
+  params:
+    lines:
+    - text: 'First project: a *chatbot* web app'
+      word: chatbot
+    - text: Small. Real. Teaches how the pieces connect.
+      word: small
+      size: 60
+- id: s3
+  type: roadmap
+  say: Step three answers a simple question. How does a model find the right information
+    in a huge pile of data?
+  chapter: 'Step 3: Vector stores'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 2
+      t: 0
+    - i: 3
+      t: 1.0
+      word: simple
+- id: emb
+  type: meaning
+  say: The answer starts with embeddings. An embedding turns text into a list of numbers
+    that captures its meaning. So text with similar meanings ends up close together,
+    even when the words are different.
+  transition: defocus
+  params:
+    kicker: EMBEDDINGS
+    title: Similar meaning, *close together*
+    title_size: 58
+    groups:
+    - x: 0.2
+      y: 0.3
+      words:
+      - puppy
+      - dog
+      - kitten
+      - pet
+      word: numbers
+    - x: 0.78
+      y: 0.28
+      words:
+      - invoice
+      - refund
+      - payment
+      word: meaning
+    - x: 0.5
+      y: 0.72
+      words:
+      - pizza
+      - pasta
+      - dinner
+      word: similar
+- id: search
+  type: meaning
+  say: Ask about a sick puppy, and it lands right next to the pets, because meaning
+    is what gets compared, and not exact words.
+  transition: cut
+  params:
+    kicker: SEMANTIC SEARCH
+    title: Search by *meaning*, not exact words
+    title_size: 58
+    groups:
+    - x: 0.2
+      y: 0.3
+      words:
+      - puppy
+      - dog
+      - kitten
+      - pet
+      at: -1
+    - x: 0.78
+      y: 0.28
+      words:
+      - invoice
+      - refund
+      - payment
+      at: -1
+    - x: 0.5
+      y: 0.72
+      words:
+      - pizza
+      - pasta
+      - dinner
+      at: -1
+    query:
+      text: my dog seems unwell
+      x: 0.34
+      y: 0.66
+      group: 0
+      word: sick
+- id: vdb
+  type: site
+  say: A vector database stores those numbers, so you can search them by similarity.
+    The guide names four of them. FAISS, Pinecone, ChromaDB, and Weaviate.
+  transition: defocus
+  params:
+    kicker: VECTOR DATABASES
+    title: Store them, *search them*
+    title_size: 62
+    shots:
+    - src: assets/shots/faiss.jpg
+      url: github.com/facebookresearch/faiss
+      word: FAISS
+    - src: assets/shots/pinecone_c.jpg
+      url: pinecone.io
+      word: Pinecone
+    - src: assets/shots/chroma.jpg
+      url: trychroma.com
+      word: ChromaDB
+    - src: assets/shots/weaviate_c.jpg
+      url: weaviate.io
+      word: Weaviate
+    notes:
+    - text: Stores the numbers
+      word: stores
+    - text: Search by *similarity*
+      word: similarity
+- id: sem
+  type: flow
+  say: Put it together, and you've got a semantic search engine. Turn your documents
+    into embeddings. Store them in a vector database. Then turn each question into
+    an embedding, and look for the closest match.
+  transition: defocus
+  params:
+    kicker: STEP 3
+    title: A semantic search engine
+    nodes:
+    - label: Documents to embeddings
+      glyph: '1'
+      word: documents
+    - label: Store in a vector database
+      glyph: '2'
+      word: store
+    - label: Question to embedding
+      glyph: '3'
+      word: question
+    - label: Closest *match*
+      glyph: '4'
+      word: closest
+    size: 40
+- id: try3
+  type: flow
+  say: Here's a nice exercise. Take a few of your own notes, turn them into embeddings,
+    and ask questions in your own words. Watching it find the right note, even when
+    you phrase things differently, makes the idea click.
+  transition: defocus
+  params:
+    kicker: TRY THIS
+    title: Search *your own notes*
+    nodes:
+    - label: Your notes
+      glyph: TXT
+      sub: a few of your own
+      word: notes
+    - label: Embeddings
+      glyph: vec
+      sub: meaning as numbers
+      word: embeddings
+    - label: Ask in *your words*
+      glyph: '?'
+      sub: it finds the right note
+      word: ask
+- id: m_kw
+  type: footage
+  say: Which beats hunting for one exact keyword, and hoping for the best.
+  transition: cut
+  params:
+    clip: confused
+    frames: 135
+    fps: 30
+    speed: 0.9
+    loop: false
+    title: ME GUESSING *THE EXACT KEYWORD*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.5
+  cues:
+  - lt: 3.27
+    type: trombone
+    lvl: 3
+- id: s4
+  type: roadmap
+  say: Step four is prompt engineering, and it's a skill you can start practising
+    right now.
+  chapter: 'Step 4: Prompt engineering'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 3
+      t: 0
+    - i: 4
+      t: 1.0
+      word: prompt
+- id: p1
+  type: statement
+  say: A model can only work with what you give it. A well designed prompt guides
+    it toward answers that are more accurate, and more relevant.
+  transition: defocus
+  params:
+    lines:
+    - text: A better prompt
+      word: well
+      size: 110
+    - text: '*More accurate. More relevant.*'
+      word: accurate
+      size: 78
+- id: p2
+  type: cards
+  say: Here are the main techniques. Zero shot means you just ask. Few shot means
+    you show a few examples first. Chain of thought gets the model to work step by
+    step.
+  transition: defocus
+  params:
+    kicker: PROMPTING TECHNIQUES
+    title: Start simple
+    items:
+    - tag: ZERO-SHOT
+      t: Just ask
+      word: zero
+    - tag: FEW-SHOT
+      t: Show a few examples
+      word: few
+    - tag: CHAIN OF THOUGHT
+      t: Work step by step
+      word: chain
+- id: p3
+  type: cards
+  say: Self consistency compares several answers, and goes with the one they agree
+    on. React mixes reasoning with actions. And retrieval augmented prompting pulls
+    in relevant information first, using exactly what you learned in step three.
+  transition: defocus
+  params:
+    kicker: PROMPTING TECHNIQUES
+    title: Then go further
+    items:
+    - tag: SELF-CONSISTENCY
+      t: Compare several answers
+      word: self
+    - tag: REACT
+      t: Reasoning plus actions
+      word: react
+    - tag: RETRIEVAL-AUGMENTED
+      t: Pull in relevant info first
+      word: retrieval
+- id: m_prompt
+  type: footage
+  say: Because a vague prompt gets you... well, this.
+  transition: cut
+  params:
+    clip: fall
+    frames: 165
+    fps: 30
+    speed: 1
+    loop: false
+    title: MY VAGUE PROMPT *IN PRODUCTION*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.0
+  cues:
+  - lt: 2.34
+    type: boom
+    lvl: 3
+  - lt: 2.54
+    type: laugh
+    lvl: 3
+- id: p4
+  type: statement
+  say: Try them all on the same question, and compare the results. That's a quick
+    way to feel the difference.
+  transition: defocus
+  params:
+    lines:
+    - text: Same question.
+      word: same
+      size: 110
+    - text: '*Compare* the results.'
+      word: compare
+      size: 110
+- id: notebook
+  type: statement
+  say: Keep a little notebook of your best prompts. Note what worked, and why. It
+    turns into your own playbook surprisingly fast.
+  transition: defocus
+  params:
+    lines:
+    - text: Keep a *prompt notebook*
+      word: notebook
+      size: 100
+    - text: What worked, and why
+      word: why
+      size: 70
+- id: s5
+  type: roadmap
+  say: Step five is all about your own documents.
+  chapter: 'Step 5: LlamaIndex'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 4
+      t: 0
+    - i: 5
+      t: 1.0
+      word: five
+- id: li
+  type: site
+  say: LlamaIndex, formerly called GPT Index, is a tool for indexing and querying
+    large collections of documents, like PDFs and text files. It also works alongside
+    LangChain.
+  transition: defocus
+  params:
+    src: assets/shots/llamaindex.jpg
+    url: llamaindex.ai
+    kicker: STEP 5
+    title: LlamaIndex
+    notes:
+    - text: Formerly GPT Index
+      word: formerly
+    - text: Index and query PDFs and text files
+      word: indexing
+    - text: Works with *LangChain*
+      word: alongside
+- id: lijobs
+  type: flow
+  say: Think of it as three jobs. Organise your documents so they're easy to reach.
+    Let people ask questions about them. And search for meaning, not just keywords.
+  transition: defocus
+  params:
+    kicker: STEP 5
+    title: Three jobs
+    nodes:
+    - label: Organise
+      glyph: '1'
+      sub: easy to reach
+      word: organise
+    - label: Ask
+      glyph: '2'
+      sub: questions about your docs
+      word: ask
+    - label: Search
+      glyph: '3'
+      sub: meaning, not just keywords
+      word: search
+- id: liend
+  type: statement
+  say: That's how you build things like document search engines, and knowledge extraction
+    tools. And notice how the earlier steps are starting to click together.
+  transition: defocus
+  params:
+    lines:
+    - text: Document search engines
+      word: document
+      size: 80
+    - text: Knowledge extraction tools
+      word: knowledge
+      size: 80
+    - text: The steps start to *click*
+      word: click
+      size: 80
+- id: try5
+  type: flow
+  say: Try pointing it at a folder of your own PDFs, and asking it questions. It's
+    a small project, but it's the kind of thing real teams build.
+  transition: defocus
+  params:
+    kicker: TRY THIS
+    title: Ask *your own PDFs*
+    nodes:
+    - label: A folder of PDFs
+      glyph: PDF
+      word: folder
+    - label: LlamaIndex
+      glyph: '[ ]'
+      word: pointing
+    - label: Your *questions*
+      glyph: '?'
+      word: asking
+- id: s6
+  type: roadmap
+  say: Step six is fine tuning, and this one's worth saving until now.
+  chapter: 'Step 6: Fine-tuning'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 5
+      t: 0
+    - i: 6
+      t: 1.0
+      word: fine
+- id: ft
+  type: flow
+  say: Pre trained models like GPT and BERT have learned general patterns. Fine tuning
+    adapts one to a specific job, like classifying text, sentiment analysis, or answering
+    questions. You adjust its weights using your own dataset, while it keeps its general
+    knowledge.
+  transition: defocus
+  params:
+    kicker: STEP 6
+    title: General model, *specific job*
+    nodes:
+    - label: Pre-trained model
+      glyph: GPT
+      sub: general patterns
+      word: trained
+    - label: Your dataset
+      glyph: '[ ]'
+      sub: adjust the weights
+      word: adjust
+    - label: Tuned model
+      glyph: OK
+      sub: keeps general knowledge, does one job well
+      word: keeps
+- id: ft2
+  type: cards
+  say: You'll meet a lot of names here. Reinforcement learning from human feedback
+    uses people's ratings to guide the model. Parameter efficient fine tuning, or
+    PEFT, changes only a small part of the model. LoRA and QLoRA are popular ways
+    of doing that.
+  transition: defocus
+  params:
+    kicker: STEP 6
+    title: A lot of names
+    items:
+    - tag: RLHF
+      t: People's ratings guide the model
+      word: reinforcement
+    - tag: PEFT
+      t: Change only a small part
+      word: parameter
+    - tag: LoRA + QLoRA
+      t: Popular ways of doing that
+      word: LoRA
+    t_size: 46
+- id: ft3
+  type: cards
+  say: Others include prompt tuning, instruction tuning, and supervised fine tuning.
+    And there's distillation, which teaches a smaller model to copy a larger one.
+  transition: defocus
+  params:
+    kicker: STEP 6
+    title: And a few more
+    cols: 4
+    items:
+    - tag: PROMPT
+      t: Prompt tuning
+      word: prompt
+    - tag: INSTRUCTION
+      t: Instruction tuning
+      word: instruction
+    - tag: SUPERVISED
+      t: Supervised fine-tuning
+      word: supervised
+    - tag: DISTILLATION
+      t: Smaller model copies a larger one
+      word: distillation
+    t_size: 42
+- id: hf
+  type: site
+  say: Hugging Face is a natural place to try this, with pre trained models, and guides
+    for lightweight tuning.
+  transition: defocus
+  params:
+    kicker: STEP 6
+    title: Try it on *Hugging Face*
+    title_size: 60
+    shots:
+    - src: assets/shots/huggingface.jpg
+      url: huggingface.co/models
+    - src: assets/shots/hfpeft.jpg
+      url: huggingface.co/docs/peft
+      word: guides
+    notes:
+    - text: Pre-trained models
+      word: models
+    - text: Guides for lightweight tuning
+      word: guides
+- id: m_ft
+  type: footage
+  say: But please, don't start here on day one. Start with good prompts and good retrieval,
+    and only fine tune when they're not enough.
+  transition: cut
+  params:
+    clip: pole
+    frames: 210
+    fps: 30
+    speed: 0.778
+    loop: false
+    title: ME FINE-TUNING *ON DAY ONE*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 4.5
+  cues:
+  - lt: 7.11
+    type: trombone
+    lvl: 3
+- id: s7
+  type: roadmap
+  say: Step seven is getting your work out into the world.
+  chapter: 'Step 7: Cloud deployment'
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    open_wide: 1.1
+    visits:
+    - i: 6
+      t: 0
+    - i: 7
+      t: 1.0
+      word: seven
+- id: cloud
+  type: site
+  say: The guide names AWS, Google Cloud, and Azure, as important platforms for running
+    generative AI at scale.
+  transition: defocus
+  params:
+    kicker: STEP 7
+    title: Run it *at scale*
+    shots:
+    - src: assets/shots/bedrock.jpg
+      url: aws.amazon.com/bedrock
+      word: AWS
+    - src: assets/shots/vertex.jpg
+      url: cloud.google.com
+      word: Google
+    - src: assets/shots/azure.jpg
+      url: azure.microsoft.com
+      word: Azure
+    notes:
+    - text: AWS
+      word: AWS
+    - text: Google Cloud
+      word: Google
+    - text: Azure
+      word: Azure
+- id: bed
+  type: site
+  say: Amazon Bedrock, for example, is a fully managed service that gives you access
+    to pre trained models from top providers. Hugging Face is popular for training
+    and deploying them too.
+  transition: defocus
+  params:
+    src: assets/shots/bedrock.jpg
+    url: aws.amazon.com/bedrock
+    kicker: STEP 7
+    title: Amazon Bedrock
+    notes:
+    - text: Fully managed
+      word: managed
+    - text: Pre-trained models from top providers
+      word: providers
+    - text: 'Hugging Face: train and deploy'
+      word: Hugging
+- id: whycloud
+  type: cards
+  say: So why use the cloud? Cost, because you pay for what you use. Reliability,
+    because your app stays available. And tools, for processing data, monitoring models,
+    and scaling automatically.
+  transition: defocus
+  params:
+    kicker: STEP 7
+    title: Why the cloud?
+    items:
+    - tag: COST
+      t: Pay for what you use
+      word: cost
+    - tag: RELIABILITY
+      t: Your app stays available
+      word: reliability
+    - tag: TOOLS
+      t: Process, monitor, scale
+      word: tools
+- id: try7
+  type: statement
+  say: Start small here too. Put one simple app online, watch how it behaves, and
+    learn from whatever breaks.
+  transition: defocus
+  params:
+    lines:
+    - text: Put *one small app* online
+      word: simple
+      size: 96
+    - text: Learn from whatever breaks
+      word: learn
+      size: 70
+- id: m_laptop
+  type: footage
+  say: Because, it worked on my laptop, is not a deployment plan.
+  transition: cut
+  params:
+    clip: wreck
+    frames: 165
+    fps: 30
+    speed: 1
+    loop: false
+    title: IT WORKED *ON MY LAPTOP*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.75
+  cues:
+  - lt: 0.1
+    type: boom
+    lvl: 3
+  - lt: 3.66
+    type: trombone
+    lvl: 3
+- id: apps0
+  type: statement
+  say: So, what can you build with all of this? The guide gives four clear examples.
+  transition: defocus
+  params:
+    lines:
+    - text: What can you *build?*
+      word: build
+      size: 120
+  chapter: What you can build
+- id: apps
+  type: cards
+  say: Chatbots that handle customer service and common questions. Sentiment analysis,
+    that reads the emotion in feedback. Text generation, for creating content. And
+    language translation, between text or speech.
+  transition: defocus
+  params:
+    kicker: WHAT YOU CAN BUILD
+    cols: 2
+    items:
+    - tag: CHATBOTS
+      t: Customer service, common questions
+      word: chatbots
+    - tag: SENTIMENT ANALYSIS
+      t: Reads the emotion in feedback
+      word: sentiment
+    - tag: TEXT GENERATION
+      t: Creating content
+      word: generation
+    - tag: TRANSLATION
+      t: Between text or speech
+      word: translation
+    t_size: 48
+- id: apps2
+  type: site
+  say: Each one makes a great practice project. And the guide links to tutorials for
+    them, including chatbots built with Gemini, OpenAI, and LLaMA.
+  transition: defocus
+  params:
+    src: assets/shots/article.jpg
+    url: geeksforgeeks.org
+    kicker: PRACTICE
+    title: Tutorials are *linked in the guide*
+    title_size: 60
+    notes:
+    - text: Gemini
+      word: Gemini
+    - text: OpenAI
+      word: OpenAI
+    - text: LLaMA
+      word: LLaMA
+- id: pick
+  type: statement
+  say: Pick the one that excites you most. You'll learn more from finishing one small
+    project, than from starting five.
+  transition: defocus
+  params:
+    lines:
+    - text: Pick *one*
+      word: pick
+      size: 120
+    - text: Finish one, not start five
+      word: finishing
+      size: 70
+- id: recap
+  type: roadmap
+  say: Let's walk the whole road, one more time. Foundations. Concepts. LangChain.
+    Vector stores. Prompts. LlamaIndex. Fine tuning. And the cloud.
+  chapter: Recap
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    zoom: 1.2
+    move: 0.5
+    visits:
+    - i: 0
+      word: foundations
+      t: 3
+    - i: 1
+      word: concepts
+      t: 4
+    - i: 2
+      word: langchain
+      t: 5
+    - i: 3
+      word: vector
+      t: 6
+    - i: 4
+      word: prompts
+      t: 7
+    - i: 5
+      word: llamaindex
+      t: 8
+    - i: 6
+      word: fine
+      t: 9
+    - i: 7
+      word: cloud
+      t: 10
+- id: honest
+  type: statement
+  say: One honest note. This guide was last updated in July twenty twenty five, and
+    this field moves fast. So some names will change, and there are newer tools now.
+    Still, the logic of the order makes sense, because each step builds on the one
+    before.
+  transition: defocus
+  params:
+    lines:
+    - text: Last updated *July 2025*
+      word: updated
+      size: 84
+    - text: Names change. Tools change.
+      word: names
+      size: 70
+    - text: '*Each step builds on the one before*'
+      word: builds
+      size: 70
+- id: next
+  type: statement
+  say: You don't have to learn every tool. You just have to take the next step.
+  transition: defocus
+  params:
+    lines:
+    - text: Not every tool
+      word: every
+      size: 90
+    - text: '*Just the next step*'
+      word: next
+      size: 120
+- id: m_calm
+  type: footage
+  say: Because that's you, with a roadmap, while everyone else is still running.
+  transition: cut
+  params:
+    clip: calm
+    frames: 84
+    fps: 30
+    speed: 0.56
+    loop: false
+    title: YOU, *WITH A ROADMAP*
+    title_at: 0
+    title_pos: top
+    push: 0.04
+    treat: []
+  bars: 2.5
+  cues:
+  - lt: 3.5
+    type: applause
+    lvl: 3
+- id: outro
+  type: roadmap
+  say: So pick your step, build something small this week, and if this helped, subscribe
+    for the next one.
+  transition: defocus
+  params:
+    kicker: THE GENAI ENGINEER ROADMAP
+    nodes: *id001
+    visits:
+    - i: 7
+      t: 0
+    pull_at: 0
+    pull_dur: 0.6
+    reveal_all: true
+    cta: Subscribe for *the next one*
+    cta_word: subscribe
+    wide_zoom: 0.6

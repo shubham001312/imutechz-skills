@@ -1,0 +1,209 @@
+# Themes: a whole look in one id. `brief.yaml -> theme: <id>` (or the interview's theme question).
+# A theme differs from the others in four ways, not just colour:
+#   type      fonts.display / sans / serif / mono / hand (all OFL or Apache-2.0, fetched by `npm install`)
+#   texture   the surface: paper | grain | clean | grid | blueprint | halftone | scanlines | notebook | dots | sunburst | stripes | film
+#   layout    kicker (chip|underline|tape|bracket|pill|bar), card (panel|outline|flat|sticker|glass|ticket), radius, border,
+#             caps, weight, track, shadow (soft|hard|none|glow), align, scrim, dim
+#   motion    speed (1 = classic), rise (travel of entrances), push (camera push-in on photos), captions (style + fill/stroke/case)
+# Existing projects are unchanged: a brief without `theme:` keeps using brand.* and the style palettes.
+# Override one thing without leaving the theme:  theme_overrides: {colors: {accent: "#ff0066"}, fonts: {display: Anton}}
+# Every colour pair is checked by tests (ink/bg >= 7:1, muted/bg >= 4.5:1, accent/bg >= 3:1).
+# Contribution rule: a new theme must change at least three of type / texture / layout / motion against every other theme.
+
+themes:
+  archive-doc:
+    label: "Documentary archive"
+    genre: documentary
+    best_for: "history, true stories, people, 'the man who...' (real photos lead)"
+    mode: dark
+    colors: {bg: "#15110c", surface: "#211a12", paper: "#1b150f", ink: "#f1e8d4", fg: "#e9dfc8", muted: "#b9ad93", dim: "#8a7f68", accent: "#d9863a", accent2: "#8fb4a3"}
+    fonts: {display: "Special Elite", sans: "Source Serif 4", serif: "Source Serif 4", mono: "Courier Prime", hand: "Special Elite"}
+    texture: film
+    layout: {kicker: tape, card: flat, radius: 4, border: 2, caps: true, weight: 400, track: 0.01, shadow: hard, align: left, scrim: 0.62, dim: 0.5}
+    motion: {speed: 0.85, rise: 0.6, push: 1.5}
+    captions: {style: minimal, fill: "#f1e8d4", stroke: "#15110c", stroke_w: ".06em", case: none}
+    style: glow-metaphor
+    music: dark-drone
+    delivery: calm
+  editorial-serif:
+    label: "Editorial serif"
+    genre: editorial
+    best_for: "essays, opinion, long reads, culture, interviews"
+    mode: light
+    colors: {bg: "#f5f0e6", surface: "#fbf8f1", paper: "#f8f3ea", ink: "#14110f", fg: "#1c1814", muted: "#4d463c", dim: "#7a7164", accent: "#b3262c", accent2: "#1f5d73"}
+    fonts: {display: "Playfair Display", sans: "DM Sans", serif: "Playfair Display", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: paper
+    layout: {kicker: underline, card: outline, radius: 3, border: 2, caps: false, weight: 700, track: -0.01, shadow: none, align: left, scrim: 0.5, dim: 0.8}
+    motion: {speed: 0.9, rise: 0.7, push: 0.8}
+    captions: {style: minimal, fill: "#14110f", stroke: "#f5f0e6", stroke_w: ".05em", case: none, shadow: "none"}
+    style: paper-collage
+    music: calm-pulse
+    delivery: calm
+  tech-dark:
+    label: "Tech dark"
+    genre: tech
+    best_for: "AI, software, developer roadmaps, product explainers"
+    mode: dark
+    colors: {bg: "#090d14", surface: "#111826", paper: "#0c121d", ink: "#e8eef9", fg: "#dbe4f4", muted: "#9db0cf", dim: "#5f7191", accent: "#4fd1c5", accent2: "#a78bfa"}
+    fonts: {display: "Space Grotesk", sans: "Space Grotesk", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: grid
+    layout: {kicker: bracket, card: glass, radius: 14, border: 2, caps: false, weight: 700, track: -0.02, shadow: glow, align: left, scrim: 0.5, dim: 0.42}
+    motion: {speed: 1.1, rise: 1, push: 1}
+    captions: {style: pop, fill: "#e8eef9", stroke: "#090d14", case: none}
+    style: neon-diagram
+    music: lofi-tech
+    delivery: calm
+  bold-shorts:
+    label: "Bold Shorts"
+    genre: shorts
+    best_for: "fast Shorts and Reels: facts, deadlines, news, lists (huge type, hard shadows)"
+    mode: light
+    colors: {bg: "#ffd60a", surface: "#fff3b0", paper: "#ffe14d", ink: "#111111", fg: "#111111", muted: "#3a3300", dim: "#6b5d00", accent: "#e8260a", accent2: "#1f3bff"}
+    fonts: {display: "Anton", sans: "Inter", serif: "Fraunces", mono: "JetBrains Mono", hand: "Permanent Marker"}
+    texture: stripes
+    layout: {kicker: bar, card: sticker, radius: 8, border: 5, caps: true, weight: 400, track: 0.01, shadow: hard, align: center, scrim: 0.55, dim: 0.8}
+    motion: {speed: 1.3, rise: 1.4, push: 1.2}
+    captions: {style: pop, fill: "#ffffff", stroke: "#111111", stroke_w: ".1em", case: uppercase}
+    style: studio-kinetic
+    music: hiphop-groove
+    delivery: punchy
+  retro-arcade:
+    label: "Retro arcade"
+    genre: retro
+    best_for: "games, internet culture, nostalgia, 80s and 90s tech"
+    mode: dark
+    colors: {bg: "#150d2e", surface: "#22164a", paper: "#1b1138", ink: "#f4eefe", fg: "#e9e0fb", muted: "#bba9ea", dim: "#8470c4", accent: "#ff4fa3", accent2: "#27e1f2"}
+    fonts: {display: "Press Start 2P", sans: "Space Grotesk", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Press Start 2P"}
+    texture: scanlines
+    layout: {kicker: bracket, card: outline, radius: 0, border: 4, caps: true, weight: 400, track: 0.02, shadow: glow, align: center, scrim: 0.5, dim: 0.4}
+    motion: {speed: 1.15, rise: 0.8, push: 0.9}
+    captions: {style: pop, fill: "#f4eefe", stroke: "#150d2e", stroke_w: ".12em", case: uppercase}
+    style: neon-diagram
+    music: phonk-loop
+    delivery: punchy
+  retro-70s:
+    label: "Retro 70s sunburst"
+    genre: retro
+    best_for: "design history, music, food, lifestyle, warm nostalgia"
+    mode: light
+    colors: {bg: "#f4e3bf", surface: "#fbefd2", paper: "#f7e8c6", ink: "#2b1a10", fg: "#2b1a10", muted: "#5b4030", dim: "#8a6a50", accent: "#c9461a", accent2: "#1f6f68"}
+    fonts: {display: "Righteous", sans: "DM Sans", serif: "DM Serif Display", mono: "Courier Prime", hand: "Permanent Marker"}
+    texture: sunburst
+    layout: {kicker: pill, card: ticket, radius: 40, border: 4, caps: false, weight: 400, track: 0, shadow: hard, align: center, scrim: 0.5, dim: 0.8}
+    motion: {speed: 0.95, rise: 1.1, push: 1}
+    captions: {style: pop, fill: "#fbefd2", stroke: "#2b1a10", stroke_w: ".09em", case: none}
+    style: studio-kinetic
+    music: upbeat-promo
+    delivery: calm
+  minimal-light:
+    label: "Minimal light"
+    genre: minimal
+    best_for: "product, SaaS, calm explainers, anything that needs air"
+    mode: light
+    colors: {bg: "#fafaf9", surface: "#ffffff", paper: "#f5f5f4", ink: "#0f1115", fg: "#1a1d23", muted: "#4b5160", dim: "#7b8191", accent: "#2457e6", accent2: "#0f9d7a"}
+    fonts: {display: "DM Sans", sans: "DM Sans", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: clean
+    layout: {kicker: underline, card: flat, radius: 12, border: 1, caps: false, weight: 700, track: -0.03, shadow: soft, align: left, scrim: 0.45, dim: 0.8}
+    motion: {speed: 0.9, rise: 0.6, push: 0.7}
+    captions: {style: minimal, fill: "#0f1115", stroke: "#fafaf9", stroke_w: ".05em", case: none, shadow: "none"}
+    style: screen-explainer
+    music: calm-pulse
+    delivery: calm
+  kids-playful:
+    label: "Kids and playful"
+    genre: kids
+    best_for: "kids, learning, friendly how-tos, cheerful brand voices"
+    mode: light
+    colors: {bg: "#fff4c2", surface: "#fffbe6", paper: "#fff8d6", ink: "#1d2a4a", fg: "#1d2a4a", muted: "#47557a", dim: "#6c7aa0", accent: "#e8454f", accent2: "#1f8fe0"}
+    fonts: {display: "Fredoka", sans: "Fredoka", serif: "Fraunces", mono: "JetBrains Mono", hand: "Permanent Marker"}
+    texture: dots
+    layout: {kicker: pill, card: sticker, radius: 36, border: 5, caps: false, weight: 700, track: 0, shadow: hard, align: center, scrim: 0.45, dim: 0.8}
+    motion: {speed: 1.2, rise: 1.6, push: 1}
+    captions: {style: pop, fill: "#ffffff", stroke: "#1d2a4a", stroke_w: ".1em", case: none}
+    style: studio-kinetic
+    music: upbeat-promo
+    delivery: punchy
+  news-broadcast:
+    label: "News broadcast"
+    genre: news
+    best_for: "breaking news, explainers of events, finance and politics updates"
+    mode: dark
+    colors: {bg: "#0a1730", surface: "#12244a", paper: "#0d1d3d", ink: "#f4f7ff", fg: "#e6ecfa", muted: "#aebbd9", dim: "#7487b0", accent: "#ff3b4a", accent2: "#ffc933"}
+    fonts: {display: "Oswald", sans: "Oswald", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: stripes
+    layout: {kicker: bar, card: flat, radius: 2, border: 0, caps: true, weight: 700, track: 0.01, shadow: soft, align: left, scrim: 0.6, dim: 0.45}
+    motion: {speed: 1.1, rise: 0.9, push: 1}
+    captions: {style: pop, fill: "#f4f7ff", stroke: "#0a1730", stroke_w: ".08em", case: uppercase, plate: "rgba(10,23,48,.78)"}
+    style: studio-kinetic
+    music: dark-build
+    delivery: punchy
+  noir-crime:
+    label: "Noir and true crime"
+    genre: noir
+    best_for: "mysteries, true crime, disasters, dark twists, dramatic reveals"
+    mode: dark
+    colors: {bg: "#0b0b0c", surface: "#18181a", paper: "#111113", ink: "#f2f2f0", fg: "#e8e8e5", muted: "#b0b0aa", dim: "#7d7d78", accent: "#e0262e", accent2: "#c9c9c2"}
+    fonts: {display: "Oswald", sans: "Courier Prime", serif: "Source Serif 4", mono: "Courier Prime", hand: "Special Elite"}
+    texture: halftone
+    layout: {kicker: tape, card: outline, radius: 0, border: 2, caps: true, weight: 700, track: 0.04, shadow: hard, align: left, scrim: 0.7, dim: 0.4}
+    motion: {speed: 0.8, rise: 0.5, push: 1.6}
+    captions: {style: minimal, fill: "#f2f2f0", stroke: "#0b0b0c", stroke_w: ".07em", case: uppercase}
+    style: glow-metaphor
+    music: dark-drone
+    delivery: cinematic
+  notebook-class:
+    label: "Notebook classroom"
+    genre: education
+    best_for: "lessons, study tips, step-by-step teaching, whiteboard-like explainers"
+    mode: light
+    colors: {bg: "#fbf8ee", surface: "#ffffff", paper: "#f7f3e6", ink: "#1b2340", fg: "#1b2340", muted: "#444e72", dim: "#6f789c", accent: "#d2371f", accent2: "#2358d6"}
+    fonts: {display: "Permanent Marker", sans: "DM Sans", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: notebook
+    layout: {kicker: tape, card: sticker, radius: 6, border: 3, caps: false, weight: 400, track: 0, shadow: hard, align: left, scrim: 0.45, dim: 0.8}
+    motion: {speed: 1, rise: 1, push: 0.8}
+    captions: {style: karaoke, fill: "#1b2340", stroke: "#fbf8ee", stroke_w: ".05em", case: none, shadow: "none"}
+    style: whiteboard-explainer
+    music: calm-pulse
+    delivery: calm
+  luxury-finance:
+    label: "Luxury and finance"
+    genre: finance
+    best_for: "money, markets, premium brands, careers, high-trust business stories"
+    mode: dark
+    colors: {bg: "#0b100d", surface: "#151d18", paper: "#101712", ink: "#f4efe2", fg: "#e9e3d3", muted: "#b6b09f", dim: "#827d6e", accent: "#d4af5a", accent2: "#7fb59a"}
+    fonts: {display: "DM Serif Display", sans: "DM Sans", serif: "DM Serif Display", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: film
+    layout: {kicker: underline, card: outline, radius: 2, border: 1, caps: false, weight: 400, track: 0.02, shadow: none, align: center, scrim: 0.62, dim: 0.5}
+    motion: {speed: 0.8, rise: 0.5, push: 1.3}
+    captions: {style: minimal, fill: "#f4efe2", stroke: "#0b100d", stroke_w: ".05em", case: none}
+    style: glow-metaphor
+    music: cinematic-swell
+    delivery: cinematic
+  comic-pop:
+    label: "Comic pop"
+    genre: comic
+    best_for: "memes, reactions, 'wait what' stories, humour, pop culture"
+    mode: light
+    colors: {bg: "#fff6dd", surface: "#ffffff", paper: "#fff0c4", ink: "#101820", fg: "#101820", muted: "#3a4654", dim: "#66717f", accent: "#e3262f", accent2: "#1d4ed8"}
+    fonts: {display: "Archivo Black", sans: "Space Grotesk", serif: "Fraunces", mono: "JetBrains Mono", hand: "Permanent Marker"}
+    texture: halftone
+    layout: {kicker: bar, card: sticker, radius: 10, border: 6, caps: true, weight: 400, track: 0, shadow: hard, align: center, scrim: 0.5, dim: 0.8}
+    motion: {speed: 1.25, rise: 1.5, push: 1.1}
+    captions: {style: pop, fill: "#ffffff", stroke: "#101820", stroke_w: ".11em", case: uppercase}
+    style: studio-kinetic
+    music: hiphop-groove
+    delivery: punchy
+  nature-calm:
+    label: "Nature and calm"
+    genre: nature
+    best_for: "wellbeing, nature, slow stories, reflection, gentle documentaries"
+    mode: light
+    colors: {bg: "#eef1e4", surface: "#f8faf1", paper: "#f2f5e8", ink: "#1b2a1f", fg: "#1f3024", muted: "#46594a", dim: "#6f8273", accent: "#2f7a4b", accent2: "#a4571f"}
+    fonts: {display: "Source Serif 4", sans: "DM Sans", serif: "Source Serif 4", mono: "IBM Plex Mono", hand: "Caveat"}
+    texture: grain
+    layout: {kicker: pill, card: glass, radius: 28, border: 1, caps: false, weight: 600, track: -0.01, shadow: soft, align: center, scrim: 0.5, dim: 0.8}
+    motion: {speed: 0.75, rise: 0.6, push: 1.2}
+    captions: {style: minimal, fill: "#1b2a1f", stroke: "#eef1e4", stroke_w: ".05em", case: none, shadow: "none"}
+    style: glow-metaphor
+    music: cinematic-swell
+    delivery: calm

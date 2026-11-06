@@ -1,0 +1,244 @@
+title: 'video #002'
+prompt: 'create project name "video #002" in this get the latrest and trendy topic
+  and make a short video for youtube.'
+goal: explain
+audience: curious beginners; no jargon, one idea at a time
+structure: explainer
+length: 38
+platforms:
+- shorts
+language: en-US
+tone: warm, precise, confident; no hype words
+brand:
+  name: ''
+  url: ''
+  tagline: ''
+  logo: ''
+  mode: light
+  colors:
+    bg: '#f3ede2'
+    surface: '#faf7f0'
+    paper: '#f8f4ec'
+    ink: '#1a1714'
+    fg: '#1c1915'
+    muted: '#58524a'
+    dim: '#847c70'
+    accent: '#d9481e'
+    accent2: '#15858d'
+  fonts:
+    sans: Inter
+    serif: Fraunces
+    mono: JetBrains Mono
+    hand: Caveat
+  font_files: []
+points:
+- 212GB minimum
+- about a third of an original PS5, about a quarter of a Slim
+- pre-order download Nov 10
+- launch Nov 19
+- which game are you deleting
+facts:
+- text: Clear a minimum of 212GB on PS5
+  value: 212GB
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Pre-order download starts November 10 local midnight
+  value: November 10
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Launches November 19 on PS5
+  value: November 19
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Original PS5 has about 667GB usable
+  value: '667'
+  source: https://gamesradar.com/ps5-storage-space-how-much-hard-drive-size
+- text: 212 of 667 is 31.8 percent, almost a third
+  value: 1/3
+  source: derived from the two figures above
+- text: PlayStation Blog post dated Nov 3, 2026
+  value: Nov 3, 2026
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Pre-order download date
+  value: NOV 10
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Launch date
+  value: NOV 19
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: Pre-download is available to those who pre-order
+  value: ''
+  source: https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- text: PS5 Slim has about 842GB usable
+  value: '842'
+  source: https://qa2.www.digitaltrends.com/gaming/ps5-1tb-usable-storage-answer
+- text: 212 of 842 is 25.2 percent, about a quarter
+  value: 1/4
+  source: derived
+sources:
+- https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+- https://gamesradar.com/ps5-storage-space-how-much-hard-drive-size
+- https://qa2.www.digitaltrends.com/gaming/ps5-1tb-usable-storage-answer
+website:
+  url: ''
+  theme: light
+  pages: []
+  hide: []
+  storage: {}
+reference:
+  src: ''
+  videos: []
+cta:
+  text: Which game are you deleting?
+  url: ''
+  kind: comment
+voice:
+  provider: elevenlabs
+  language: en-US
+  elevenlabs:
+    voice_id: ""
+    model_id: eleven_multilingual_v2
+    voice_settings:
+      stability: 0.55
+      similarity_boost: 0.8
+      style: 0.3
+      use_speaker_boost: true
+      speed: 1.12
+  fallback:
+    provider: edge-tts
+    voice: en-US-AndrewMultilingualNeural
+    rate: -10%
+    pitch: -6Hz
+  pronunciations: {}
+  pick: adam11
+  delivery: cinematic
+  post: highpass=f=60,lowshelf=f=140:g=2,equalizer=f=320:t=q:w=1.2:g=-2,equalizer=f=4200:t=q:w=1.4:g=2,acompressor=threshold=-21dB:ratio=3:attack=8:release=120:makeup=2.5
+score:
+  key: A
+  mode: dorian
+  progression: i-IV-i-VII
+  seed: 12345
+  drums: true
+captions:
+  burn: auto
+  style: pop
+hashtags: []
+slug: video-002
+interview:
+  answers:
+    topic: 'GTA VI needs at least 212GB on PS5, launches Nov 19, pre-order downloads
+      from Nov 10: viewer should clear space and comment which game they are deleting'
+    goal: explain
+    audience: curious beginners; no jargon, one idea at a time
+    platforms:
+    - shorts
+    length: 38
+    style: paper-collage
+    theme: none
+    references: none
+    hook: claim
+    palette: warm-paper
+    mode: light
+    type: hand
+    texture: paper
+    voice: adam11
+    voice_energy: cinematic
+    music: lofi-tech
+    sfx: rich
+    real_assets: none
+    screen: none
+    language: en-US
+    points: 212GB minimum; about a third of an original PS5, about a quarter of a
+      Slim; pre-order download Nov 10; launch Nov 19; which game are you deleting
+    facts: See research/facts.md
+    cta: comment
+    captions: pop
+    channel: ''
+    thumbnail: text_subject
+    checkpoints: &id001
+    - final
+    keys_have: &id002
+    - ELEVENLABS_API_KEY
+    optional_installs: &id003
+    - none
+  confirmed: true
+summary: 'Two things to do before November 10 for GTA VI on PS5: clear 212GB, and
+  pre-order to download early.'
+style: paper-collage
+hook:
+  kind: claim
+palette: warm-paper
+type_feel: hand
+texture: clean
+music:
+  mood: lofi-tech
+  search: lofi chill tech background
+sfx:
+  density: rich
+assets:
+  policy: none
+screen:
+  kind: none
+facts_raw: See research/facts.md
+thumbnail:
+  style: text_subject
+approvals:
+  required: *id001
+keys:
+  provided: *id002
+installs: *id003
+pacing:
+  change_every: 1.1
+  hard_cuts_per_15s: 2
+  transitions:
+  - defocus
+  - split
+  - zoom
+  - cut
+  line_gap: 0.1
+  lead_in: 0.04
+  tail: 0.15
+motif: one recurring real object per idea (photo cut-out), contact shadow top-left
+  light
+tempo:
+  bpm: 120
+  beats_per_bar: 1
+publish:
+  titles:
+  - 'GTA 6: Do These 2 Things Before November 10'
+  - 2 Things to Do Before GTA 6 Pre-Load Starts
+  - GTA 6 Needs 212GB. Is Your PS5 Ready?
+  - 212GB for GTA 6? Something Has to Go
+  - Don't Get Stuck Waiting for GTA 6
+  description: 'Do these 2 things before November 10, or GTA 6 makes you wait.
+
+    Which game are you deleting to make room?
+
+
+    PlayStation says to clear a minimum of 212GB. Pre-download is available to those
+    who pre-order, from local midnight on November 10. The game launches November
+    19. Usable storage is about 667GB on an original PS5 and about 842GB on a PS5
+    Slim.
+
+
+    Sources:
+
+    https://blog.playstation.com/2026/11/03/grand-theft-auto-vi-pre-download-begins-november-10/
+
+    https://gamesradar.com/ps5-storage-space-how-much-hard-drive-size
+
+    https://qa2.www.digitaltrends.com/gaming/ps5-1tb-usable-storage-answer'
+  tags:
+  - gta 6
+  - gta vi
+  - gta 6 file size
+  - gta 6 212gb
+  - gta 6 ps5
+  - gta 6 preload
+  - gta 6 pre order
+  - gta 6 release date
+  - ps5 storage
+  - gaming news
+  - gaming shorts
+  hashtags:
+  - '#GTA6'
+  - '#GTAVI'
+  - '#PS5'
+  - '#gaming'
+  - '#shorts'

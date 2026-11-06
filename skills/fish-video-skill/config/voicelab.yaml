@@ -18,7 +18,10 @@ engines:
 
 whisper_model: small.en       # word timings and the transcript check; "small" is used for other languages
 
-defaults: {engine: chatterbox, gender: male, style: soft, pace: natural, seed: 11, temperature: 0.75}
+# chatterbox-soft is the RECOMMENDED voice (the named preset the long roadmap video used): Chatterbox's own default voice,
+# one sentence at a time, exaggeration 0.32-0.55 by sentence, cfg_weight 0.25, temperature 0.75, seed 11 (re-seeded for every
+# sentence), pauses 0.35-0.55 s, then the post chain and loudnorm I=-18 TP=-2 LRA=9 at 48 kHz. Every other style stays available.
+defaults: {engine: chatterbox, gender: male, style: chatterbox-soft, pace: natural, seed: 11, temperature: 0.75}
 
 # A voice is labelled by its measured pitch, never by ear. Median F0 below `split_hz` reads as male.
 genders:
@@ -37,6 +40,17 @@ paces:
 # air: band for energy above 6 kHz relative to the whole speech signal, in dB. Measured on both engines the recipes gave -12 to -19 dB,
 # so these bands (observed range plus 4 dB) catch a broken chain or a drifting line. They cannot say that a voice sounds airy or hissy: listen.
 styles:
+  chatterbox-soft:
+    exaggeration: 0.36              # the base; each sentence moves it by its mood and punctuation, kept inside exaggeration_range
+    exaggeration_range: [0.32, 0.55]
+    cfg_fixed: 0.25                 # fixed: no closed-loop pace control, no regeneration (that is what the long video did)
+    temperature: 0.75
+    pause: 0.45
+    pause_range: [0.35, 0.55]       # a sentence under 6 words 0.35, a question 0.5, otherwise 0.45, at most 0.55
+    edges: {head: 0.05, tail: 0.45} # with pacing.line_gap 0.05 a gap between two narration lines is about 0.55 s
+    air: [-26, -8]
+    loudnorm: "loudnorm=I=-18:TP=-2:LRA=9"
+    post: "highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-2,equalizer=f=3200:t=q:w=1.4:g=0.8,aexciter=freq=6500:amount=0.5:blend=0:ceil=11500,highshelf=f=8000:g=1.5,deesser=i=0.35,acompressor=threshold=-20dB:ratio=1.8:attack=15:release=180:makeup=1.2,aecho=0.9:0.9:19|37:0.04|0.025"
   airy:
     exaggeration: 0.42
     cfg_shift: -0.03

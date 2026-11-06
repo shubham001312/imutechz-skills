@@ -156,8 +156,17 @@
   L.textureCSS = (kind, C) => {
     if (kind === "grid") return `background-color:${C.bg};background-image:linear-gradient(${L.hexA(C.ink, 0.07)} 1px, transparent 1px),linear-gradient(90deg, ${L.hexA(C.ink, 0.07)} 1px, transparent 1px);background-size:24px 24px`;
     if (kind === "blueprint") return "background-color:#0f3a5f;background-image:linear-gradient(rgba(255,255,255,.16) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px),linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);background-size:120px 120px,120px 120px,24px 24px,24px 24px";
+    /* theme textures (config/themes.yaml): all pure CSS, no fetched files */
+    if (kind === "halftone") return `background-color:${C.bg};background-image:radial-gradient(${L.hexA(C.ink, 0.16)} 22%, transparent 24%),radial-gradient(${L.hexA(C.ink, 0.1)} 22%, transparent 24%);background-size:22px 22px;background-position:0 0,11px 11px`;
+    if (kind === "scanlines") return `background-color:${C.bg};background-image:repeating-linear-gradient(0deg, ${L.hexA(C.ink, 0.07)} 0 2px, transparent 2px 5px),radial-gradient(ellipse at 50% 40%, ${L.hexA(C.accent, 0.12)}, transparent 65%)`;
+    if (kind === "notebook") return `background-color:${C.bg};background-image:linear-gradient(${L.hexA(C.accent2 || C.accent, 0.28)} 1px, transparent 1px),linear-gradient(90deg, transparent 94px, ${L.hexA(C.accent, 0.35)} 94px 96px, transparent 96px);background-size:100% 56px,100% 100%`;
+    if (kind === "dots") return `background-color:${C.bg};background-image:radial-gradient(${L.hexA(C.ink, 0.18)} 2.5px, transparent 3px);background-size:34px 34px`;
+    if (kind === "sunburst") return `background-color:${C.bg};background-image:repeating-conic-gradient(from 0deg at 50% 42%, ${L.hexA(C.accent, 0.13)} 0deg 6deg, transparent 6deg 15deg)`;
+    if (kind === "stripes") return `background-color:${C.bg};background-image:repeating-linear-gradient(135deg, ${L.hexA(C.ink, 0.06)} 0 28px, transparent 28px 56px)`;
+    if (kind === "film") return `background-color:${C.bg};background-image:radial-gradient(ellipse at 50% 45%, ${L.hexA(C.surface, 0.9)}, transparent 70%),repeating-linear-gradient(90deg, ${L.hexA(C.ink, 0.035)} 0 1px, transparent 1px 7px)`;
     return `background:${C.bg}`;
   };
+  L.TEXTURES_CSS = ["grid", "blueprint", "halftone", "scanlines", "notebook", "dots", "sunburst", "stripes", "film"];
 
   /* ---------------- image treatments ---------------- */
   const fxCache = {};

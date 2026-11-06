@@ -13,7 +13,7 @@ The code and documents in this repo are MIT unless stated here. Bundled third-pa
 
 ### Installed by the setup, not bundled
 
-Fonts (Inter, Fraunces, JetBrains Mono, Caveat, Noto Sans Devanagari via Fontsource), ffmpeg (via `ffmpeg-static`), puppeteer-core, rough.js, yt-dlp, edge-tts. Optional extras the skill can install: rembg, Kokoro (Apache-2.0 code and weights), Chatterbox (MIT; its output carries the PerTh watermark), faster-whisper (MIT), librosa. Each keeps its own licence. Check them for your use, especially ffmpeg builds and any model weights.
+Fonts (Inter, Fraunces, JetBrains Mono, Caveat, Noto Sans Devanagari via Fontsource; for themes also Anton, Archivo Black, Courier Prime, DM Sans, DM Serif Display, Fredoka, IBM Plex Mono, Oswald, Playfair Display, Press Start 2P, Righteous, Source Serif 4, Space Grotesk under the SIL OFL 1.1, and Special Elite and Permanent Marker under Apache-2.0; all fetched by `npm install`, none committed), brand icons for thumbnails (`simple-icons`, icon files CC0-1.0, fetched by `npm install`, none committed; the logos are trademarks of their owners, so use them only for brands the video is about), ffmpeg (via `ffmpeg-static`), puppeteer-core, rough.js, yt-dlp, edge-tts. Optional extras the skill can install: rembg, Kokoro (Apache-2.0 code and weights), Chatterbox (MIT; its output carries the PerTh watermark), faster-whisper (MIT), librosa. Each keeps its own licence. Check them for your use, especially ffmpeg builds and any model weights.
 
 ### Rights in what you make
 

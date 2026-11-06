@@ -23,6 +23,7 @@ from pathlib import Path
 from fvcore import SKILL, FishError, ensure_project, load_json, load_yaml, log, main_guard, save_json, save_yaml, secret, warn
 
 CFG = SKILL / "config"
+SERIES = re.compile(r"\bpart\s*(?:1|2|one|two)\b(?:\s*of\s*\d)?|\bto be continued\b", re.I)
 PLACEHOLDER = re.compile(r"TODO|<[^<>\n]{2,80}>|lorem ipsum", re.I)
 # phrases the v1 scaffold produced; they must never ship
 STOCK_PHRASES = ["explained.", "in 60 seconds", "Here is ", "in three parts", "Step by step:", "Thanks for watching", "This is "]
@@ -59,13 +60,29 @@ def _set(d: dict, path: str, value) -> None:
     cur[keys[-1]] = value
 
 
-def _options(q: dict, answers: dict) -> list[dict]:
+def _options(q: dict, answers: dict, project: Path | None = None) -> list[dict]:
     src = q.get("options_from")
     if not src:
         return q.get("options") or []
     st = styles()
     if src == "styles":
         return [{"label": v["label"][:40], "value": k, "description": f"{v['look']}. Best for {v['best_for']}"} for k, v in st["styles"].items()]
+    if src == "themes":
+        import themes
+        ths = themes.all_themes()
+        rec = next((k for k, v in ths.items() if v.get("style") == answers.get("style")), None) or "tech-dark"
+        out = [{**o, "label": o["label"] + (" (Recommended)" if o["value"] == rec else "")} for o in themes.options()]
+        out.sort(key=lambda o: "(Recommended)" not in o["label"])
+        import trends
+        dv = trends.derived_theme(project) if project else None
+        if dv:                                    # derived from this run's live thumbnails: offered first; the built-in ones are fallbacks
+            for o in out:
+                o["label"] = o["label"].replace(" (Recommended)", " (fallback)")
+            c = dv["colors"]
+            out.insert(0, {"label": "Trend-derived (Recommended)", "value": "derived",
+                           "description": f"Palette pooled from this run's trending thumbnails ({dv['mode']}; bg {c['bg']} accent {c['accent']} accent2 {c['accent2']}); type and texture from {dv['base']}"})
+        out.append({"label": "No theme", "value": "none", "description": "Keep the chosen style's own palette, fonts and texture (the classic look)"})
+        return out
     if src == "palettes":
         rec = (st["styles"].get(answers.get("style")) or {}).get("defaults", {}).get("palette")
         out = []
@@ -73,11 +90,15 @@ def _options(q: dict, answers: dict) -> list[dict]:
             c = v.get("colors") or {}
             desc = "Give your hex codes (bg, ink, accent)" if k == "brand" else f"bg {c.get('bg')} ink {c.get('ink')} accent {c.get('accent')}"
             out.append({"label": v["label"] + (" (Recommended)" if k == rec else ""), "value": k, "description": desc})
+        if out and not any("(Recommended)" in o["label"] for o in out):
+            out[0]["label"] += " (Recommended)"
         out.sort(key=lambda o: "(Recommended)" not in o["label"])
         return out
     if src == "music_moods":
         rec = (st["styles"].get(answers.get("style")) or {}).get("defaults", {}).get("music")
         out = [{"label": v["label"] + (" (Recommended)" if k == rec else ""), "value": k, "description": f"library search: '{v['search']}', or an original synthesised score"} for k, v in st["music_moods"].items()]
+        if out and not any("(Recommended)" in o["label"] for o in out):
+            out[0]["label"] += " (Recommended)"
         out.sort(key=lambda o: "(Recommended)" not in o["label"])
         return out
     if src == "voices":
@@ -120,7 +141,7 @@ def open_questions(project: Path) -> list[dict]:
             item = {k: q[k] for k in ("id", "header", "question", "required") if k in q}
             item["multiSelect"] = bool(q.get("multi"))
             item["free_text"] = bool(q.get("free_text"))
-            opts = _options(q, answers)
+            opts = _options(q, answers, project)
             if opts:
                 item["options"] = opts
             prefill = _get(brief, q["maps_to"]) if q.get("maps_to") else None
@@ -162,7 +183,7 @@ def record(project: Path, answers: dict) -> dict:
             continue
         store[k] = v
     brief["interview"] = iv
-    apply(brief)
+    apply(brief, project)
     save_yaml(project / "brief.yaml", brief)
     return store
 
@@ -181,7 +202,7 @@ def _store_keys(text: str) -> None:
     log(f"stored {n} key(s) in {env} (gitignored; never printed)")
 
 
-def apply(brief: dict) -> dict:
+def apply(brief: dict, project: Path | None = None) -> dict:
     """Map answers into the brief + style defaults. Idempotent."""
     a = (brief.get("interview") or {}).get("answers") or {}
     st = styles()
@@ -205,6 +226,25 @@ def apply(brief: dict) -> dict:
     cta_text = {"follow": "Follow for more", "comment": "Comment below"}.get(a.get("cta"))
     if cta_text and not (brief.get("cta") or {}).get("text"):
         brief.setdefault("cta", {})["text"] = cta_text
+    if a.get("theme") in (None, "", "none"):
+        if a.get("theme") == "none":
+            brief.pop("theme", None)
+    else:
+        import themes
+        if a["theme"] == "derived":
+            import trends
+            dv = trends.derived_theme(project) if project else None
+            if not dv:
+                raise FishError("theme 'derived' needs research/theme.json: run `fishvideo trends <dir> --derive-theme` first")
+            brief["theme"] = dv["base"]
+            brief["theme_overrides"] = {"colors": dict(dv["colors"])}
+        else:
+            brief["theme"] = a["theme"]
+        themes.get(brief["theme"])
+        pal_hex = a.get("palette") if isinstance(a.get("palette"), str) and "#" in a["palette"] else None
+        if pal_hex:
+            hexes = re.findall(r"#[0-9a-fA-F]{6}", pal_hex)
+            brief["theme_overrides"] = {"colors": {k: h for k, h in zip(["bg", "ink", "accent", "accent2"], hexes)}}
     style = st["styles"].get(a.get("style") or brief.get("style") or "")
     d = (style or {}).get("defaults", {})
     if style:
@@ -222,6 +262,9 @@ def apply(brief: dict) -> dict:
             c = brief.setdefault("brand", {}).setdefault("colors", {})
             for key, h in zip(["bg", "ink", "accent", "accent2"], hexes):
                 c[key] = h
+    if brief.get("theme"):
+        import themes
+        themes.apply_to_brief(brief)           # the theme's colours, fonts, texture and caption look beat the style palette
     mood = st["music_moods"].get(a.get("music") or d.get("music") or "")
     if mood:
         brief["score"] = {**(brief.get("score") or {}), **{k: v for k, v in mood["score"].items() if k != "bpm"}}
@@ -236,7 +279,7 @@ def apply(brief: dict) -> dict:
     plats = brief.get("platforms") or []
     if plats and all(p in ("shorts", "reels", "tiktok") for p in plats) or (brief.get("length") or 999) <= 90:
         pac = brief.setdefault("pacing", {})
-        for k, v in {"snap": "beat", "lead_in": 0.1, "tail": 0.2, "max_word_gap": 0.3}.items():
+        for k, v in {"snap": "speech", "lead_in": 0.1, "tail": 0.15, "max_word_gap": 0.3}.items():
             pac.setdefault(k, v)
     return brief
 
@@ -285,6 +328,14 @@ def _apply_voice(brief: dict, a: dict) -> None:
         near = next((x for x in vc["voices"].get(lang, []) if x["provider"] == "edge"), None)
         if near:
             voice["fallback"] = {"provider": "edge-tts", "voice": near["voice"], "rate": pre["edge_rate"], "pitch": pre["edge_pitch"]}
+    elif v["provider"] == "chatterbox":          # the recommended soft preset (config/voicelab.yaml -> chatterbox-soft)
+        voice["provider"] = "chatterbox"
+        voice["studio"] = {"gender": "male", "style": "chatterbox-soft", "pace": "natural"}
+        voice["delivery"] = "soft"
+        pac = brief.setdefault("pacing", {})
+        pac.update({"max_word_gap": 0.9, "line_gap": 0.2})
+        brief.setdefault("mix", {})["music_under_voice_db"] = -12
+        return
     elif v["provider"] == "kokoro":
         voice["provider"] = "kokoro"
         voice["kokoro"] = {"voice": v["voice"], "speed": round(pre["wps"] / 2.9, 2)}
@@ -314,7 +365,13 @@ def summary(project: Path) -> str:
     if c:
         lines.append("Colours: " + ", ".join(f"{k} {v}" for k, v in c.items() if k in ("bg", "ink", "accent", "accent2")))
     v = brief.get("voice") or {}
-    lines.append(f"Voice: {v.get('provider')} {((v.get('fallback') or {}).get('voice') if v.get('provider') != 'elevenlabs' else (v.get('elevenlabs') or {}).get('voice_id'))} ({v.get('delivery', '')})")
+    if v.get("provider") in ("chatterbox", "kokoro") and v.get("studio"):
+        stu = v["studio"]
+        lines.append(f"Voice: {v['provider']} preset {stu.get('style')} ({stu.get('gender', 'male')}, pace {stu.get('pace', 'natural')}; Chatterbox default voice, one sentence at a time, seed 11); language {v.get('language')}")
+    elif v.get("provider") == "none":
+        lines.append("Voice: none (music and text)")
+    else:
+        lines.append(f"Voice: {v.get('provider')} {((v.get('fallback') or {}).get('voice') if v.get('provider') != 'elevenlabs' else (v.get('elevenlabs') or {}).get('voice_id'))} ({v.get('delivery', '')})")
     open_req = [q["id"] for rr in open_questions(project) for q in rr["questions"] if q.get("required")]
     lines.append("")
     lines.append("Open required questions: " + (", ".join(open_req) if open_req else "none"))
@@ -361,10 +418,69 @@ def copy_problems(project: Path) -> list[str]:
                     probs.append(f"{sc.get('id')}: stock scaffold phrase '{ph.strip()}' in narration: rewrite it")
     if not ((load_yaml(project / "brief.yaml") or {}).get("publish") or {}).get("titles"):
         probs.append("publishing copy: write brief.publish.titles (5 options), description, tags and hashtags")
+    brief_ = load_yaml(project / "brief.yaml") or {}
+    if not brief_.get("series"):
+        for sc in sb.get("scenes", []):
+            hit = SERIES.search(json.dumps({"p": sc.get("params"), "say": sc.get("say")}, ensure_ascii=False))
+            if hit:
+                probs.append(f"{sc.get('id')}: series text left in a single video ('{hit.group(0)}'): remove it, or set `series: true` in brief.yaml if this really is part of a series")
     th = sb.get("thumbnail") or {}
     if PLACEHOLDER.search(json.dumps(th)):
         probs.append("thumbnail: placeholder text left")
     return probs
+
+
+def _example_media_hashes() -> dict:
+    import hashlib
+    out = {}
+    for p in (SKILL / "examples").rglob("*"):
+        if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4"):
+            out[hashlib.sha256(p.read_bytes()).hexdigest()] = str(p.relative_to(SKILL / "examples"))
+    return out
+
+
+def example_problems(project: Path) -> list[str]:
+    """Examples are past outputs: no example image or video file may appear inside a new project."""
+    project = Path(project).resolve()
+    if (SKILL / "examples").resolve() in project.parents:
+        return []                                  # the examples themselves (some use custom scenes)
+    probs = []
+    import hashlib
+    hashes = _example_media_hashes()
+    if hashes:
+        for p in list(project.glob("assets/**/*")) + list(project.glob("out/**/thumbnail*")):
+            if p.is_file() and p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4"):
+                h = hashlib.sha256(p.read_bytes()).hexdigest()
+                if h in hashes:
+                    probs.append(f"example file reused: {p.relative_to(project)} is identical to examples/{hashes[h]}: collect your own licensed images; examples are past outputs, never assets")
+    probs += sameness_problems(project)
+    return probs
+
+
+def sameness_problems(project: Path) -> list[str]:
+    """The scene-type sequence must not be identical to the recipe skeleton or to a bundled example: the direction must change something."""
+    project = Path(project)
+    sbf = project / "storyboard.yaml"
+    if not sbf.exists():
+        return []
+    seq = [str(sc.get("type")) for sc in (load_yaml(sbf) or {}).get("scenes", [])]
+    if len(seq) < 3:
+        return []
+    same = []
+    recipe = (load_yaml(project / "brief.yaml") or {}).get("recipe") if (project / "brief.yaml").exists() else None
+    if recipe:
+        try:
+            import recipes
+            if seq == [str(sc.get("type")) for sc in recipes.storyboard(recipe).get("scenes", [])]:
+                same.append(f"the `{recipe}` recipe skeleton")
+        except FishError:
+            pass
+    for exf in sorted((SKILL / "examples").glob("**/storyboard.yaml")):
+        if seq == [str(sc.get("type")) for sc in (load_yaml(exf) or {}).get("scenes", [])]:
+            same.append(f"examples/{exf.parent.relative_to(SKILL / 'examples')}")
+    if same:
+        return [f"scene sequence is identical to {', '.join(same)}: apply the trend `direction` (research/trends.md) so the beat order, scene types or layouts change for this video"]
+    return []
 
 
 def gate(project: Path, stage: str = "render", force: bool = False) -> list[str]:
@@ -376,8 +492,25 @@ def gate(project: Path, stage: str = "render", force: bool = False) -> list[str]
         errs.append(f"interview: required questions still open: {open_req} (run `fishvideo interview {project}` and ask them)")
     if not iv.get("confirmed"):
         errs.append("interview: not confirmed: read `fishvideo interview <dir> --summary` to the user, then `--confirm`")
+    if brief.get("recipe") and stage in ("script", "render"):
+        import gates
+        errs += gates.budget_errors(project) if (project / "storyboard.yaml").exists() else []
+    if (project / "storyboard.yaml").exists():
+        errs += example_problems(project)
+    if stage in ("script", "render"):
+        import trends
+        errs += trends.gate_problems(project)
+        why = trends.unavailable_reason(project)
+        if why:
+            warn(f"trend research was UNAVAILABLE ({why}): built-in themes used; say so in the final report")
     if stage == "render":
         errs += copy_problems(project)
+        try:
+            import gates
+            _m, fails = gates.check(project)
+        except FishError as e:
+            _m, fails = None, [str(e)]
+        errs += [f"imagery gate ({brief.get('recipe') or 'default'}): {x}" for x in fails]       # every video: the default rule; opt-out only via visuals.mode: abstract on the user's request
         need = set((brief.get("approvals") or {}).get("required") or [])
         got = load_json(project / "approvals.json", default={}) if (project / "approvals.json").exists() else {}
         for n in ("storyboard", "stills"):
@@ -425,6 +558,15 @@ def audition(project: Path) -> list[dict]:
                                                                      "voice_settings": {"stability": pre["stability"], "similarity_boost": 0.8, "style": pre["eleven_style"], "use_speaker_boost": True}}}, key)
             elif v["provider"] == "kokoro":
                 audio = voicemod.kokoro_audio(line, {"voice": v["voice"], "speed": round(pre["wps"] / 2.9, 2)})
+            elif v["provider"] == "chatterbox":
+                import voicelab
+                if not voicelab.engine_ready("chatterbox"):
+                    res.append({"id": v["id"], "skipped": "Chatterbox is not installed: run `fishvideo voice setup --engine chatterbox` (one command), then audition again. Not substituted by another voice."})
+                    continue
+                f = out / f"{v['id']}.wav"
+                voicelab.say(line, f, "chatterbox", {"gender": "male", "style": "chatterbox-soft"}, lang, out / "_chatterbox")
+                res.append({"id": v["id"], "label": v["label"], "file": str(f)})
+                continue
             else:
                 continue
             f.write_bytes(audio)

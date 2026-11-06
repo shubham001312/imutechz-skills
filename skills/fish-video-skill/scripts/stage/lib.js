@@ -47,7 +47,13 @@
     if (f.mono) r.setProperty("--mono", stack(f.mono, "ui-monospace, monospace"));
     if (f.hand) r.setProperty("--hand", stack(f.hand, "cursive"));
     if (th.mode === "dark") document.documentElement.classList.add("theme-dark");
+    /* theme layout + motion tokens (config/themes.yaml). Scenes read L.T; the defaults reproduce the classic look. */
+    L.T = Object.assign({ radius: 22, border: 3, kicker: "chip", card: "panel", caps: false, weight: 900, track: -0.02, shadow: "soft", rise: 1, speed: 1, push: 1, align: "center", scrim: 0.55, dim: 0.45 }, th.layout || {});
+    const cap = th.captions || {};
+    const cv = { "--cap-fill": cap.fill, "--cap-stroke": cap.stroke, "--cap-stroke-w": cap.stroke_w, "--cap-shadow": cap.shadow, "--cap-plate": cap.plate, "--cap-case": cap.case, "--cap-radius": cap.radius };
+    for (const k in cv) if (cv[k] != null) r.setProperty(k, cv[k]);
   };
+  L.T = { radius: 22, border: 3, kicker: "chip", card: "panel", caps: false, weight: 900, track: -0.02, shadow: "soft", rise: 1, speed: 1, push: 1, align: "center", scrim: 0.55, dim: 0.45 };
 
   /* ---------------- maths ---------------- */
   const clamp = (L.clamp = (v, a = 0, b = 1) => (v < a ? a : v > b ? b : v));
@@ -104,14 +110,20 @@
     if (/calm|slow|soft|narrat|documentary/.test(d)) return 6;
     return 5;
   };
-  const WEAK = /^(the|a|an|of|to|and|or|but|in|on|at|for|your|my|so)$/i;
+  const WEAK = /^(the|a|an|of|to|and|or|but|in|on|at|for|with|your|my|so)$/i;
   L.capGroups = (words, delivery, o = {}) => {
     const limit = o.limit || L.capLimit(delivery), gap = o.gap != null ? o.gap : 0.15, hold = o.hold != null ? o.hold : 0.3;
     const g = [];
     let cur = [];
     const flush = () => { if (cur.length) { g.push(cur); cur = []; } };
     for (const w of words || []) {
-      if (cur.length && w.t0 - cur[cur.length - 1].t1 >= gap) flush();
+      if (cur.length && w.t0 - cur[cur.length - 1].t1 >= gap) {
+        /* a pause never strands a connecting word: "and" alone is not a caption; it travels to the phrase it belongs to */
+        const weakTail = WEAK.test(cur[cur.length - 1].w) && !/[.!?…,;:]["”’)]*$/.test(cur[cur.length - 1].w);
+        if (cur.length === 1 && weakTail) { /* keep it: it opens the next phrase */ }
+        else if (cur.length > 1 && weakTail) { const tail = cur.pop(); flush(); cur.push(tail); }
+        else flush();
+      }
       else if (cur.length >= limit) {
         /* never strand "the" / "a" / "of" at the end of a group: it opens the next one */
         const tail = cur.length > 1 && WEAK.test(cur[cur.length - 1].w) ? cur.pop() : null;

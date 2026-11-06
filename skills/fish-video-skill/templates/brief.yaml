@@ -53,18 +53,22 @@ cta:
   text: ""
   url: ""
 
-voice:                        # default: ElevenLabs voice fydPJq00SigRIaPxWgiS (English, India); edge-tts fallback
-  provider: elevenlabs        # elevenlabs | edge-tts | none
-  language: en-IN
+voice:                        # default: the Chatterbox soft preset (recommended; `fishvideo voice setup --engine chatterbox` once).
+  provider: chatterbox        # chatterbox | elevenlabs | edge-tts | kokoro | none. If Chatterbox is missing the build STOPS and says how to install it.
+  language: en-US             # Chatterbox is English only: for another language pick edge-tts or elevenlabs on purpose
+  studio: {gender: male, style: chatterbox-soft, pace: natural}
   elevenlabs:
     voice_id: fydPJq00SigRIaPxWgiS
     model_id: eleven_multilingual_v2
     voice_settings: {stability: 0.42, similarity_boost: 0.8, style: 0.18, use_speaker_boost: true, speed: 0.96}
   fallback:
     provider: edge-tts
-    voice: en-IN-NeerjaNeural
-    rate: "-6%"
+    voice: en-US-AndrewMultilingualNeural
+    rate: "-4%"
   pronunciations: {}          # {"IMURUN": "Imu run", "GGUF": "G G U F"}: applied to every line
+
+pacing: {max_word_gap: 0.9, line_gap: 0.05}
+mix: {music_under_voice_db: -12}
 
 score:                        # original synthesised score (no samples)
   key: D

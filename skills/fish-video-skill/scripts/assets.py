@@ -37,13 +37,13 @@ import urllib.parse
 import zipfile
 from pathlib import Path
 
-from fvcore import SKILL, FishError, ensure_project, ffmpeg_bin, log, main_guard, run, save_json, secret, slugify, warn, load_json
+from fvcore import SKILL, FishError, ensure_project, ffmpeg_bin, load_yaml, log, main_guard, run, save_json, save_yaml, secret, slugify, warn, load_json
 import fvnet
-from fvnet import add_credit, credits_text, norm_license
+from fvnet import add_credit, credits_path, credits_text, load_credits, norm_license
 
 KINDS = ("photo", "video", "audio", "sfx", "music")
 DEFAULT_PROVIDERS = {
-    "photo": ["pexels", "pixabay", "openverse", "wikimedia", "nasa"],
+    "photo": ["pexels", "pixabay", "openverse", "wikimedia", "nasa", "loc"],
     "video": ["pexels", "pixabay", "nasa", "wikimedia", "archive"],
     "audio": ["openverse", "wikimedia", "archive"],
     "music": ["openverse"],
@@ -266,10 +266,48 @@ def _freesound(q, kind, n):
     return out
 
 
+def _loc(q, kind, n):
+    """Library of Congress Prints & Photographs (loc.gov JSON API). Only items whose rights statement says no known restrictions or public domain are 'safe'."""
+    d = fvnet.fetch_json("https://www.loc.gov/photos/", {"q": q, "fo": "json", "c": n})
+    out = []
+    for it in (d.get("results") or [])[:n]:
+        imgs = it.get("image_url") or []
+        if not imgs:
+            continue
+        rights = " ".join(str(x) for x in ([it.get("rights_advisory"), it.get("rights")] if not isinstance(it.get("rights"), list) else [it.get("rights_advisory")] + it["rights"]) if x).lower()
+        ok = "no known restrictions" in rights or "public domain" in rights
+        who = it.get("contributor") or it.get("creator") or []
+        who = who[0] if isinstance(who, list) and who else (who if isinstance(who, str) else "")
+        out.append(_rec("loc", str(it.get("id") or it.get("url") or "").rstrip("/").split("/")[-1], kind, it.get("title") or q, it.get("url") or it.get("id") or "",
+                        imgs[-1], imgs[0], None, None, None, who or "Library of Congress, Prints and Photographs Division", "",
+                        "Library of Congress: no known restrictions" if ok else (rights[:80] or ""), "https://www.loc.gov/rr/print/res/", attribution=False if ok else None,
+                        risk="safe" if ok else "unverified"))
+    return out
+
+
 PROVIDERS = {"pexels": (_pexels, ("photo", "video")), "pixabay": (_pixabay, ("photo", "video")), "openverse": (_openverse, ("photo", "audio", "music", "sfx")),
-             "wikimedia": (_wikimedia, ("photo", "video", "audio", "music", "sfx")), "nasa": (_nasa, ("photo", "video")), "freesound": (_freesound, ("sfx",)),
+             "wikimedia": (_wikimedia, ("photo", "video", "audio", "music", "sfx")), "nasa": (_nasa, ("photo", "video")), "loc": (_loc, ("photo",)), "freesound": (_freesound, ("sfx",)),
              "archive": (_archive, ("video", "audio", "music", "sfx"))}
 TAKES_OPTS = {"wikimedia", "archive"}       # providers that understand before= (a year) and lang=
+
+
+MAX_PHOTO_SIDE = 2400      # a downloaded photo is kept at most this many px on its long side: the renderer decodes every picture, and a 47-megapixel original stalls the browser
+
+
+def limit_size(path: Path, max_side: int = MAX_PHOTO_SIDE) -> tuple[int, int] | None:
+    """Shrink a photo in place when its long side exceeds `max_side` (never enlarges). Returns the original size when it shrank."""
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            w, h = im.size
+            if max(w, h) <= max_side:
+                return None
+            k = max_side / max(w, h)
+            small = im.convert("RGB").resize((round(w * k), round(h * k)), Image.LANCZOS)
+        small.save(path, quality=92)
+        return (w, h)
+    except Exception:                                              # noqa: BLE001 - an unreadable file is reported by the gate
+        return None
 
 
 # ------------------------------------------------------------------ search / get
@@ -400,7 +438,10 @@ def get(project, candidate_ids, accept_risk: bool = False) -> list[Path]:
         except FishError as e:
             warn(f"{cid}: {e}")
             continue
+        orig = limit_size(dest) if kind == "photo" else None
         rec = {k: v for k, v in r.items() if k not in ("preview_file", "collection_url", "filetype", "identifier")}
+        if orig:
+            rec["original_size"] = list(orig)
         rec["file"] = str(dest.relative_to(project)).replace("\\", "/")
         rec["credit"] = fvnet.credit_line(rec)
         added = add_credit(project, rec)
@@ -631,6 +672,240 @@ def sfx_pack(dest=None) -> dict:
 
 
 # ------------------------------------------------------------------ CLI
+# ------------------------------------------------------------------ source: one command from beat to credited file
+SOURCE_PROVIDERS = ("wikimedia", "nasa", "loc")           # keyless, licence confirmed by the API; stock keys are added when configured
+
+
+def _beat_patch(project: Path, beat: str, rel: str, label: str) -> None:
+    """Point a storyboard beat at the downloaded file: `src` when it has none, else append to `srcs`; set the honesty label."""
+    sbf = Path(project) / "storyboard.yaml"
+    sb = load_yaml(sbf)
+    sc = next((s for s in sb.get("scenes", []) if s.get("id") == beat), None)
+    if sc is None:
+        raise FishError(f"no beat '{beat}' in storyboard.yaml (beats: {', '.join(str(s.get('id')) for s in sb.get('scenes', []))})")
+    p = sc.setdefault("params", {})
+    placeholder = lambda v: isinstance(v, str) and "TODO" in v                                  # noqa: E731
+    if not p.get("src") or placeholder(p.get("src")):
+        p["src"] = rel
+    else:
+        srcs = p.get("srcs") or [{"src": p["src"]}]
+        if not any(x.get("src") == rel for x in srcs):
+            srcs.append({"src": rel})
+        p["srcs"] = srcs
+    if sc.get("type") in ("story", "image", "statement"):
+        p["label"] = label
+    save_yaml(sbf, sb)
+
+
+def _used_files(project: Path, except_beat: str | None) -> set[str]:
+    sbf = Path(project) / "storyboard.yaml"
+    out = set()
+    if sbf.exists():
+        for sc in load_yaml(sbf).get("scenes", []):
+            if sc.get("id") == except_beat:
+                continue
+            p = sc.get("params") or {}
+            for v in [p.get("src")] + [x.get("src") for x in (p.get("srcs") or []) if isinstance(x, dict)]:
+                if isinstance(v, str):
+                    out.add(Path(v).stem)
+    return out
+
+
+def source(project, query: str, beat: str | None = None, n: int = 1, providers=None, kind: str = "photo", depicts: str | None = None,
+           before: int | None = None, min_width: int | None = None, min_height: int | None = None) -> list[dict]:
+    """Search Commons, NASA, the Library of Congress (and Pexels/Pixabay when their keys are set), keep only results whose licence the API
+    confirms, download the best `n`, write source, licence and author to assets/credits.json (so they reach every post text and the
+    metadata), and point the beat at the file. `depicts` says the picture truly shows that person or event (label: archive photo);
+    otherwise the beat is labelled `illustrative`. Returns the credit records."""
+    project = ensure_project(project)
+    prov = list(providers or SOURCE_PROVIDERS)
+    if not providers:
+        prov += [k for k in ("pexels", "pixabay") if secret(KEY_NAMES[k], project)]
+    opts = {"before": before} if before else {}
+    cands = search(project, query, kind, prov, max(n * 4, 8), False, **opts)
+    safe = [c for c in cands if c.get("risk") == "safe" and c.get("_ok", True)]
+    if not safe:
+        raise FishError(f"no result for '{query}' has a licence the API confirms (providers: {', '.join(prov)}). Try other words, add --providers, or "
+                        "make the beat a drawn graphic. Nothing is used with an unconfirmed licence.")
+    if kind == "photo":
+        import gates
+        if min_width is None:
+            from fvcore import project_config
+            try:
+                min_width = gates.min_native_width(gates.frame_size(project, None)[0])
+            except Exception:                                         # noqa: BLE001 - no platform yet: a sane default
+                min_width = 540
+        if min_height is None:
+            try:
+                min_height = gates.min_native_height(gates.frame_size(project, None)[1])
+            except Exception:                                         # noqa: BLE001
+                min_height = 0
+        big = [c for c in safe if (c.get("width") or 0) >= min_width and (c.get("height") or 10 ** 6) >= min_height]
+        small = [c for c in safe if c.get("width") and ((c.get("width") or 0) < min_width or (c.get("height") or 10 ** 6) < min_height)]
+        unknown = [c for c in safe if not c.get("width")]
+        if big or unknown:                                           # sharp enough first, biggest first; undersized ones are dropped, not down-ranked into use
+            safe = sorted(big, key=lambda c: -(c.get("width") or 0)) + unknown
+            if small:
+                warn(f"{len(small)} result(s) under {min_width}px wide were skipped: they would render muddy")
+        else:
+            raise FishError(f"every licence-confirmed result for '{query}' is too small (under {min_width}x{min_height}px; largest {max(c['width'] for c in small)}px): it would render blurry. Try other words or --min-width to accept smaller.")
+    used = _used_files(project, beat)
+    fresh = [c for c in safe if Path(c["id"]).stem not in used]
+    if fresh or not used:
+        safe = fresh or safe
+    if not safe:
+        raise FishError(f"no result for '{query}' has a licence the API confirms (providers: {', '.join(prov)}). Try other words, add --providers, or "
+                        "make the beat a drawn graphic. Nothing is used with an unconfirmed licence.")
+    files: list[Path] = []
+    for c in safe:                                                   # a result whose download fails (too large, gone) is skipped for the next one
+        if len(files) >= n:
+            break
+        files += get(project, [c["id"]])
+    if not files:
+        raise FishError(f"none of the {len(safe)} licence-confirmed results for '{query}' could be downloaded (too large or unavailable). Try other words or another provider.")
+    idx = {r["file"]: r for r in load_credits(project)}
+    out = []
+    for f in files:
+        rel = str(Path(f).relative_to(project)).replace("\\", "/")
+        rec = idx.get(rel)
+        if rec is None:
+            continue
+        if depicts:
+            rec["depicts"] = depicts
+            rec["depicts_verified"] = True
+            save_json(credits_path(project), list(idx.values()))
+        out.append(rec)
+        if beat:
+            _beat_patch(project, beat, rel, "archive photo" if depicts else "illustrative")
+        log(f"{rel}  [{rec['license']}]  {rec['author']}" + (f"  -> beat {beat}" if beat else ""))
+    return out
+
+
+# ------------------------------------------------------------------ `music source`: licensed music that fits the trend's style
+MUSIC_OK = {"cc0": "CC0", "pdm": "Public Domain", "by": "CC BY"}          # no NC, no ND, no SA: the channel may be monetised
+
+
+def _music_queries(project: Path, query: str | None) -> list[str]:
+    if query:
+        return [query]
+    qs = []
+    ts = project / "research" / "trend-sounds.json"
+    if ts.exists():
+        st = [w for w, n in (load_json(ts).get("styles") or []) if n >= 2][:3]      # a style one video uses is not a trend
+        if st:
+            qs.append(" ".join(st) + " instrumental")
+    brief = load_yaml(project / "brief.yaml") or {}
+    if (brief.get("music") or {}).get("search"):
+        qs.append(brief["music"]["search"])
+    qs.append("instrumental background")
+    return list(dict.fromkeys(qs))
+
+
+def music_source(project, query: str | None = None, target: float | None = None, tries: int = 3) -> dict:
+    """Find, verify, download and credit one CC0 / CC BY track for the project; otherwise report that the synthesised score is used.
+
+    The licence is confirmed twice: in the search result and again on the track's own API record. Trimming, looping under the
+    voice and ducking are done by render (`prepare_track` + the mix). Returns {"used": "licensed"|"synth", ...}."""
+    project = ensure_project(project)
+    from fvcore import load_json as _lj
+    tl = next(iter(sorted((project / "build").glob("timeline-*.json"))), None)
+    target = target or (_lj(tl).get("duration") if tl else None) or 30
+    mdir = project / "assets" / "music"
+    cands, seen = [], set()
+    for q in _music_queries(project, query):
+        try:
+            d = fvnet.fetch_json("https://api.openverse.org/v1/audio/", {"q": q, "page_size": 20, "license": "cc0,pdm,by"})
+        except Exception as e:                                          # noqa: BLE001
+            warn(f"music source: search '{q}' failed: {str(e)[:80]}")
+            continue
+        for r in d.get("results", []):
+            lic = (r.get("license") or "").lower()
+            dur = (r.get("duration") or 0) / 1000
+            if r["id"] in seen or lic not in MUSIC_OK or dur < 15 or dur > 900:
+                continue
+            seen.add(r["id"])
+            cands.append((0 if dur >= target else 1, abs(dur - target), q, r))
+    cands.sort(key=lambda c: c[:2])
+    sc = project / "score.json"                    # projects must not all get the same track: the project's own seed picks among the best few
+    if sc.exists() and len(cands) > 1:
+        k = int(load_json(sc).get("seed") or 0) % min(len(cands), 6)
+        cands = cands[k:] + cands[:k]
+    fallback = {"used": "synth", "reason": "no suitable CC0 / CC BY track found" if not cands else "no candidate could be verified and downloaded"}
+    for _, _, q, r in cands[: tries * 3]:
+        try:
+            det = fvnet.fetch_json(f"https://api.openverse.org/v1/audio/{r['id']}/")      # confirm the licence at the source record
+        except Exception:                                               # noqa: BLE001
+            continue
+        lic = (det.get("license") or "").lower()
+        if lic not in MUSIC_OK or not det.get("url"):
+            continue
+        label = MUSIC_OK[lic] + (f" {det.get('license_version') or '4.0'}" if lic == "by" else "")
+        rec = _rec("openverse", det["id"], "music", det.get("title") or q, det.get("foreign_landing_url") or det.get("url"), det["url"], None,
+                   duration=(det.get("duration") or 0) / 1000, author=det.get("creator"), author_url=det.get("creator_url"), lic=label, lic_url=det.get("license_url") or "")
+        if fvnet.risk_of(rec) != "safe":
+            continue
+        ext = _ext(det["url"], "." + str(det.get("filetype") or "mp3").lower()[:5])
+        dest = mdir / f"{fvnet.safe_name(rec['id'])}{ext}"
+        try:
+            fvnet.download_file(det["url"], dest, timeout=120, max_bytes=MAX_BYTES["music"], types=CTYPES["music"])
+        except FishError as e:
+            warn(f"music source: {rec['id']}: {str(e)[:80]}")
+            continue
+        for old in mdir.glob("*"):                                      # one track per project: render uses the first file in assets/music
+            if old != dest and old.is_file():
+                old.unlink()
+        rec["file"] = str(dest.relative_to(project)).replace("\\", "/")
+        rec["credit"] = fvnet.credit_line(rec)
+        add_credit(project, rec)
+        out = {"used": "licensed", "file": rec["file"], "title": rec["title"], "author": rec["author"], "license": rec["license"], "license_url": rec["license_url"],
+               "source": rec["url"], "seconds": rec["duration"], "query": q, "credit": rec["credit"]}
+        save_json(project / "build" / "music-source.json", out)
+        log(f"music: licensed track {rec['title']} by {rec['author']} [{rec['license']}] -> {rec['file']}; credit written to assets/credits.json")
+        return out
+    save_json(project / "build" / "music-source.json", fallback)
+    log(f"music: {fallback['reason']}: the synthesised score is used (mood and seed in score.json)")
+    return fallback
+
+
+def adopt(project, license: str, author: str, source: str, label: str | None = None, files: list[str] | None = None) -> dict:
+    """For an existing project: write a credit record for every referenced picture that has none (using the licence, author and source the
+    caller asserts), and set `label` on story/image/statement beats that lack one. Nothing is guessed: all three facts must be given."""
+    import gates
+    project = ensure_project(project)
+    if not (license and author and source):
+        raise FishError("adopt needs --license, --author and --source: you are asserting where the pictures come from")
+    if label and label not in gates.LABELS:
+        raise FishError(f"--label is one of: {', '.join(gates.LABELS)}")
+    m = gates.measure(project)
+    idx = gates.credit_index(project)
+    added, labelled = [], []
+    for r in m["rows"]:
+        for x in r.get("srcs", []):
+            if x.startswith("assets/") and (project / x).exists() and x not in idx and not (x.startswith("assets/shots/") or r["screenshot"]) and (not files or x in files):
+                add_credit(project, {"id": "adopted-" + slugify(Path(x).stem), "provider": "adopted", "kind": "photo", "title": Path(x).stem, "file": x, "author": author,
+                                     "license": license, "url": source, "credit": f"{Path(x).stem} by {author} ({source}), {license}.", "attribution_required": False, "risk": "safe"})
+                idx[x] = {}
+                added.append(x)
+    if label:
+        sbf = project / "storyboard.yaml"
+        sb = load_yaml(sbf)
+        for sc in sb.get("scenes", []):
+            if sc.get("type") in gates.LABEL_TYPES and (sc.get("params") or {}).get("src") and not (sc["params"].get("label")):
+                sc["params"]["label"] = label
+                labelled.append(sc["id"])
+        save_yaml(sbf, sb)
+    log(f"adopted {len(added)} picture(s), labelled {len(labelled)} beat(s) as '{label}'" if label else f"adopted {len(added)} picture(s)")
+    return {"credited": added, "labelled": labelled}
+
+
+def plan_report(project) -> list[dict]:
+    """Per beat: does it have a real image, and what is missing. (`fishvideo gates` enforces it.)"""
+    import gates
+    project = ensure_project(project)
+    m = gates.measure(project)
+    return [{"beat": r["id"], "type": r["type"], "kind": r["kind"], "images": r.get("srcs", [])} for r in m["rows"]]
+
+
 def cli(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="assets.py", description=__doc__.split("\n")[0])
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -652,6 +927,13 @@ def cli(argv=None) -> int:
     a.add_argument("--grade", choices=sorted(GRADES)); a.add_argument("--sharpen", action="store_true"); a.add_argument("--lut", help=".cube file")
     a.add_argument("--aspect", choices=sorted(ASPECTS)); a.add_argument("--focus", help="x,y fractions of the frame to keep when cropping")
     a = sp.add_parser("sfx-pack"); a.add_argument("dest", nargs="?")
+    a = sp.add_parser("source"); a.add_argument("project"); a.add_argument("q"); a.add_argument("--beat"); a.add_argument("-n", type=int, default=1)
+    a.add_argument("--providers"); a.add_argument("--depicts", help="say the picture truly shows this person or event: the beat is labelled `archive photo` instead of `illustrative`")
+    a.add_argument("--before", type=int); a.add_argument("--min-width", type=int, help="skip results narrower than this many px (default: the panel width at 2.2x)"); a.add_argument("--min-height", type=int, help="skip results shorter than this many px (default: half the frame height at 2.2x)")
+    a = sp.add_parser("adopt"); a.add_argument("project"); a.add_argument("--license", required=True); a.add_argument("--author", required=True)
+    a.add_argument("--source", required=True); a.add_argument("--label", choices=["archive photo", "illustrative"])
+    a = sp.add_parser("music-source"); a.add_argument("project"); a.add_argument("--q"); a.add_argument("--target", type=float)
+    a = sp.add_parser("plan"); a.add_argument("project")
     a = sp.add_parser("credits"); a.add_argument("project")
     ns = ap.parse_args(argv)
     if ns.cmd == "search":
@@ -676,6 +958,16 @@ def cli(argv=None) -> int:
         prep_clip(ns.project, ns.src, ns.clip_id, ns.start, ns.dur, ns.fps, ns.width, ns.grade, ns.sharpen, ns.lut, ns.aspect, focus)
     elif ns.cmd == "sfx-pack":
         sfx_pack(ns.dest)
+    elif ns.cmd == "source":
+        got = source(ns.project, ns.q, ns.beat, ns.n, ns.providers.split(",") if ns.providers else None, depicts=ns.depicts, before=ns.before, min_width=ns.min_width, min_height=ns.min_height)
+        return 0 if got else 1
+    elif ns.cmd == "adopt":
+        adopt(ns.project, ns.license, ns.author, ns.source, ns.label)
+    elif ns.cmd == "music-source":
+        music_source(ns.project, ns.q, ns.target)
+    elif ns.cmd == "plan":
+        for r in plan_report(ns.project):
+            log(f"{r['beat']:<22} {r['type']:<10} {r['kind']:<8} {', '.join(r['images']) or 'NEEDS an image: assets source <dir> \"<query>\" --beat ' + r['beat']}")
     elif ns.cmd == "credits":
         print(credits_text(ensure_project(ns.project)))
     return 0

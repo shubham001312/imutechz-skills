@@ -1,5 +1,14 @@
 # Local voices: make them yourself, free, with measured checks
 
+## The recommended default: `chatterbox-soft`
+
+The named preset every recipe, the brief template and the interview use first. Chatterbox's own default voice, one sentence at a time, `exaggeration` 0.32-0.55 by sentence (mood and punctuation move it inside that range), `cfg_weight` 0.25, `temperature` 0.75, `seed` 11 (re-seeded for every sentence), pauses 0.35-0.55 s (under 6 words 0.35, a question 0.5, otherwise 0.45), then `highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-2,equalizer=f=3200:t=q:w=1.4:g=0.8,aexciter=freq=6500:amount=0.5:blend=0:ceil=11500,highshelf=f=8000:g=1.5,deesser=i=0.35,acompressor=threshold=-20dB:ratio=1.8:attack=15:release=180:makeup=1.2,aecho=0.9:0.9:19|37:0.04|0.025` and `loudnorm=I=-18:TP=-2:LRA=9`, 48 kHz. Brief: `voice: {provider: chatterbox, studio: {style: chatterbox-soft}}`, `pacing.max_word_gap: 0.9`, `pacing.line_gap: 0.05`, `mix.music_under_voice_db: -12`.
+
+It reproduces the voice of the long roadmap video (the recipe came from that video's generation script, not from the studio's older `soft` style, which is a different, flatter chain). Measured on the reference machine: the same sentence generated twice from seed 11 is bit-identical; against the long video's first line the pitch was 120 Hz against 118 Hz, level -18.1 against -17.8 dB RMS, equal peaks, and band energies within about 2 dB. Nobody has listened to the comparison: audition it.
+
+Not installed? `fishvideo voice setup --engine chatterbox` (one command, about 2 GB, CPU is enough). Until then `voice`, `audition` and `render` stop and say so. Nothing falls back silently; to use another voice the user picks it (`--provider`, or `voice.studio.style` for another studio style) and you tell them what changes. English only; no voice audio is committed.
+
+
 Load this when the user wants a free voice made on their own machine, male or female, airy or soft, at a chosen pace, and wants the output tested. Nothing here ships audio or model weights. The tools make the voice on the user's computer.
 
 ## What can and cannot be claimed

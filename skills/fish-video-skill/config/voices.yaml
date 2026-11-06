@@ -16,11 +16,13 @@ delivery:
   cinematic: {edge_rate: "-10%", edge_pitch: "-6Hz", eleven_speed: 0.9, eleven_style: 0.35, stability: 0.5, line_gap: 0.45, wps: 2.2,
               post: "highpass=f=60,lowshelf=f=140:g=2,equalizer=f=320:t=q:w=1.2:g=-2,equalizer=f=4200:t=q:w=1.4:g=1.5,acompressor=threshold=-21dB:ratio=3:attack=10:release=160:makeup=2.5,aecho=0.85:0.9:40|73:0.12|0.07"}
 
+# chatterbox-soft is the recommended default (named preset; recipe in config/voicelab.yaml). English only.
 # provider: edge (free, needs internet, word timings) | elevenlabs (ELEVENLABS_API_KEY; paid plan
 # for commercial use and library voices) | kokoro (local, Apache-2.0, `pip install kokoro soundfile`;
 # word timings via faster-whisper alignment)
 voices:
   en-US:
+    - {id: chatterbox-soft, provider: chatterbox, voice: soft, label: "Chatterbox soft (Recommended) - natural, soft, warm male; free, runs on this machine (one-command setup)", fits: [calm, punchy, cinematic]}
     - {id: andrew,  provider: edge, voice: en-US-AndrewMultilingualNeural, label: "Andrew - warm, confident male", fits: [calm, punchy]}
     - {id: brian,   provider: edge, voice: en-US-BrianMultilingualNeural,  label: "Brian - casual, sincere male", fits: [punchy, calm]}
     - {id: ava,     provider: edge, voice: en-US-AvaMultilingualNeural,    label: "Ava - expressive, caring female", fits: [calm, punchy]}
@@ -31,12 +33,14 @@ voices:
     - {id: kokoro_heart, provider: kokoro, voice: af_heart,                label: "Kokoro Heart - natural female (local)", fits: [calm]}
     - {id: kokoro_michael, provider: kokoro, voice: am_michael,            label: "Kokoro Michael - natural male (local)", fits: [calm, cinematic]}
   en-GB:
+    - {id: chatterbox-soft, provider: chatterbox, voice: soft, label: "Chatterbox soft (Recommended) - natural, soft, warm male; free, runs on this machine (one-command setup)", fits: [calm, punchy, cinematic]}
     - {id: ryan,    provider: edge, voice: en-GB-RyanNeural,   label: "Ryan - British male", fits: [calm, cinematic]}
     - {id: thomas,  provider: edge, voice: en-GB-ThomasNeural, label: "Thomas - British male, lighter", fits: [punchy, calm]}
     - {id: sonia,   provider: edge, voice: en-GB-SoniaNeural,  label: "Sonia - British female", fits: [calm]}
     - {id: libby,   provider: edge, voice: en-GB-LibbyNeural,  label: "Libby - British female, bright", fits: [punchy]}
     - {id: kokoro_george, provider: kokoro, voice: bm_george,  label: "Kokoro George - British male (local)", fits: [cinematic, calm]}
   en-IN:
+    - {id: chatterbox-soft, provider: chatterbox, voice: soft, label: "Chatterbox soft (Recommended) - natural, soft, warm male; free, runs on this machine (one-command setup)", fits: [calm, punchy, cinematic]}
     - {id: neerja_x, provider: edge, voice: en-IN-NeerjaExpressiveNeural, label: "Neerja Expressive - Indian female", fits: [punchy, calm]}
     - {id: prabhat,  provider: edge, voice: en-IN-PrabhatNeural,          label: "Prabhat - Indian male", fits: [calm, cinematic]}
     - {id: eleven_in, provider: elevenlabs, voice: fydPJq00SigRIaPxWgiS,  label: "ElevenLabs India narrator (key, paid plan)", fits: [calm, punchy]}

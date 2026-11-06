@@ -6,9 +6,10 @@ tempo:
   beats_per_bar: 4
 
 pacing:
-  lead_in: 0.35       # s from scene start to the first spoken word
-  line_gap: 0.30      # s breath between narration lines inside a scene
-  tail: 0.55          # s after the last word before the cut
+  snap: speech       # narration drives time: scene cuts follow the last word ("bar" = the old 2 s bar grid, opt-in; "beat" = alias of speech)
+  lead_in: 0.1        # s from scene start to the first spoken word (kept 0.05-0.15)
+  line_gap: 0.25      # s between narration lines inside a scene (kept 0.15-0.35); a line may add `pause:` up to 0.8 s
+  tail: 0.15          # s after the last word before the cut (kept 0.1-0.2); cut + lead_in = 0.15-0.35 s between scenes
   wpm:                # speaking rate used to estimate before TTS exists
     default: 150
     en-IN: 145

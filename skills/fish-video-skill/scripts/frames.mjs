@@ -39,13 +39,14 @@ export function timelineSize(project, platform) {
 
 /* A browser can die mid-render (memory, a killed process). The frames are a pure function
    of t, so redo just that worker's segment rather than losing the whole render. */
-async function workerRetry(k, a, b, ctx, tries = 3) {
+async function workerRetry(k, a, b, ctx, tries = 5) {
   for (let n = 1; ; n++) {
     try { return await worker(k, a, b, ctx); }
     catch (e) {
       const m = String(e && e.message);
       if (n >= tries || !/Target closed|Protocol error|Connection closed|Session closed|detached|ffmpeg exited|EPIPE/i.test(m)) throw e;
       console.log(`  w${k}: browser lost (${m.slice(0, 80)}); retry ${n}/${tries - 1}`);
+      await new Promise((r) => setTimeout(r, 1500 * n));          /* let the dead browser's memory come back before the next one starts */
     }
   }
 }
@@ -53,13 +54,15 @@ async function workerRetry(k, a, b, ctx, tries = 3) {
 async function worker(k, a, b, ctx) {
   const { url, platform, W, H, scale, fps, outDir, crf } = ctx;
   const browser = await launch();
+  let ff = null, finished = false;
   try {
     const { p } = await openStage(browser, url, platform, W, H, scale);
     const cdp = await p.createCDPSession();
     const seg = path.join(outDir, `seg${k}.mp4`);
-    const ff = spawn(ffmpegPath(), ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(fps), "-c:v", "png", "-i", "-",
+    ff = spawn(ffmpegPath(), ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(fps), "-c:v", "png", "-i", "-",
       "-c:v", "libx264", "-threads", "2", "-preset", ctx.preset, "-crf", String(crf), "-pix_fmt", "yuv420p", "-r", String(fps), seg], { stdio: ["pipe", "inherit", "inherit"] });
     const done = new Promise((r, j) => { ff.on("close", (c) => (c === 0 ? r() : j(new Error(`ffmpeg exited ${c} (worker ${k})`)))); ff.on("error", j); });
+    done.catch(() => { /* handled where it is awaited; a killed ffmpeg must not become an unhandled rejection */ });
     ff.stdin.on("error", () => { /* surfaced by `done` */ });
     const t0 = Date.now();
     for (let f = a; f < b; f++) {
@@ -70,8 +73,11 @@ async function worker(k, a, b, ctx) {
     }
     ff.stdin.end();
     await done;
+    finished = true;
     return seg;
   } finally {
+    /* a worker that failed (browser lost) must not leave its ffmpeg waiting on a pipe nobody writes: the render would hang after the retry */
+    if (ff && !finished) { try { ff.stdin.destroy(); ff.kill("SIGKILL"); } catch { /* already gone */ } }
     await browser.close().catch(() => {});
   }
 }

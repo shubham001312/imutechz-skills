@@ -4,8 +4,7 @@ ffmpeg and internet (edge-tts voice; the live site for the tour).
 
     .venv/Scripts/python -m pytest tests/test_e2e.py -m e2e -s
 
-Outputs are kept in tests/_out/ and the fictional cut is copied to
-examples/smoke/ so the skill ships a real sample.
+Outputs are kept in tests/_out/.
 """
 import json
 import shutil

@@ -31,7 +31,7 @@
     const bar = el("div", "abs", b), bh = 44 * u; L.pos(bar, 0, 0, w, bh);
     bar.style.cssText += `;background:#26282d;display:flex;align-items:center;gap:${9 * u}px;padding-left:${16 * u}px;box-sizing:border-box`;
     ["#ff5f57", "#febc2e", "#28c840"].forEach((k) => { const d = el("div", "", bar); d.style.cssText = `width:${13 * u}px;height:${13 * u}px;border-radius:50%;background:${k};flex:none`; });
-    const a = el("div", "", bar, L.esc(url || "")); a.style.cssText = `margin-left:${14 * u}px;padding:${5 * u}px ${18 * u}px;border-radius:${14 * u}px;background:#15161a;color:#c9cbd1;font:500 ${18 * u}px Inter,sans-serif;white-space:nowrap`;
+    const a = el("div", "", bar, L.esc(url || "")); a.style.cssText = `margin-left:${14 * u}px;padding:${5 * u}px ${18 * u}px;border-radius:${14 * u}px;background:#15161a;color:#c9cbd1;font:500 ${18 * u}px var(--display);white-space:nowrap`;
     const box = el("div", "abs", b); L.pos(box, 0, bh, w, h - bh); box.style.overflow = "hidden";
     const img = el("img", "", box); img.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:top";
     L.setImg(img, L.projUrl(src));
@@ -54,7 +54,7 @@
       (p.chips || []).forEach((tx, i) => {
         const d = el("div", "abs", root, L.esc(tx)), q = L.rng(i + 11);
         L.pos(d, c.safe.x + (c.safe.w - 300 * u) * ((i * 0.618 + 0.07) % 1), c.safe.y + (c.safe.h - 80 * u) * ((i * 0.381 + 0.11) % 1));
-        d.style.cssText += `;padding:${10 * u}px ${22 * u}px;border-radius:${40 * u}px;border:${2 * u}px solid ${glow(0.65)};color:${C.accent};background:${L.hexA(C.bg, 0.86)};font:700 ${30 * u}px Inter,sans-serif;white-space:nowrap`;
+        d.style.cssText += `;padding:${10 * u}px ${22 * u}px;border-radius:${40 * u}px;border:${2 * u}px solid ${glow(0.65)};color:${C.accent};background:${L.hexA(C.bg, 0.86)};font:700 ${30 * u}px var(--display);white-space:nowrap`;
         st.chips.push({ d, t0: 0.15 + i * (p.chip_every || 0.3), rot: (q() - 0.5) * 12 });
       });
       const n = (p.cards || []).length;
@@ -71,7 +71,7 @@
         const sc = (st.scrim = el("div", "abs", root)); L.pos(sc, 0, 0, c.W, c.H); sc.style.background = "rgba(8,8,9,.74)";
         const T = (st.T = el("div", "abs", root, `<span>${accent(p.title)}</span>`));
         L.pos(T, c.safe.x + 80 * u, c.H * 0.27, c.safe.w - 160 * u, c.H * 0.46);
-        T.style.cssText += `;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font:900 ${(p.title_size || 150) * u}px/1.02 Inter,sans-serif;letter-spacing:-.03em;text-shadow:0 ${8 * u}px ${40 * u}px #000`;
+        T.style.cssText += `;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;font:900 ${(p.title_size || 150) * u}px/1.02 var(--display);letter-spacing:-.03em;text-shadow:0 ${8 * u}px ${40 * u}px #000`;
       }
       return st;
     },
@@ -119,12 +119,12 @@
         const im = el("div", "abs", d); L.pos(im, 0, 0, NW, NH * 0.56); im.style.overflow = "hidden";
         if (n.src) { const img = el("img", "", im); img.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:top"; L.setImg(img, L.projUrl(n.src)); }
         else { const ic = el("div", "abs", im, L.esc(n.glyph || "")); L.pos(ic, 0, 0, NW, NH * 0.56); ic.style.cssText += `;display:flex;align-items:center;justify-content:center;color:${C.accent};font:800 ${58 * u}px 'JetBrains Mono',monospace`; }
-        const tag = el("div", "abs", d, L.esc(n.tag || "")); L.pos(tag, 22 * u, NH * 0.6); tag.style.cssText += `;color:${C.accent};font:800 ${25 * u}px Inter,sans-serif;letter-spacing:.09em`;
-        const lb = el("div", "abs", d, L.esc(n.label || "")); L.pos(lb, 22 * u, NH * 0.71, NW - 44 * u); lb.style.cssText += `;color:${C.ink};font:800 ${44 * u}px/1.05 Inter,sans-serif;letter-spacing:-.015em`;
+        const tag = el("div", "abs", d, L.esc(n.tag || "")); L.pos(tag, 22 * u, NH * 0.6); tag.style.cssText += `;color:${C.accent};font:800 ${25 * u}px var(--display);letter-spacing:.09em`;
+        const lb = el("div", "abs", d, L.esc(n.label || "")); L.pos(lb, 22 * u, NH * 0.71, NW - 44 * u); lb.style.cssText += `;color:${C.ink};font:800 ${44 * u}px/1.05 var(--display);letter-spacing:-.015em`;
         st.nodes.push({ d, i });
       });
-      if (p.kicker) { const k = (st.k = el("div", "abs", root, L.esc(p.kicker))); L.pos(k, c.safe.x, c.safe.y); k.style.cssText += `;padding:${12 * u}px ${24 * u}px;border-radius:${12 * u}px;background:${C.accent};color:${C.bg};font:900 ${34 * u}px Inter,sans-serif;letter-spacing:.02em;white-space:nowrap`; }
-      if (p.cta) { const a = (st.cta = el("div", "abs", root, `<span>${accent(p.cta)}</span>`)); L.pos(a, c.safe.x, c.safe.y + c.safe.h - 90 * u, c.safe.w, 90 * u); a.style.cssText += `;display:flex;align-items:center;justify-content:center;color:${C.ink};font:900 ${60 * u}px Inter,sans-serif;letter-spacing:-.02em`; }
+      if (p.kicker) { const k = (st.k = el("div", "abs", root, L.esc(p.kicker))); L.pos(k, c.safe.x, c.safe.y); k.style.cssText += `;padding:${12 * u}px ${24 * u}px;border-radius:${12 * u}px;background:${C.accent};color:${C.bg};font:900 ${34 * u}px var(--display);letter-spacing:.02em;white-space:nowrap`; }
+      if (p.cta) { const a = (st.cta = el("div", "abs", root, `<span>${accent(p.cta)}</span>`)); L.pos(a, c.safe.x, c.safe.y + c.safe.h - 90 * u, c.safe.w, 90 * u); a.style.cssText += `;display:flex;align-items:center;justify-content:center;color:${C.ink};font:900 ${60 * u}px var(--display);letter-spacing:-.02em`; }
       st.V = (p.visits || [{ i: 0, t: 0 }]).map((v) => ({ i: v.i, t: visitTime(c, v) }));
       st.pull = pullTime(c);
       return st;

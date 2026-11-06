@@ -1,0 +1,177 @@
+title: Hiroo Onoda, Part 2
+prompt: Hiroo Onoda, the soldier who kept fighting WWII until 1974. Part 2 of 2.
+goal: story
+audience: general viewers of history Shorts
+structure: story
+length: 28
+platforms:
+- shorts
+language: en-US
+tone: serious, calm, factual; real deaths are involved
+brand:
+  name: ''
+  url: ''
+  tagline: ''
+  logo: ''
+  mode: dark
+  colors:
+    bg: '#0f0f10'
+    surface: '#17171a'
+    paper: '#121214'
+    ink: '#f5f5f5'
+    fg: '#eeeeee'
+    muted: '#9a9a9a'
+    dim: '#5c5c5c'
+    accent: '#f2b722'
+    accent2: '#ffe600'
+  fonts:
+    sans: Inter
+    serif: Fraunces
+    mono: JetBrains Mono
+    hand: Caveat
+  font_files: []
+points:
+- only his old commander could end it; the cost to islanders
+facts:
+- text: Onoda came out after nearly 29 years
+  value: '29'
+  source: https://en.wikipedia.org/wiki/Hiroo_Onoda
+- text: Taniguchi met Onoda on 9 March 1974
+  value: '1974'
+  source: https://en.wikipedia.org/wiki/Hiroo_Onoda
+- text: Filipino reports say Onoda's group killed up to thirty civilians on Lubang
+  value: '30'
+  source: https://en.wikipedia.org/wiki/Hiroo_Onoda
+sources:
+- https://en.wikipedia.org/wiki/Hiroo_Onoda
+- https://www.cbsnews.com/news/wwii-soldier-who-hid-in-jungle-for-29-years-dies-at-91
+- https://www.inquirer.com/philly/obituaries/20140118_Hiroo_Onoda__91__Japan_s_last_WWII_holdout.html
+website:
+  url: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+  theme: light
+  pages: []
+  hide: []
+  storage: {}
+reference:
+  src: ''
+cta:
+  text: ''
+  url: ''
+  kind: none
+voice:
+  provider: edge-tts
+  language: en-US
+  elevenlabs:
+    voice_id: ""
+    model_id: eleven_multilingual_v2
+    voice_settings:
+      stability: 0.42
+      similarity_boost: 0.8
+      style: 0.18
+      use_speaker_boost: true
+      speed: 0.96
+  fallback:
+    provider: edge-tts
+    voice: en-GB-RyanNeural
+    rate: -4%
+    pitch: +0Hz
+  pronunciations: {}
+  pick: ryan
+  post: highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-2,equalizer=f=3200:t=q:w=1.4:g=0.8,aexciter=freq=6500:amount=0.5:blend=0:ceil=11500,highshelf=f=8000:g=1.5,deesser=i=0.35,acompressor=threshold=-20dB:ratio=1.8:attack=15:release=180:makeup=1.2,aecho=0.9:0.9:19|37:0.04|0.025
+  delivery: calm
+score:
+  key: D
+  mode: minor
+  progression: i-VI-III-VII
+  seed: 12345
+  drums: false
+captions:
+  burn: true
+  style: pop
+  min_cue: 1.0
+hashtags: []
+slug: this
+interview:
+  answers:
+    topic: Hiroo Onoda
+    goal: story
+    audience: curious beginners; no jargon, one idea at a time
+    platforms:
+    - shorts
+    length: 28
+    hook: pain
+    real_assets: mixed
+    sfx: standard
+    voice: chatterbox-soft
+    language: en-US
+    style: glow-metaphor
+    theme: none
+    references: none
+    palette: neon-amber
+    mode: dark
+    type: grotesk
+    texture: grid
+    voice_energy: calm
+    music: dark-drone
+    screen: none
+    brand_files: none
+    points: Foundations first; each step builds on the last; do not try to learn every tool; build small things as you go
+    facts: none
+    cta: none
+    captions: pop
+    channel: none
+    thumbnail: frame
+    checkpoints: &id001
+    - final
+    keys_have: &id002 []
+    optional_installs: &id003
+    - none
+  confirmed: true
+summary: A serious two-part true story of Hiroo Onoda. Part 2.
+pacing:
+  snap: beat
+  lead_in: 0.1
+  tail: 0.3
+  max_word_gap: 0.9
+  line_gap: 0.05
+  change_every: 1.2
+  hard_cuts_per_15s: 1
+  transitions:
+  - defocus
+  - flash
+  - cut
+hook:
+  kind: story
+assets:
+  policy: mixed
+sfx:
+  density: standard
+style: glow-metaphor
+palette: neon-amber
+type_feel: grotesk
+texture: grain
+music:
+  mood: dark-drone
+  search: dark ambient cinematic documentary
+screen:
+  kind: none
+thumbnail:
+  title: ONODA *PART 2*
+approvals:
+  required: *id001
+keys:
+  provided: *id002
+installs: *id003
+motif: amber accent line over aerial Lubang
+tempo:
+  bpm: 120
+mix:
+  music_under_voice_db: -12
+publish:
+  titles:
+  - Only His Old Commander Could Stop Him (Part 2)
+  - How the Last WWII Holdout Finally Came Out
+  - '29 Years Late: How It Ended (Part 2)'
+  description: ''
+  tags: []
+  hashtags: []

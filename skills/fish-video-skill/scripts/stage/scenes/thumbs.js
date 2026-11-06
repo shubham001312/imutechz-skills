@@ -9,6 +9,8 @@
              split     before / after on a diagonal split, each half labelled
              caption   a full-bleed frame, a dark scrim, the caption low and left
              frame     the best frame of the video in a card, the title beside it
+             road      the house thumbnail (`fishvideo thumbnail`): tag, huge two-tone headline, audience line, and logo or picture
+                       tiles along a glowing road (params.tiles); see the road() comment
 
    params: title, accent (the word to mark; "*word*" also marks), kicker, badge,
            image (subject or frame, project path), baked (true: the PNG already has its outline and glow),
@@ -208,7 +210,120 @@
     return {};
   }
 
-  const LAYOUTS = { subject, number, split, caption, frame };
+  /* ------------------------------------------------------------ road */
+  /* The house thumbnail: a short tag above, a huge two-tone headline on the left, an audience line below, and on the right a
+     smooth glowing road (uniform Catmull-Rom through the tile centres, open-ended so it has no kink) passing through tiles.
+     A tile is a brand logo (simple-icons path; the marks belong to their owners) or a licensed picture. Dark glow ground; the
+     theme supplies the accent colour and the display font.
+     params: tag, title, accent (the big first words), sub (audience line; *word* is marked), tiles [{d, hex, tile, title} | {src}] */
+  const ROAD = [[730, 625], [915, 600], [1140, 500], [960, 395], [745, 300], [960, 185], [1175, 95]];
+  const roadPoints = (n) => {
+    if (n >= ROAD.length) return ROAD.slice();
+    if (n === 1) return [ROAD[3]];
+    return Array.from({ length: n }, (_, i) => ROAD[Math.round((i * (ROAD.length - 1)) / (n - 1))]);
+  };
+  /* pictures: one big hero tile and up to two smaller ones (design units: 1280x720 landscape, 1080x1920 portrait); logos: a row of small tiles */
+  const PICS_L = [{ x: 790, y: 600, s: 170 }, { x: 910, y: 330, s: 330 }, { x: 1160, y: 120, s: 160 }];
+  const PICS_P = [{ x: 250, y: 1420, s: 290 }, { x: 540, y: 950, s: 470 }, { x: 800, y: 1520, s: 290 }];
+  /* thumbnail type is always heavy: the theme's display face only when it is itself a heavy one, else Inter 900 (never a distressed or light face) */
+  const HEAVY = new Set(["Anton", "Archivo Black", "Oswald"]);
+  const heavyFamily = () => { const d = (L.T && getComputedStyle(document.documentElement).getPropertyValue("--display") || "").split(",")[0].replace(/["']/g, "").trim(); return HEAVY.has(d) ? "var(--display)" : "'Inter', var(--sans)"; };
+  const STOP = new Set("a an the of and or but in on at to for with by from as is are was were be been it its this that these those vs".split(" "));
+  function road(root, c) {
+    const p = c.p, k = c.P ? c.W / 1080 : c.H / 720, W = c.W, Hh = c.H, s = c.safe;
+    const bgc = L.isDark(C.bg) ? C.bg : "#0b0b0e", ink = "#ffffff", acc = C.accent;
+    const bg = el("div", "abs", root); L.pos(bg, 0, 0, W, Hh);
+    const gx = c.P ? W * 0.5 : W * 0.69, gy = c.P ? Hh * 0.62 : Hh * 0.5;
+    bg.style.background = `radial-gradient(${700 * k}px ${520 * k}px at ${gx}px ${gy}px, ${L.hexA(acc, 0.42)}, transparent 70%),radial-gradient(${500 * k}px ${400 * k}px at ${60 * k}px ${Hh - 20 * k}px, ${L.hexA(acc, 0.16)}, transparent 70%),${bgc}`;
+    const grid = el("div", "abs", root); L.pos(grid, 0, 0, W, Hh);
+    grid.style.cssText += `;background-image:linear-gradient(#ffffff0a 1px,transparent 1px),linear-gradient(90deg,#ffffff0a 1px,transparent 1px);background-size:${64 * k}px ${64 * k}px;-webkit-mask-image:radial-gradient(ellipse at ${gx}px ${gy}px,#000 20%,transparent 75%)`;
+    const all = (p.tiles || []);
+    const pics = all.length > 0 && all.every((t) => t.src);
+    const tiles = all.slice(0, pics ? 3 : c.P ? 5 : 7);
+    const n = tiles.length, ox = c.P ? 0 : (W - 1280 * k) / 2;
+    /* tile centres and sizes. Pictures: [small, hero, small] in road order; the first given picture is the hero. */
+    let spots;
+    if (pics) {
+      const T = (c.P ? PICS_P : PICS_L);
+      const order = n >= 3 ? [1, 0, 2] : n === 2 ? [1, 0] : [1];                  /* tiles[0] -> hero (T[1]), tiles[1] -> T[0], tiles[2] -> T[2] */
+      spots = order.map((ti) => ({ x: T[ti].x * k + ox, y: T[ti].y * k, size: T[ti].s * k }));
+      spots = spots.map((sp, i) => ({ ...sp, idx: order[i] }));
+      const byIdx = {}; tiles.forEach((t, i) => { byIdx[[1, 0, 2][i]] = t; });
+      spots = spots.map((sp) => ({ ...sp, tile: byIdx[sp.idx] })).filter((sp) => sp.tile);
+      spots.sort((a, b) => a.idx - b.idx);
+    } else if (c.P) spots = Array.from({ length: n }, (_, i) => { const f = n === 1 ? 0.5 : i / (n - 1); return { x: W * (0.5 + [-1, 0, 1, 0][i % 4] * 0.26), y: Hh * (0.9 - 0.22 * f), size: 135 * k, tile: tiles[i] }; });
+    else spots = roadPoints(n).map(([x, y], i) => ({ x: x * k + ox, y: y * k, size: (118 - i * 3) * k, tile: tiles[i] }));
+    const svg = L.svg("svg", { width: W, height: Hh }, root); svg.style.cssText = "position:absolute;left:0;top:0;overflow:visible";
+    if (spots.length > 1) {
+      const pts = spots.map((q) => [q.x, q.y]);
+      const Q = c.P ? [[W * 0.1, Hh * 0.99], ...pts, [W * 0.95, Hh * 0.52]] : [[470 * k + ox, 790 * k], ...pts, [1330 * k + ox, 30 * k]];
+      let d = `M${Q[0][0]} ${Q[0][1]}`;
+      for (let i = 0; i < Q.length - 1; i++) {
+        const p0 = Q[Math.max(i - 1, 0)], p1 = Q[i], p2 = Q[i + 1], p3 = Q[Math.min(i + 2, Q.length - 1)];
+        d += ` C${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6},${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6},${p2[0]} ${p2[1]}`;
+      }
+      const g = L.svg("path", { d, fill: "none", stroke: acc, "stroke-width": 56 * k, opacity: 0.7 }, svg); g.style.filter = `blur(${16 * k}px)`;
+      L.svg("path", { d, fill: "none", stroke: "#1a1407", "stroke-width": 46 * k, "stroke-linecap": "round" }, svg);
+      L.svg("path", { d, fill: "none", stroke: acc, "stroke-width": 19 * k, "stroke-linecap": "round" }, svg);
+    }
+    spots.forEach((sp) => {
+      const t = sp.tile, size = sp.size, ic = size * 0.6;
+      const e = el("div", "abs", root); L.pos(e, sp.x - size / 2, sp.y - size / 2, size, size); e.dataset.tile = "1";
+      e.style.cssText += `;border-radius:${size * 0.12}px;overflow:hidden;background:${t.tile || "#16161a"};border:${(pics ? 6 : 4) * k}px solid ${acc};box-shadow:0 ${8 * k}px ${24 * k}px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center`;
+      if (t.src) { const im = el("img", "", e); im.style.cssText = "width:100%;height:100%;object-fit:cover"; L.setImg(im, L.projUrl(t.src)); }
+      else e.innerHTML = `<svg viewBox="0 0 24 24" width="${ic}" height="${ic}" role="img" aria-label="${L.esc(t.title || "")}"><path fill="#${t.hex}" d="${t.d}"/></svg>`;
+    });
+    /* words: a tag chip, a headline whose KEY words are big and together, an audience line */
+    const lx = c.P ? s.x : 52 * k + ox, colW = c.P ? s.w : 600 * k;
+    let tg = null;
+    if (p.tag) {
+      tg = el("div", "abs", root, L.esc(p.tag)); L.pos(tg, c.P ? s.x : 58 * k + ox, c.P ? s.y : 52 * k); tg.dataset.grp = "tag"; tg.dataset.block = "tag";
+      tg.style.cssText += `;background:${acc};color:${L.isDark(acc) ? "#fff" : "#0b0b0e"};font:900 ${40 * k * (c.P ? 1.3 : 1)}px ${heavyFamily()};letter-spacing:-.01em;padding:${6 * k}px ${20 * k}px ${8 * k}px;border-radius:${12 * k}px;transform:rotate(-1.5deg);white-space:nowrap`;
+    }
+    const words = String(p.title || c.brand.name || "").split(/\s+/).filter(Boolean);
+    const norm = (w) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    let a0 = -1, a1 = -1;
+    const want = String(p.accent || "").split(/\s+/).map(norm).filter(Boolean);
+    if (want.length && want.some((w) => !STOP.has(w))) for (let i = 0; i + want.length <= words.length; i++) if (want.every((w, j) => norm(words[i + j]) === w)) { a0 = i; a1 = i + want.length; break; }
+    if (a0 < 0) { let best = [0, 0, -1]; for (let i = 0; i < words.length; i++) { let j = i, len = 0; while (j < words.length && !STOP.has(norm(words[j])) && j - i < 3) { len += words[j].length; j++; } if (len > best[2]) best = [i, j, len]; } [a0, a1] = best[2] > 0 ? [best[0], best[1]] : [0, Math.min(words.length, 2)]; }
+    const head = el("div", "abs", root); L.pos(head, lx, c.P ? s.y + 120 * k : 112 * k, colW); head.dataset.grp = "head";
+    head.style.cssText += `;color:${ink};font:900 ${124 * k * (c.P ? 1.55 : 1)}px/.93 ${heavyFamily()};letter-spacing:-.045em;text-transform:uppercase;text-shadow:0 ${6 * k}px ${34 * k}px #000`;
+    const line = (txt, big) => `<span class="fv-hl" style="display:block;width:max-content;white-space:nowrap;${big ? `color:${acc};font-size:1.42em;text-shadow:0 0 ${50 * k}px ${L.hexA(acc, 0.35)},0 ${6 * k}px ${30 * k}px #000` : ""}">${L.esc(txt)}</span>`;
+    head.innerHTML = (a0 > 0 ? line(words.slice(0, a0).join(" "), false) : "") + (c.P ? line(words.slice(a0, a1).join(" "), true) : words.slice(a0, a1).map((w) => line(w, true)).join("")) + (a1 < words.length ? line(words.slice(a1).join(" "), false) : "");
+    const fitHead = () => {
+      let px = parseFloat(head.style.fontSize) || 124 * k;
+      const wide = () => Math.max(...[...head.querySelectorAll(".fv-hl")].map((e) => e.offsetWidth));
+      for (let i = 0; i < 60 && px > 40 * k && wide() > colW; i++) { px *= 0.97; head.style.fontSize = px + "px"; }
+    };
+    const growHead = () => {                                  /* a short headline grows to fill the left column, like the approved design */
+      if (c.P) return;
+      let px = parseFloat(head.style.fontSize) || 124 * k;
+      const target = Math.min(0.56 * Hh, 0.86 * Hh - 96 * k) - parseFloat(head.style.top);        /* room is kept below for the audience line */
+      const wide = () => Math.max(...[...head.querySelectorAll(".fv-hl")].map((e) => e.offsetWidth));
+      for (let i = 0; i < 40 && head.offsetHeight < target * 0.9 && wide() < colW * 0.96 && px < 210 * k; i++) { px *= 1.04; head.style.fontSize = px + "px"; }
+      if (wide() > colW) fitHead();
+    };
+    fitHead(); growHead(); fits.push(fitHead, growHead);
+    const subTxt = String(p.sub || "");
+    let subEl = null;
+    if (subTxt) {
+      subEl = el("div", "abs", root, subTxt.split(/\s+/).map((w) => /^\*.*\*[.,!?]*$/.test(w) ? `<i style="font-style:normal;color:${acc}">${L.esc(w.replace(/\*/g, ""))}</i>` : L.esc(w)).join(" "));
+      subEl.dataset.grp = "sub";
+      L.pos(subEl, lx + 6 * k, 536 * k);
+      subEl.style.cssText += `;color:#fff;font:800 ${44 * k * (c.P ? 1.3 : 1)}px ${heavyFamily()};letter-spacing:-.02em;text-transform:uppercase;white-space:nowrap;text-shadow:0 ${4 * k}px ${20 * k}px #000`;
+      const fitSub = () => { let px = parseFloat(subEl.style.fontSize) || 44 * k; for (let i = 0; i < 40 && px > 24 * k && subEl.offsetWidth > colW - 6 * k; i++) { px *= 0.96; subEl.style.fontSize = px + "px"; } };
+      fitSub(); fits.push(fitSub);
+    }
+    const place = () => {
+      if (tg) head.style.top = Math.max(parseFloat(head.style.top), tg.offsetTop + tg.offsetHeight + 12 * k) + "px";
+      if (subEl) subEl.style.top = (c.P && pics ? Math.max(Hh * 0.885, head.offsetTop + head.offsetHeight + 22 * k) : head.offsetTop + head.offsetHeight + 26 * k) + "px";
+    };
+    place();
+    fits.push(place);
+    return {};
+  }
+
+  const LAYOUTS = { subject, number, split, caption, frame, road };
   S.thumbnail = {
     build(root, c) {
       const f = LAYOUTS[String((c.p || {}).layout || "")];

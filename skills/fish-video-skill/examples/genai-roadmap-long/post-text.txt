@@ -1,0 +1,46 @@
+TITLE
+GenAI Engineer Roadmap: What to Learn, in Order
+
+ALTERNATE TITLES
+How to Become a GenAI Engineer: 7 Steps, Explained
+Lost in AI Tools? The GenAI Engineer Roadmap
+GenAI Roadmap for Beginners: From Basics to Cloud
+Stop Chasing AI Tools: Follow This GenAI Roadmap
+
+DESCRIPTION
+Lost in all the AI tools? Here's the order to learn them.
+A calm, high-level walk through the GenAI engineer roadmap: the foundations, seven steps, and what you can build.
+
+Based on the GeeksforGeeks guide, last updated 23 July 2025: https://www.geeksforgeeks.org/artificial-intelligence/roadmap-to-generative-ai-a-comprehensive-guide-for-beginners/
+
+Subscribe for the next one.
+
+CHAPTERS
+0:00 Intro
+0:44 Before you start: the foundations
+1:30 Step 1: Key concepts
+2:48 Step 2: LangChain
+3:43 Step 3: Vector stores
+4:46 Step 4: Prompt engineering
+5:40 Step 5: LlamaIndex
+6:18 Step 6: Fine-tuning
+7:16 Step 7: Cloud deployment
+8:02 What you can build
+8:35 Recap
+
+#genai #aiengineer #langchain #learnai
+
+CREDITS
+- "Programmer at work (Unsplash)" by Crew crew (wikimedia), licence: CC0 https://creativecommons.org/publicdomain/zero/1.0/ https://commons.wikimedia.org/wiki/File:Programmer_at_work_(Unsplash).jpg
+- "Cops (1922), silent film, video only" by Buster Keaton, Edward F. Cline (wikimedia), licence: Public Domain https://commons.wikimedia.org/wiki/File:Keaton_Cops_pt6.ogv
+- "Neighbors (1920), silent film, video only" by Edward F. Cline, Buster Keaton (wikimedia), licence: Public Domain https://commons.wikimedia.org/wiki/File:Neighbors_(Edward_F._Cline_and_Buster_Keaton,_1920).webm
+- "Sad Trombone" by Sad Tromboner (wikimedia), licence: CC BY 4.0 https://commons.wikimedia.org/wiki/File:Sad_Trombone.wav
+- "approx-800-laughter-and-clapter-1" by lonemonk on freesound.org (wikimedia), licence: CC BY 3.0 https://commons.wikimedia.org/wiki/File:72844_lonemonk_approx-800-laughter-and-clapter-1.wav
+- "applause-2" by Sandermotions (wikimedia), licence: CC0 https://commons.wikimedia.org/wiki/File:277021_sandermotions_applause-2.wav
+- Music: original score, synthesised for this video
+- Voice: AI narration (Chatterbox, watermarked by its maker).
+- Disclosure: this video uses an AI-generated voice and AI-assisted editing.
+- Website screenshots shown for commentary and identification; all trademarks belong to their owners: GeeksforGeeks, arXiv, LangChain, LangSmith, Hugging Face, Ollama, Pinecone, Chroma, Weaviate, FAISS, LlamaIndex, Amazon Bedrock, Google Cloud, Microsoft Azure, scikit-learn, Prompt Engineering Guide.
+
+TAGS
+genai roadmap, generative ai, ai engineer roadmap, genai engineer, langchain, vector database, prompt engineering, llamaindex, fine tuning, learn ai, ai for beginners, rag, embeddings, transformers, hugging face

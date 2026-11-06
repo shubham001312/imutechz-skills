@@ -6,6 +6,17 @@ It is an agent skill: `SKILL.md` is what an AI agent reads. It also works as a p
 
 Videos are rendered from code. Every frame is a pure function of time, drawn in headless Chromium and encoded with ffmpeg, so renders are deterministic and parallel. Real assets can be mixed in: licensed photos, b-roll, music and SFX, plus your own screen recordings, each one logged with its licence. No number appears on screen without a source.
 
+## What's new in 2.5: portable quality
+
+A weaker model on another device can now get close to the best videos, because the quality moved from project files into tools:
+
+- **Recipes**: `fishvideo new <dir> --recipe roadmap-explainer|story-short|bold-short` prefills the brief, a storyboard skeleton and an asset plan.
+- **Scenes**: `story` (photo-led), `statement`, `cards`, `flow`, `site`, `bold`, all theme-aware and word-synced.
+- **14 themes** with different type, texture, layout and motion: `fishvideo themes`, `fishvideo themes preview`.
+- **Gates**: `fishvideo gates` (measured image coverage), `fishvideo signoff` (frame-sheet checklist), and a required thumbnail: `fishvideo thumbnail` (headline plus logo or picture tiles on a glowing road; `package` refuses without it). Logos come from the CC0 `simple-icons` package and are trademarks of their owners: use only brands the video is about.
+- **Voice**: the `chatterbox-soft` preset is the recommended default everywhere (`fishvideo voice setup --engine chatterbox` once).
+- `SKILL.md` is now a short numbered path; the long form is in `references/pipeline-details.md`. See `references/recipes-and-themes.md`.
+
 ## Follow-up fixes
 
 - `render`: the stem-mix ffmpeg has a timeout (`FISH_MIX_TIMEOUT`, default 4x the video length, at least 120 s) with one retry and an actionable error, instead of hanging.
@@ -51,7 +62,9 @@ Videos are rendered from code. Every frame is a pure function of time, drawn in 
   - QA measures the balance.
 - **A tidy package:** `out/<date>_<slug>/` with `video/`, `captions/`, `thumbnails/`, `metadata/` (titles, post text, tags, credits, transcript) and `qa/`, plus a README and an upload checklist.
 
-The skill grew out of the pipeline that produced the ImuTechz explainer (see `examples/imutechz-explainer/`). That example shows structure only; its lines are blocked from reuse.
+The skill grew out of the pipeline that produced the ImuTechz explainer. That early storyboard is no longer shipped (it is in git history); the examples in `examples/` show structure only, and their lines are blocked from reuse.
+
+**Direction comes from live research, not from bundled samples.** `fishvideo trends <dir>` searches recent videos for the topic and format on every run (ranked by views per day, Shorts separated), writes a contact sheet of their thumbnails, and the agent writes the analysis and a `direction` from it; `--derive-theme` builds a project theme from those thumbnails. `gate` refuses without fresh research. The files are analysis only: never used in the video, committed or packaged.
 
 ## Setup
 
@@ -99,7 +112,7 @@ The default narrator is the ElevenLabs voice `fydPJq00SigRIaPxWgiS` (English, In
 ELEVENLABS_API_KEY=...
 ```
 
-Without a key, or if the plan does not allow the voice, the free **edge-tts** voice `en-IN-NeerjaNeural` is used, and the run tells you so.
+The default voice is the free local **Chatterbox soft** preset (`chatterbox-soft`): run `fishvideo voice setup --engine chatterbox` once. If Chatterbox is not installed the build stops and prints that command; it never switches voice silently. ElevenLabs and edge-tts remain available when you choose them. For a non-English video pick `edge-tts` or `elevenlabs` on purpose (Chatterbox is English only).
 
 ## Make a video from one prompt
 
@@ -170,7 +183,7 @@ references/         storyboards, scene catalogue, pacing & music, captions & typ
 scripts/            fishvideo.py (CLI) + Python modules + Node renderer/capture/synth + stage/ (scene library)
 config/defaults.yaml
 templates/          brief.yaml, storyboard.yaml, description.md, tags.txt
-examples/           why-you-cant-put-it-down/ (full narrated sample), showcase/ (style demo), imutechz-explainer/ (structure only)
+examples/           genai-roadmap-long/ (long explainer excerpt), onoda-story-series/ (two story Shorts), gta6-short/ (typographic Short); see examples/README.md
 tests/              pytest + node tests, fixtures
 ```
 

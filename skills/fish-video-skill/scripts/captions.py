@@ -50,6 +50,26 @@ def chunk_words(words: list[dict], max_chars: int = 42, max_lines: int = 2, max_
         if BREAK_AFTER.search(w["w"]) and (length >= limit * 0.45 or (nxt and nxt["t0"] - w["t1"] > 0.35)):
             flush()
     flush()
+    # a caption never floats a lone connecting word ("and", "the"): join it to the phrase it belongs to
+    k = 0
+    while k < len(cues):
+        c = cues[k]
+        if len(c["words"]) == 1 and not BREAK_AFTER.search(c["words"][0]["w"]) and len(c["words"][0]["w"].strip(".,;:!?\"'")) <= 4:
+            if k + 1 < len(cues) and len(c["text"]) + 1 + len(cues[k + 1]["text"]) <= limit:
+                n = cues[k + 1]
+                n["words"] = c["words"] + n["words"]
+                n["text"] = c["text"] + " " + n["text"]
+                n["start"] = c["start"]
+                cues.pop(k)
+                continue
+            if k > 0 and len(cues[k - 1]["text"]) + 1 + len(c["text"]) <= limit:
+                pr = cues[k - 1]
+                pr["words"] += c["words"]
+                pr["text"] += " " + c["text"]
+                pr["end"] = c["end"]
+                cues.pop(k)
+                continue
+        k += 1
     # timing: hold each cue until the next one starts (or 0.45 s after its last word)
     for k, c in enumerate(cues):
         nxt = cues[k + 1]["start"] if k + 1 < len(cues) else float("inf")

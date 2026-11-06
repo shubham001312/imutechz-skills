@@ -17,7 +17,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs, isMain } from "./common.mjs";
-import { buildProgression, NOTE, SCALES } from "./harmony.mjs";
+import { buildProgression, NOTE, SCALES, planSections, sectionSig, sigKey, arpPattern, bassPattern } from "./harmony.mjs";
 
 const args = parseArgs();
 const project = args._[0];
@@ -25,7 +25,7 @@ const platform = args.platform || "youtube";
 if (!project && isMain(import.meta.url)) { console.error("usage: node scripts/music.mjs <project> --platform youtube"); process.exit(2); }
 const info = JSON.parse(fs.readFileSync(path.join(project, "build", platform, "info.json"), "utf8"));
 const tl = JSON.parse(fs.readFileSync(path.join(project, "build", `timeline-${platform}.json`), "utf8"));
-const score = Object.assign({ key: "D", mode: "minor", progression: "i-VI-III-VII", seed: 12345, sfx: true, drums: true }, tl.score || {});
+const score = Object.assign({ key: "D", mode: "minor", progression: "i-VI-III-VII", seed: 12345, sfx: true, drums: true, palette: {} }, tl.score || {});
 
 const SR = 48000;
 const BPM = info.bpm, BEAT = 60 / BPM, BAR = BEAT * 4;
@@ -52,16 +52,23 @@ const energy = new Array(BARS + 2).fill(0);
 {
   const m = info.music;
   for (let k = 0; k < m.length; k++) {
-    const b0 = Math.floor(m[k][0]), e = m[k][1];
-    const b1 = Math.ceil(k + 1 < m.length ? m[k + 1][0] : BARS);
+    const b0 = Math.round(m[k][0]), e = m[k][1];      // scenes follow the narration, so a section starts on the nearest bar
+    const b1 = Math.round(k + 1 < m.length ? m[k + 1][0] : BARS);
     for (let b = b0; b < b1; b++) energy[b] = e;
   }
   energy[BARS] = -1;
 }
 
+/* sections + the bars under a key line (a reveal or punchline: the bed thins so the words land) */
+const SEC = planSections(energy, BARS, 8);
+const PAL = score.palette || {};
+const SIGS = SEC.map((i) => sectionSig(i, PAL));
+const KEYBARS = new Set(((tl.voice_lines || []).filter((l) => /^(reveal|punchline)$/.test(l.tag || "")).map((l) => Math.floor(l.at / (60 / info.bpm * 4)))));
+const sections = [...new Set(SEC)].map((i) => ({ section: i, from_bar: SEC.indexOf(i), sig: sigKey(SIGS[SEC.indexOf(i)]) }));
+
 /* ------------------------------------------------------------- harmony */
 const PROG = buildProgression(score.key, score.mode, score.progression);
-const chordAt = (bar) => PROG[((bar % PROG.length) + PROG.length) % PROG.length];
+const chordAt = (bar) => { const sg = SIGS[bar] || SIGS[SIGS.length - 1] || { rot: 0 }; return PROG[(((bar + sg.rot) % PROG.length) + PROG.length) % PROG.length]; };
 
 /* ------------------------------------------------------------- voices */
 function kick(t0, g = 1) {
@@ -233,7 +240,9 @@ function impact(t0, g = 1, B = sfx, tail = 1.6) {
 
 /* ------------------------------------------------------------- the arrangement */
 for (let bar = 0; bar < BARS; bar++) {
-  const e = energy[bar], next = energy[bar + 1];
+  let e = energy[bar]; const next = energy[bar + 1]; const sg = SIGS[bar] || sectionSig(0, PAL);
+  if (KEYBARS.has(bar) && e > 1) e = 1;     // a key line: thin the bed (no drums, light bass) for this bar
+  const DS = PAL.drum || "four";
   const t = bar * BAR;
   const ch = chordAt(bar);
   const last = bar === BARS - 1;
@@ -243,31 +252,37 @@ for (let bar = 0; bar < BARS; bar++) {
   if (e >= 1 && score.drums !== false) {
     for (let b = 0; b < 4; b++) {
       const tb = t + b * BEAT;
-      if (e >= 2 || b % 2 === 0) kick(tb, e >= 2 ? 0.95 : 0.6);
-      if (e >= 2 && (b === 1 || b === 3)) clap(tb, e >= 3 ? 0.9 : 0.75);
+      const kk = DS === "half" ? b === 0 || (e >= 2 && b === 2 && bar % 2) : DS === "broken" ? b === 0 || (b === 2 && e >= 2) || (b === 3 && bar % 2 && e >= 3) : (e >= 2 || b % 2 === 0);
+      if (kk) kick(tb, e >= 2 ? 0.95 : 0.6);
+      const cl = DS === "half" ? b === 2 : (b === 1 || b === 3);
+      if (e >= 2 && cl) clap(tb, e >= 3 ? 0.9 : 0.75);
       hat(tb + BEAT / 2, e >= 2 ? 0.95 : 0.6, e >= 3 && b === 3, 0.25);
-      if (e >= 2) hat(tb, 0.35, false, -0.2);
-      if (e >= 3) for (let s = 0; s < 4; s++) shaker(tb + s * BEAT / 4, s % 2 ? 1 : 0.6);
+      if (e >= 2 && DS !== "half") hat(tb, 0.35, false, -0.2);
+      if (e >= 3 && DS !== "half") for (let s = 0; s < 4; s++) shaker(tb + s * BEAT / 4, s % 2 ? 1 : 0.6);
     }
   }
   // bass: syncopated eighths
   if (e >= 2) {
-    const pat = [1, 0, 1, 1, 0, 1, 1, 0];
+    const pat = bassPattern(sg.bass);
     for (let s = 0; s < 8; s++) if (pat[s]) bassNote(t + s * BEAT / 2, BEAT / 2 * 0.85, ch.root + (s === 6 ? 12 : 0), 1);
   } else if (e === 1) {
     bassNote(t, BEAT * 1.8, ch.root, 0.7);
     bassNote(t + BEAT * 2.5, BEAT * 1.2, ch.root, 0.55);
   }
-  // pluck arpeggio
-  if (e >= 1) {
+  // lead: the section's voice plays the section's arpeggio shape
+  if (sg.lead !== "none" && e >= 1) {
     const steps = e >= 2 ? 16 : 8;
     const tones = ch.notes.map((m) => m + 12);
+    const shape = arpPattern(sg.arp);
     for (let s = 0; s < steps; s++) {
-      const idx = [0, 2, 4, 1, 3, 2, 4, 3][s % 8];
+      const idx = shape[s % 8];
       const m = tones[idx % tones.length] + (s >= 8 && e >= 2 ? 12 : 0);
-      pluck(t + s * BAR / steps, m, e >= 3 ? 1 : 0.8, ((s % 4) - 1.5) * 0.3);
+      const pan = ((s % 4) - 1.5) * 0.3;
+      if (sg.lead === "bell") { if (s % 2 === 0) bell(t + s * BAR / steps, m, 0.55, pan); }
+      else if (sg.lead === "glass") { if (s % 2 === 0) { pluck(t + s * BAR / steps, m + 12, 0.55, pan); bell(t + s * BAR / steps, m, 0.3, -pan); } }
+      else pluck(t + s * BAR / steps, m, e >= 3 ? 1 : 0.8, pan);
     }
-  } else {
+  } else if (sg.lead !== "none") {
     // calm: a few soft notes
     [0, 1.5, 2.5].forEach((b, j) => pluck(t + b * BEAT, ch.notes[(j * 2) % ch.notes.length] + 12, 0.6, j ? 0.3 : -0.3));
   }
@@ -492,4 +507,4 @@ const SL = new Float32Array(N), SR_ = new Float32Array(N);
 for (let i = 0; i < N; i++) { SL[i] = Math.tanh(sfx[0][i] * 1.1) / 1.1; SR_[i] = Math.tanh(sfx[1][i] * 1.1) / 1.1; }
 wav(path.join(path.dirname(out), "sfx.wav"), SL, SR_);
 let peak = 0; for (let i = 0; i < N; i++) peak = Math.max(peak, Math.abs(L0[i]), Math.abs(R0[i]));
-console.log(JSON.stringify({ music: out, seconds: +(N / SR).toFixed(2), peak: +peak.toFixed(3), key: score.key, mode: score.mode, progression: score.progression }));
+console.log(JSON.stringify({ sections, palette: PAL, music: out, seconds: +(N / SR).toFixed(2), peak: +peak.toFixed(3), key: score.key, mode: score.mode, progression: score.progression }));

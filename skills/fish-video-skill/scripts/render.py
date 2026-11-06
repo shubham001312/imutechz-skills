@@ -304,6 +304,9 @@ def render_platform(project: Path, platform: str, *, scale: float = 1, workers: 
 
 
 def render(project: Path, platforms: list[str] | None = None, **kw) -> list[dict]:
+    import themes
+    from fvcore import project_config as _pc
+    themes.check_fonts(_pc(Path(project))["brief"])       # a theme's fonts must be installed: no silent fallback
     project = ensure_project(project)
     sbmod.build(project, quiet=True)
     cfg = project_config(project)

@@ -55,7 +55,7 @@ def fill(template: str, ctx: dict) -> str:
 
 
 def tags_for(brief: dict, trends: dict | None = None) -> list[str]:
-    tags = [t.lstrip("#") for t in (brief.get("publish") or {}).get("tags") or brief.get("hashtags") or []]
+    tags = [str(t).lstrip("#") for t in (brief.get("publish") or {}).get("tags") or brief.get("hashtags") or []]
     for t in (trends or {}).get("recommended_tags") or []:
         if str(t).lower() not in [x.lower() for x in tags]:
             tags.append(str(t))
@@ -179,6 +179,19 @@ def package(project: Path, out: Path | None = None, name: str | None = None) -> 
     import thumbs
     for name in thumbs.ship(project, dest):      # the picked thumbnail, the variants and feed sheets, the check results
         log(f"  thumbnails: {name}")
+    from PIL import Image
+    import numpy as np
+    shots = []
+    for f in sorted((dest / "thumbnails").glob("*.png")):
+        try:
+            with Image.open(f) as im:
+                if thumbs.looks_like_screenshot(np.asarray(im.convert("RGB"))):
+                    shots.append(f.name)
+        except OSError:
+            pass
+    if shots:
+        raise FishError("a thumbnail or cover is a website screenshot (" + ", ".join(shots) + "). Make a designed one: set thumbnail.logos in storyboard.yaml, "
+                        "run `fishvideo thumb make <dir>` (logos layout) and `fishvideo thumb pick <dir> N`, then package again.")
     tags = tags_for(brief, trends)
     (md / "tags.txt").write_text(", ".join(tags) + "\n", encoding="utf-8")
     (md / "titles.txt").write_text("\n".join(f"{i + 1}. {t}" for i, t in enumerate(titles)) + "\n", encoding="utf-8")

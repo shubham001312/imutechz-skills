@@ -1,0 +1,134 @@
+title: 'video #002'
+style: paper-collage
+bpm: 120
+texture: clean
+grain: false
+hud:
+  chapter: false
+  rail: false
+custom_scenes:
+- scenes/custom.js
+captions:
+  style: pop
+scenes:
+- id: big2
+  type: collage
+  transition: cut
+  params:
+    act: big2
+    g: '#FFD60A'
+    nx: '#1F3BFF'
+  say:
+  - Do these {2|two} things
+  bars: 3
+- id: nov
+  type: collage
+  transition: cut
+  params:
+    act: nov
+    g: '#1F3BFF'
+    nx: '#111111'
+  say:
+  - before {November 10|November tenth},
+  bars: 3
+- id: wait
+  type: collage
+  transition: cut
+  params:
+    act: wait
+    g: '#111111'
+    nx: '#FF4B2B'
+  say:
+  - or {GTA 6|G T A Six} makes you wait.
+  bars: 6
+- id: hook
+  type: collage
+  transition: cut
+  params:
+    act: hook
+    g: '#FFD60A'
+    nx: '#1F3BFF'
+  say:
+  - One. Clear {212|two hundred twelve} gigabytes.
+  bars: 6
+- id: proof
+  type: collage
+  transition: cut
+  params:
+    act: proof
+    g: '#1F3BFF'
+    nx: '#FF4B2B'
+  say:
+  - Not a leak. PlayStation said it.
+  bars: 6
+- id: bar1
+  type: collage
+  transition: cut
+  params:
+    act: bar
+    g: '#FF4B2B'
+    nx: '#111111'
+    label: ORIGINAL PS5
+    usable: about 667 GB usable
+    gb: 667
+    stat: ALMOST 1/3
+    w1: that
+    w2: third
+    ink: '#111111'
+    statc: '#FFF6E6'
+    size: 138
+  say:
+  - On an original {PS5|P S five}, that's almost a third.
+  bars: 7
+- id: bar2
+  type: collage
+  transition: cut
+  params:
+    act: bar
+    g: '#111111'
+    nx: '#FFF6E6'
+    label: PS5 SLIM
+    usable: about 842 GB usable
+    gb: 842
+    stat: ABOUT 1/4
+    w1: slim
+    w2: quarter
+    size: 138
+  say:
+  - On a Slim, about a quarter.
+  bars: 4
+- id: two
+  type: collage
+  transition: cut
+  params:
+    act: two
+    g: '#FFF6E6'
+    nx: '#111111'
+  say:
+  - Two. Pre-order to download early.
+  bars: 6
+- id: dates
+  type: collage
+  transition: cut
+  params:
+    act: dates
+    g: '#111111'
+    nx: '#FFF6E6'
+  say:
+  - Pre-orders start {November 10|November tenth}. Launch is {November 19|November
+    nineteenth}.
+  bars: 9
+- id: purge
+  type: collage
+  transition: cut
+  params:
+    act: purge
+    g: '#FFF6E6'
+  say:
+  - So which game are you deleting?
+  bars: 7
+thumbnail:
+  kicker: GTA VI ON PS5
+  title: DO THESE 2 THINGS
+  accent: 2 THINGS
+  badge: ''

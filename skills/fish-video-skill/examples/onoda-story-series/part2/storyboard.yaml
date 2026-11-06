@@ -1,0 +1,173 @@
+title: Hiroo Onoda, Part 2 v2
+style: glow-metaphor
+bpm: 120
+custom_scenes:
+- scenes/custom.js
+hud:
+  chapter: false
+  rail: false
+sfx:
+  density: standard
+scenes:
+- id: s1
+  type: onoda_img
+  say: A soldier kept fighting World War Two for nearly twenty-nine years. Here's how it ended.
+  transition: cut
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/onoda_lindsay.jpg
+      mode: cover
+      pos: 30% 25%
+      label: ONODA, LATER IN LIFE · ARCHIVE PHOTO
+      bright: 0.85
+    - src: assets/photo2/onoda_young.jpg
+      mode: card
+      ar: 0.82
+      word: Here's
+      w: 0.7
+      label: HIROO ONODA · ARCHIVE PORTRAIT
+      z0: 1.0
+      z1: 1.1
+      origin: 50% 35%
+    lines:
+    - text: NEARLY *29 YEARS*
+      at: -0.5
+      size: 96
+    - text: HERE'S HOW IT ENDED
+      word: Here's
+      size: 56
+      dim: true
+    block: 0.2
+  lead: 0
+- id: s2
+  type: onoda_img
+  say: Japan tracked down his old commander, Major Taniguchi, and flew him to the island.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/uniform.jpg
+      mode: card
+      ar: 1.655
+      w: 0.96
+      label: ILLUSTRATIVE · JAPANESE ARMY OFFICER DRESS, WWII
+      z0: 1.0
+      z1: 1.1
+    - src: assets/photo2/c1b.jpg
+      mode: cover
+      word: flew
+      pos: 50% 50%
+      label: ILLUSTRATIVE · JAPANESE MILITARY TRANSPORT PLANE
+      dx: 1
+    lines:
+    - text: HIS OLD COMMANDER
+      word: commander
+      size: 70
+      dim: true
+    - text: MAJOR *TANIGUCHI*
+      word: Taniguchi
+      size: 84
+    block: 0.22
+- id: s3
+  type: onoda_img
+  say: 'In March 1974, Taniguchi read Onoda the order: all combat activity had ceased.'
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/jungle.jpg
+      mode: cover
+      pos: 55% 50%
+      label: ILLUSTRATIVE · PHILIPPINE JUNGLE (PALAWAN)
+    - src: assets/photo2/lub02.jpg
+      mode: cover
+      word: order
+      pos: 50% 30%
+      label: LUBANG ISLAND, TODAY
+    lines:
+    - text: MARCH *1974*
+      word: March
+      size: 72
+      dim: true
+    - text: ALL COMBAT *CEASED*
+      word: combat
+      size: 84
+    block: 0.2
+- id: s4
+  type: onoda_img
+  say: Only then did Onoda come out, in his old uniform, and hand his sword to the Philippine president.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/marcos.jpg
+      mode: card
+      ar: 1.327
+      w: 0.8
+      label: 11 MARCH 1974 · ARCHIVE PHOTO
+      z0: 1.0
+      z1: 1.12
+      origin: 75% 50%
+    - src: assets/photo2/sword.jpg
+      mode: card
+      ar: 0.562
+      word: sword
+      w: 0.55
+      label: ILLUSTRATIVE · JAPANESE OFFICER'S SWORD
+    lines:
+    - text: HE CAME *OUT*
+      word: come
+      size: 84
+    - text: THE *SWORD*
+      word: sword
+      size: 84
+    block: 0.22
+- id: s5
+  type: onoda_img
+  say: But Filipino reports say his group killed up to thirty islanders.
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/lub03.jpg
+      mode: cover
+      pos: 50% 45%
+      label: LUBANG ISLAND, TODAY
+    - src: assets/photo2/lub13.jpg
+      mode: cover
+      t: 1.9
+      pos: 45% 50%
+      label: LUBANG ISLAND, TODAY
+    lines:
+    - text: FILIPINO REPORTS
+      word: Filipino
+      size: 56
+      dim: true
+    - text: UP TO *30* ISLANDERS KILLED
+      word: thirty
+      size: 64
+    block: 0.2
+- id: s6
+  type: onoda_img
+  say: Loyal, or just lost?
+  transition: defocus
+  params:
+    kicker: HIROO ONODA · PART 2 OF 2
+    slides:
+    - src: assets/photo2/marcos.jpg
+      mode: card
+      ar: 1.327
+      w: 0.8
+      label: ONODA, 1974 · ARCHIVE PHOTO
+      z0: 1.5
+      z1: 1.7
+      origin: 82% 50%
+    lines:
+    - text: '*LOYAL?*'
+      word: Loyal
+      size: 100
+    - text: OR JUST *LOST?*
+      word: lost
+      size: 80
+    block: 0.24

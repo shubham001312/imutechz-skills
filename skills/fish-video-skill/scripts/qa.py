@@ -82,6 +82,22 @@ def detect(path: Path, kind: str) -> list[tuple[float, float]]:
     return list(zip(starts, ends + [float("inf")] * (len(starts) - len(ends))))
 
 
+def narration_gaps(tl: dict, limit: float = 0.6) -> dict:
+    """Silence between neighbouring narration lines from the timeline: FAIL when an unplanned gap exceeds `limit` s
+    (a line may ask for a pause with `pause:`, at most 0.8 s). Reports the median and maximum. Also the hook and the pace."""
+    L = tl["voice_lines"]
+    g = [(b["at"] - (a["at"] + a["dur"]), float(b.get("pause") or 0)) for a, b in zip(L, L[1:])]
+    vals = sorted(x for x, _ in g)
+    med = vals[len(vals) // 2] if len(vals) % 2 else (vals[len(vals) // 2 - 1] + vals[len(vals) // 2]) / 2
+    bad = [round(x, 2) for x, p in g if x > limit + min(p, 0.8)]
+    wps = [len(str(v.get("say", "")).split()) / v["dur"] for v in L if v.get("dur")]
+    hook = len(str(L[0].get("display", "")).split()) < 10 and L[0]["at"] <= 0.2
+    detail = f"gaps between lines: median {med:.2f} s, max {max(vals):.2f} s (limit {limit} s)" + (f"; unplanned over limit: {bad}" if bad else "")
+    detail += f"; pace {sum(len(str(v.get('say', '')).split()) for v in L) / max(1e-6, sum(v['dur'] for v in L)):.2f} words/s, fastest line {max(wps):.1f}"
+    detail += "" if hook else "; weak hook (first line should be under 10 words and start within 0.2 s)"
+    return {"check": "narration gaps", "status": "FAIL" if bad else ("WARN" if (not hook or max(wps) > 3.6) else "PASS"), "detail": detail}
+
+
 def contact_sheet(path: Path, out: Path, duration: float, cols: int = 5, width: int = 384) -> Path:
     every = max(1.0, duration / 20)
     rows = max(1, -(-int(duration / every) // cols))
@@ -336,6 +352,8 @@ def qa_platform(project: Path, platform: str, lint: bool = True, preview: bool =
         res += voicelab.qa_rows(project)
     except ImportError:
         pass
+    if len(tl.get("voice_lines") or []) > 1:
+        res.append(narration_gaps(tl))
     # mix balance: the bed must stay audible in the gaps and sit under the voice (references/sound-design.md)
     res.append(mix_balance(video, narr, b / "mix.json"))
     # phone speakers: also writes build/<platform>/phone-monitor.wav, a file to listen to what a phone plays
@@ -343,6 +361,14 @@ def qa_platform(project: Path, platform: str, lint: bool = True, preview: bool =
     res.append(explicit_cues(load_yaml(project / "storyboard.yaml"), info.get("cues", []), (tl.get("sfx") or {}).get("density") or "rich"))
     res.append(bare_regions(video))
     res.append(cue_sounds(project, load_yaml(project / "storyboard.yaml")))
+    try:
+        import gates
+        _g = gates.recipe_gate((project_config(project)["brief"] or {}).get("recipe"))
+        if _g.get("sharp_share_min"):
+            _m, _f = gates.sharp_failures(project, video)
+            res.append({"check": "sharp image coverage", "status": "FAIL" if _f else "PASS", "detail": (_f[0] if _f else f"sharp picture covers {_m['mean']:.0%} of the frame (needs {_g['sharp_share_min']:.0%}+; weakest scene {_m['min']:.0%})")})
+    except Exception as e:                                  # noqa: BLE001 - a measuring problem must show, not vanish
+        res.append({"check": "sharp image coverage", "status": "WARN", "detail": f"not measured: {e}"})
     res.append(asset_licences(project))
     res += meme_checks(project)
     # legibility lint

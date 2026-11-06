@@ -120,8 +120,8 @@ body { font-family: var(--sans); color: var(--fg); -webkit-font-smoothing: antia
 /* ---------------- caption styles: pop | minimal (karaoke = .cap above) */
 .capbox.pop { display: flex; align-items: center; justify-content: center; transform-origin: 50% 50%; }
 .capbox.pop > div { transform-origin: 50% 55%; }
-.cap-pop { display: inline-block; font-family: var(--display); font-weight: 900; letter-spacing: 0.02em; line-height: 1.02; text-transform: uppercase; color: #fff; -webkit-text-stroke: .078em #0b0b0b; paint-order: stroke fill; text-shadow: 0 .07em 0 #0b0b0b, 0 16px 34px rgba(0,0,0,.5); padding: .1em .32em .14em; border-radius: .2em; }
-.cap-pop.plate { background: rgba(0,0,0,.4); }
+.cap-pop { display: inline-block; font-family: var(--display); font-weight: 900; letter-spacing: 0.02em; line-height: 1.02; text-transform: var(--cap-case, uppercase); color: var(--cap-fill, #fff); -webkit-text-stroke: var(--cap-stroke-w, .078em) var(--cap-stroke, #0b0b0b); paint-order: stroke fill; text-shadow: var(--cap-shadow, 0 .07em 0 #0b0b0b, 0 16px 34px rgba(0,0,0,.5)); padding: .1em .32em .14em; border-radius: var(--cap-radius, .2em); }
+.cap-pop.plate { background: var(--cap-plate, rgba(0,0,0,.4)); }
 .fv-strip { background: #f2efe8; color: #111; padding: .05em .16em .07em; margin: .018em .012em; box-shadow: .03em .05em .1em rgba(0,0,0,.42); }
 .fv-strip.acc { background: var(--accent); color: #fff; }
 .fv-sticker { background: #f2efe8; color: #111; padding: .1em .26em .14em; box-shadow: .04em .07em .14em rgba(0,0,0,.42); }

@@ -341,7 +341,7 @@ def project_of(path: Path | str) -> Path | None:
 
 
 PROVIDER_NAMES = {"pexels": "Pexels", "pixabay": "Pixabay", "openverse": "Openverse", "wikimedia": "Wikimedia Commons",
-                  "nasa": "NASA Image and Video Library", "freesound": "Freesound", "kenney": "Kenney", "youtube": "YouTube",
+                  "nasa": "NASA Image and Video Library", "loc": "Library of Congress", "freesound": "Freesound", "kenney": "Kenney", "youtube": "YouTube",
                   "archive": "Internet Archive", "imgflip": "Imgflip", "simpleicons": "Simple Icons", "iconify": "Iconify",
                   "openmoji": "OpenMoji", "twemoji": "Twemoji", "screenshot": "website screenshot", "synth": "Fish Video Skill (synthesised)",
                   "own": "supplied by the user"}
