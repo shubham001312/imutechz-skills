@@ -255,6 +255,23 @@ def _music_track(project: Path, cfg: dict) -> Path | None:
     return files[0] if files else None
 
 
+def _frames(args: list, workers: int, platform: str):
+    """Render the frames; if a parallel run fails, render again with one browser.
+
+    Several headless browsers at once can fail Page.captureScreenshot ("Unable to capture screenshot") on heavy,
+    image-dense scenes even with memory to spare; the same frames render cleanly in a single browser. Frames are a
+    pure function of t, so the serial run produces the same video, only slower."""
+    try:
+        return node("frames.mjs", *args, capture=False)
+    except FishError as e:
+        if int(workers) <= 1:
+            raise
+        warn(f"[{platform}] the {workers}-browser frame render failed ({str(e)[:140]}); rendering again with one browser")
+        a = list(args)
+        a[a.index("--workers") + 1] = 1
+        return node("frames.mjs", *a, capture=False)
+
+
 def render_platform(project: Path, platform: str, *, scale: float = 1, workers: int = 4, t_from: float | None = None, t_to: float | None = None,
                     fast: bool = False, use_voice: bool = True, use_music: bool = True) -> dict:
     project = ensure_project(project)
@@ -268,7 +285,7 @@ def render_platform(project: Path, platform: str, *, scale: float = 1, workers: 
     if preview:
         args += ["--from", t_from or 0, "--to", t_to if t_to is not None else tl["duration"]]
     log(f"[{platform}] frames ({tl['W']}x{tl['H']} x{scale}, {tl['duration']:.1f}s)")
-    r = node("frames.mjs", *args, capture=False)
+    r = _frames(args, workers, platform)
     video = build / ("video-preview.mp4" if preview else "video.mp4")
     info = load_json(build / "info.json")
     if info.get("errors"):

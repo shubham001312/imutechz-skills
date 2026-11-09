@@ -228,6 +228,38 @@ def search(q: str, n: int = 20, recent_days: int | None = None, shorts: bool = F
         return []
 
 
+CC_FILTER = "EgIwAQ%3D%3D"     # YouTube's own "Creative Commons" search filter
+
+
+def search_cc(q: str, n: int = 20, verify: bool = True) -> list[dict]:
+    """Videos YouTube files under Creative Commons, for footage you may reuse with credit.
+
+    The filter only reflects the uploader's own claim, so with verify=True each result is re-read with `info`
+    and kept only when its licence field says Creative Commons. That still does not prove the uploader owns the
+    footage: prefer an outlet's own verified channel or a journalist's own interview, and say so in the review."""
+    from urllib.parse import quote_plus
+    yt = _ytdlp()
+    opts = _base_opts(skip_download=True, ignoreerrors=True, extract_flat=True)
+    opts["playlistend"] = n
+    with yt.YoutubeDL(opts) as y:
+        res = y.extract_info(f"https://www.youtube.com/results?search_query={quote_plus(q)}&sp={CC_FILTER}", download=False) or {}
+    out = [normalize(e) for e in (res.get("entries") or []) if e]
+    if not verify:
+        return out[:n]
+    kept = []
+    for v in out[:n]:
+        try:
+            meta = info(v["url"])
+        except Exception as e:                                  # noqa: BLE001
+            warn(f"could not read {v['url']}: {str(e)[:80]}")
+            continue
+        if is_creative_commons(meta):
+            v.update(license=meta.get("license"), channel=meta.get("channel") or v.get("channel"),
+                     channel_verified=bool(meta.get("channel_is_verified")))
+            kept.append(v)
+    return kept
+
+
 def suggest(q: str) -> list[str]:
     """YouTube autocomplete (unofficial, key-less)."""
     try:
@@ -248,7 +280,7 @@ def info(url: str) -> dict:
     r = normalize(e)
     r.update({"chapters": e.get("chapters") or [], "description": e.get("description") or "", "width": e.get("width"),
               "height": e.get("height"), "categories": e.get("categories") or [], "channel_url": e.get("channel_url"),
-              "channel_id": e.get("channel_id"),
+              "channel_id": e.get("channel_id"), "channel_is_verified": bool(e.get("channel_is_verified")),
               **{k: e.get(k) for k in ("track", "artist", "album", "creator") if e.get(k)}})
     return r
 
@@ -400,6 +432,24 @@ def download(url: str, dest=None, purpose: str = "reference", project=None, max_
     return path
 
 
+def _cut_locally(yt, url: str, s: float, e: float, out: Path) -> Path:
+    """Fallback for clip(): fetch the full video into a temporary folder, then cut [s, e] with the skill's ffmpeg."""
+    with tempfile.TemporaryDirectory() as td:
+        opts = _base_opts(outtmpl=str(Path(td) / "full.%(ext)s"), merge_output_format="mp4", format="bv*[height<=1080]+ba/b[height<=1080]/b")
+        with yt.YoutubeDL(opts) as y:
+            r = y.extract_info(url, download=True)
+            full = Path(y.prepare_filename(r))
+        if not full.exists():
+            full = next(Path(td).glob("full.*"), full)
+        if not full.exists():
+            raise FishError("could not download the video to cut a clip from it")
+        cmd = [ffmpeg_bin(), "-y", "-loglevel", "error", "-ss", f"{s:.3f}", "-t", f"{e - s:.3f}", "-i", str(full),
+               "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-c:a", "aac", "-b:a", "160k", str(out)]
+        import subprocess
+        subprocess.run(cmd, check=True)
+    return out
+
+
 def clip(url: str, start, end, dest, project=None) -> Path:
     """Download only [start, end] of a Creative-Commons video (refused otherwise)."""
     yt = _ytdlp()
@@ -413,9 +463,20 @@ def clip(url: str, start, end, dest, project=None) -> Path:
     tmpl = (stem or f"youtube-{meta['id']}-{int(s)}-{int(e)}") + ".%(ext)s"
     opts = _base_opts(outtmpl=str(outdir / tmpl), merge_output_format="mp4", format="bv*[height<=1080]+ba/b[height<=1080]/b",
                       download_ranges=yt.utils.download_range_func(None, [(s, e)]), force_keyframes_at_cuts=True)
-    with yt.YoutubeDL(opts) as y:
-        r = y.extract_info(url, download=True)
-        path = Path(y.prepare_filename(r))
+    try:
+        with yt.YoutubeDL(opts) as y:
+            r = y.extract_info(url, download=True)
+            path = Path(y.prepare_filename(r))
+        if not path.exists():
+            path = path.with_suffix(".mp4")
+        if not path.exists() or path.stat().st_size == 0:
+            raise FishError("the range download produced no file")
+    except Exception as ex:                                     # noqa: BLE001
+        # Range downloads run ffmpeg against the stream; some ffmpeg builds crash there (exit -11). Download the
+        # whole video once and cut it locally instead: slower, same result.
+        warn(f"range download failed ({str(ex)[:120]}); downloading the whole video and cutting it locally")
+        path = outdir / (tmpl[: -len(".%(ext)s")] + ".mp4")
+        _cut_locally(yt, url, s, e, path)
     if not path.exists():
         path = path.with_suffix(".mp4")
     _log_credit(Path(project) if project else fvnet.project_of(outdir), meta, path)
@@ -432,7 +493,7 @@ def _fmt(v: dict) -> str:
 def cli(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="youtube.py", description=__doc__.split("\n")[0])
     sp = ap.add_subparsers(dest="cmd", required=True)
-    a = sp.add_parser("search"); a.add_argument("q"); a.add_argument("-n", type=int, default=20); a.add_argument("--recent-days", type=int); a.add_argument("--json", action="store_true")
+    a = sp.add_parser("search"); a.add_argument("q"); a.add_argument("-n", type=int, default=20); a.add_argument("--recent-days", type=int); a.add_argument("--json", action="store_true"); a.add_argument("--cc", action="store_true", help="Creative Commons videos only (licence re-checked per result)")
     a = sp.add_parser("info"); a.add_argument("url")
     a = sp.add_parser("subs"); a.add_argument("url"); a.add_argument("--lang", default="en"); a.add_argument("--json", action="store_true")
     a = sp.add_parser("download"); a.add_argument("url"); a.add_argument("--purpose", choices=["reference", "asset"], default="reference"); a.add_argument("--dest"); a.add_argument("--project")
@@ -440,7 +501,7 @@ def cli(argv=None) -> int:
     a = sp.add_parser("suggest"); a.add_argument("q")
     ns = ap.parse_args(argv)
     if ns.cmd == "search":
-        res = search(ns.q, ns.n, ns.recent_days)
+        res = search_cc(ns.q, ns.n) if ns.cc else search(ns.q, ns.n, ns.recent_days)
         if ns.json:
             print(json.dumps(res, indent=1, ensure_ascii=False))
         else:

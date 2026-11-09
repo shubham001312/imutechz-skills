@@ -217,6 +217,16 @@ Params: `shot`, `url`, `from` (a frame number or a mark), `speed`, `eyebrow`, `t
       - {text: "“streming”, a typo, *still found*", m: type, d: 30, len: 2.6, page: {x: 1060, y: 120}, align: right}
 ```
 
+### `newsstory`
+
+The people / news / fact Short (`scenes/newsstory.js`, recipe `news-short`). A real photo or real footage fills every frame, with layered elements on top that each land on a spoken word.
+
+- `slides`: `{src}` a photo; `{clip}` footage (ping-pong loop; frames and fps from `build/clips/<clip>/meta.json`); `{mode: split, src, src2, mystery}` two stacked faces (`mystery` blurs both for a "which one?" ending); `{mode: collage, src, items: [{src, cap, x, y, w, rot, word|at}]}` polaroids. Common keys: `pos`, `origin`, `z0`, `z1`, `label` (who, where, when; footage that is not of the event says so), `word|at`.
+- `lines: [{text, word|at, col, size, h, hit}]`: headline lines that pop in (scale 1.32 to 1); `ly` sets the top of the stack.
+- `fx`: `meme` (a real meme picture as a sticker, optional `top`/`bottom` captions; credit checked by `memes lint`), `emoji` (fallback only), `card` (quote card, `*word*` highlights), `stamp`, `chip`, `flash`. Keep fx at `y <= 0.66`, above the captions.
+- `tag` (PART 1 chip), `accent`, `font` (a display face registered in `brief.brand.font_files`).
+- `storyboard` checks the paths, warns on unlabelled photos and on fx over the captions, and suggests a real meme where a scene only has emoji.
+
 ### `image`
 A still image with a slow push-in.
 - Params: `src` (a path relative to the project), `title`, `caption`, `credit`, `fit`, `push`, `pan`, `treat` (`none` turns the treatment off), `frame` (`cover` or `card`), `contrast`.

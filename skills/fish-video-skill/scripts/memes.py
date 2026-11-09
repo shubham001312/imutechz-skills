@@ -300,6 +300,33 @@ def caption(image, out, top: str = "", bottom: str = "", width: int = 1080) -> P
 
 
 # ------------------------------------------------------------------ lint
+def _sticker_findings(project: Path, scenes: list) -> list[dict]:
+    """Meme stickers inside newsstory scenes (fx kind meme) follow the same rules as meme scenes:
+    the file exists, it has a credit record, the brief allows memes, and no gag repeats."""
+    stickers = [(s.get("id"), f) for s in scenes if s.get("type") == "newsstory"
+                for f in ((s.get("params") or {}).get("fx") or []) if f.get("kind") == "meme"]
+    out: list[dict] = []
+    if not stickers:
+        return out
+    if fvnet.memes_policy(project) == "none":
+        out.append({"level": "WARN", "scene": stickers[0][0], "msg": "the brief says no memes (memes.policy: none), but newsstory scenes carry meme stickers"})
+    files = {r.get("file") for r in fvnet.load_credits(project)}
+    seen: dict[str, str] = {}
+    for sid, f in stickers:
+        key = str(f.get("src") or "").lstrip("./")
+        if not key:
+            out.append({"level": "FAIL", "scene": sid, "msg": "a meme sticker needs `src`"})
+            continue
+        if not (project / key).exists():
+            out.append({"level": "FAIL", "scene": sid, "msg": f"meme sticker '{key}' is missing"})
+        elif key not in files:
+            out.append({"level": "FAIL", "scene": sid, "msg": f"meme sticker '{key}' has no credit record: register it with `memes add` or fetch it with `assets get`"})
+        if key in seen and seen[key] != sid:
+            out.append({"level": "WARN", "scene": sid, "msg": f"the same meme sticker as scene '{seen[key]}': pick a different reaction for this beat"})
+        seen.setdefault(key, sid)
+    return out
+
+
 def lint(project) -> list[dict]:
     """Findings about the memes in a storyboard: [{level: FAIL|WARN, scene, msg}].
 
@@ -310,7 +337,7 @@ def lint(project) -> list[dict]:
     sb = load_yaml(project / "storyboard.yaml") if (project / "storyboard.yaml").exists() else {}
     scenes = sb.get("scenes") or []
     memes = [(i, s) for i, s in enumerate(scenes) if s.get("type") == "meme"]
-    out: list[dict] = []
+    out: list[dict] = _sticker_findings(project, scenes)
     if not memes:
         return out
     if fvnet.memes_policy(project) == "none":
