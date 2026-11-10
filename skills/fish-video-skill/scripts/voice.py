@@ -192,8 +192,8 @@ def pick_provider(cfg: dict, project: Path | None, want: str | None = None) -> t
     prov = want or v.get("provider", "elevenlabs")
     if prov == "none":
         return "none", ""
-    if prov == "chatterbox":                       # local studio engine: runs in its own environment (voicelab.py)
-        return "chatterbox", ""
+    if prov in ("chatterbox", "qwen3"):            # local studio engines: run in their own environment (voicelab.py)
+        return prov, ""
     if prov == "kokoro" and v.get("studio"):
         return "kokoro", ""
     if prov == "kokoro":
@@ -371,7 +371,7 @@ def synthesize(project: Path, provider: str | None = None, force: bool = False) 
     sb = load_yaml(project / "storyboard.yaml")
     prov, key = pick_provider(cfg, project, provider)
     out = project / "build" / "voice"
-    if prov in ("chatterbox", "kokoro") and (prov == "chatterbox" or cfg["voice"].get("studio")):
+    if prov in ("chatterbox", "kokoro", "qwen3") and (prov in ("chatterbox", "qwen3") or cfg["voice"].get("studio")):
         import voicelab                            # the local voice studio: references/local-voices.md
         return voicelab.synthesize(project, cfg, prov, True if force else False)
     if prov == "none":

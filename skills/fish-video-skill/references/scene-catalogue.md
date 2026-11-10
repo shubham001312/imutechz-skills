@@ -7,6 +7,7 @@ Pick by what the beat has to do. Everything else on this page is detail. A scene
 | type | required params | best used for | looks weak when |
 |---|---|---|---|
 | `collage` | `items: [{src, kind: cutout}]`, `title` | a real object with one idea; hooks; paper styles | no real asset; more than 3 labels |
+| `kstack` | `lines`, optional `element` (card, pill, orbit, hero) | kinetic-explainer Shorts: the narration as stacked type with one element below | no real screenshot or logo for the element; long sentences |
 | `split` | `front: {src, title}`, `back: {title}`, `at` | a reveal or turn ("but...") | the two sides say the same thing |
 | `cone` | `title` | a dark, quiet turn; one line | long titles; repeated use |
 | `coinflip` | `items: [{icon, label}]`, `title` | 2-4 options or ingredients | items need explaining |
@@ -399,6 +400,19 @@ A serpentine map of stops joined by a glowing line. The camera lands on a stop w
 ### `pile`
 Real websites land big in the centre one by one, then settle into a pile, and a line lands over them. Each card is full size when it arrives, so no part of the frame waits empty.
 - Params: `cards: [{src, url, x, y, w, rot, word|at}]`, `chips`, `chip_every`, `title`, `title_word`, `title_cue` (swell), `title_size`, `hold_last`.
+
+### `kstack`: kinetic-explainer type (recipe `kinetic-explainer`, theme `insider-light`)
+The narration is the visual. Spoken words enter one to three at a time on their own spoken word (rise, fade, a slight blur-in; the newest word is light grey and darkens to the ink in about 0.25 s), stacked in 2 to 4 centred lines with mixed size and weight, in the upper part of the frame, with one element below. No coloured highlight box: emphasis is size, weight and italic. Between sections the whole scene takes a heavy blur for about 3 frames (`blur_in`, `blur_out`; theme `motion.blur_cut`). Frame 0 of the hook is already full.
+- Params: `lines: [string]` (2 to 4), `number` (a list label such as "First", huge, accent-coloured; `number_color: ink`), `element: card | pill | orbit | hero | none` (inferred from whichever of `card`, `pill`, `orbit`, `hero` is given), `handle` (a faint handle in the lower third, only what the brief gives), `boom: true | {word|at}`, `blur_in`, `blur_out` (seconds, 0 = off, default 0.1; the first scene never blurs in).
+- Markup in `lines`: plain words are glue (small, light); `**key words**` huge and bold; `==word==` a key word in the accent (one at most); `*word*` serif italic emphasis. A line with no key word is a calm lead-in ("Third is"). Words land on the spoken word they match, in order; the rest are interpolated.
+- `card: {src, ar (1.5), chrome, drift (zoom|none), word|at}`: a rounded shadow card holding a real screenshot, screen-recording frame or picture, drifting and scaling slowly. No `src` draws a neutral window (only for a look test; the gate counts a card as an image only with a `src`).
+- `pill: {name, logo, word|at}`: a capsule with an icon tile and the UPPERCASE name, sitting just under the type ("Third is" then the pill).
+- `orbit: {center, items (5 to 8), rings (1 to 3), word|at}`: a centre tile with logos on faint rings turning slowly.
+- `hero: {src, kind: "cutout", shape (burst|circle), side (left|center|right), word|at}`: a greyscale cut-out (transparent PNG; `assets cutout`) over a big accent-coloured shape.
+- A logo (`pill.logo`, `orbit.center`, `orbit.items[]`) is `{slug}` (a simple-icons slug, found with `fishvideo thumb logos --find <name>` and resolved to its path by `fishvideo storyboard`; the marks belong to their owners), `{d, hex, tile}`, `{src}` or `{glyph}`.
+- The element enters on `word`/`at`, else with the first key word. Cues (rich density): a `tick` or `pop` per word group, a `whoosh` on each section change and element entrance, a low `boom` where `boom` is set (put it on the name and the payoff). Captions are off in the recipe because the type is the caption.
+- Gates: a `kstack` with no element counts as a text card; with a pill or orbit as a graphic; with a `src` anywhere (card, hero) as an image.
+- Looks weak when: more than 4 lines or more than 3 key words per line; an element with no real picture or logo; several scenes in a row with the same element.
 
 ### `footage`
 A stock clip played from pre-extracted frames: `build/clips/<clip>/f_00001.jpg`, and so on, at the project fps. Every frame goes through `L.setImg`.

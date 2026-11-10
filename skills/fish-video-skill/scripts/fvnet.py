@@ -191,7 +191,8 @@ def norm_license(raw: str | None, url: str | None = None) -> dict:
 
 
 _CC_PATHS = [(r"/licenses/by/(\d\.\d)/?", "CC BY", "licenses/by", True), (r"/licenses/by-sa/(\d\.\d)/?", "CC BY-SA", "licenses/by-sa", True),
-             (r"/publicdomain/zero/1\.0/?", "CC0", None, False), (r"/publicdomain/mark/1\.0/?", "Public Domain", None, False)]
+             (r"/publicdomain/zero/1\.0/?", "CC0", None, False), (r"/publicdomain/mark/1\.0/?", "Public Domain", None, False),
+             (r"/licenses/publicdomain/?", "Public Domain", None, False)]      # CC's older Public Domain Dedication link, still common on Internet Archive films
 
 
 def strict_license_url(url: str | None) -> dict:

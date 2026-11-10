@@ -98,6 +98,8 @@ mix:
 
 QA measures the stems: the voice-to-music gap while speaking should be between 6 and 14 dB, music in the gaps must be no quieter than −30 LUFS short-term, and SFX must be audible (at least 3 events above −35 dBFS for rich density). A WARN tells you which knob to turn.
 
+QA also checks every placed SFX cue one by one (`sfx audibility`): in the window from 0.1 s before to 0.5 s after the cue it compares the SFX stems (with the gain the mix applied, recorded in `build/<platform>/mix.json`) with the voice stem. A cue that is silent there, or more than 18 dB under the voice while someone is speaking, is a WARN naming its time: raise `mix.sfx_gain_db` or `mix.sfx_under_voice_db`, or check that the cue type has a sound.
+
 ## Listening check (do it yourself)
 
 Use `dissect.py` on your own `final.mp4` and compare its `timeline.md` balance numbers with a reference's. Then open `spectrogram.png`. You should see:

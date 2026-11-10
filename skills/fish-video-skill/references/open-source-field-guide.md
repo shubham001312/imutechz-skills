@@ -19,6 +19,8 @@ Tags: **[read]** = verified in the project's files or GitHub metadata on 2026-11
 | Script prompts | MoneyPrinterTurbo, ShortGPT | [read] prompts; licences not confirmed, so ideas only | Strict output constraints, banned openers, search terms in narration order | `references/topic-to-video.md` |
 | Research | gpt-researcher (30k★) | Apache-2.0 [read], ideas only | Sub-questions → sources → numbered citations → a reviewer pass that drops uncorroborated claims | SKILL step 2 |
 | SKILL.md design | remotion-best-practices, hyperframes skill | [read] | A router (when X, load Y), short numbered hard rules, an explicit work loop | `SKILL.md` |
+| Seamless Short loop | hassancs91/claude-faceless-shorts-creator | MIT [read], idea only; our code is our own | The last frame and last line lead back into the first, so the Short replays without a seam | `ending: loop`, `qa.py` (`loop ending`) |
+| Public-domain and CC footage and photos | Internet Archive advanced search (key-less) | the API's `licenseurl` field; only CC0, public domain, CC BY, CC BY-SA are kept, never NC or ND | Movies and images with a licence link on a creativecommons.org page; items without one are `unverified` | `assets.py` (`archive` provider), `assets source` |
 | Licensed cut-outs | rembg | MIT code [memory] | `isnet-general-use`; never the non-commercial default model | `assets cutout` |
 
 ## Evaluated and rejected, or postponed

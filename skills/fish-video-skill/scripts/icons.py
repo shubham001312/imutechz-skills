@@ -83,7 +83,9 @@ def find_brand(brand: str, data: list[dict]) -> dict | None:
     for e in data:
         if want in {_norm(x) for x in names(e)}:
             return e
-    return next((e for e in data if _norm(e.get("title", "")).startswith(want)), None) if len(want) >= 3 else None
+    # a title that merely starts with the query is a DIFFERENT brand unless the rest is a generic suffix ("openai" must not give "OpenAI Gym")
+    generic = {"js", "app", "apps", "logo", "inc", "com", "io", "cloud", "ai"}
+    return next((e for e in data if _norm(e.get("title", "")).startswith(want) and _norm(e["title"])[len(want):] in generic), None) if len(want) >= 3 else None
 
 
 def logo(project, brand: str, color: str | None = "brand") -> Path:

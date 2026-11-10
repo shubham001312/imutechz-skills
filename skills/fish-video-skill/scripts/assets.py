@@ -3,6 +3,8 @@
     python scripts/assets.py search <project> "brain" --kind photo|video|audio|sfx|music [--providers pexels,openverse] [-n 12]
     python scripts/assets.py get <project> <candidate-id> [<candidate-id> ...] [--accept-risk]
     python scripts/assets.py shot <project> <url> [<url> ...] [--full] [--width 1440] [--dpr 2]
+    python scripts/assets.py github <project> <owner/repo> [--beat id] [--shot]
+    python scripts/assets.py terminal <project> --cmd "<line>" [--line "<output>"] [--out name] [--beat id] [--title zsh] [--from-file script.txt]
     python scripts/assets.py logo <project> <brand> [--color brand|white|black|#hex]
     python scripts/assets.py icon <project> <query | set:name> [--color #hex]
     python scripts/assets.py emoji <project> <emoji | UNICODE NAME> [--set openmoji|twemoji]
@@ -43,7 +45,7 @@ from fvnet import add_credit, credits_path, credits_text, load_credits, norm_lic
 
 KINDS = ("photo", "video", "audio", "sfx", "music")
 DEFAULT_PROVIDERS = {
-    "photo": ["pexels", "pixabay", "openverse", "wikimedia", "nasa", "loc"],
+    "photo": ["pexels", "pixabay", "openverse", "wikimedia", "nasa", "loc", "archive"],
     "video": ["pexels", "pixabay", "nasa", "wikimedia", "archive"],
     "audio": ["openverse", "wikimedia", "archive"],
     "music": ["openverse"],
@@ -196,14 +198,16 @@ def _year(text: str) -> int | None:
 
 def _archive(q, kind, n, **opts):
     """Internet Archive. Items that state a licence are kept as usual; items with none are `unverified`."""
-    mt = "movies" if kind == "video" else "audio"
+    mt = {"video": "movies", "photo": "image"}.get(kind, "audio")
     query = f"({q}) AND mediatype:{mt}"
+    if opts.get("licensed_only"):          # ask the API only for records that state a Creative Commons / public-domain licence link
+        query += " AND licenseurl:(*creativecommons.org*)"
     if opts.get("before"):
         query += f" AND year:[1880 TO {int(opts['before']) - 1}]"
     if opts.get("lang"):
         query += f" AND language:({opts['lang']})"
     d = fvnet.fetch_json("https://archive.org/advancedsearch.php", {"q": query, "fl[]": ["identifier", "title", "year", "licenseurl", "creator", "downloads"],
-                                                                    "sort[]": "downloads desc", "rows": min(n * 2, 50), "output": "json"})
+                                                                    "sort[]": "downloads desc", "rows": min(n * (6 if opts.get("licensed_only") else 2), 100), "output": "json"})
     out = []
     for it in d.get("response", {}).get("docs", []):
         ident = str(it.get("identifier") or "")
@@ -214,7 +218,8 @@ def _archive(q, kind, n, **opts):
         sl = fvnet.strict_license_url(lurl)    # the link is the uploader's own text: only a real creativecommons.org licence page counts
         if sl["restricted"]:
             continue            # states an NC / ND licence
-        rec = _rec("archive", ident, kind, it.get("title") or ident, f"https://archive.org/details/{urllib.parse.quote(ident)}", None, None, None, None, None,
+        rec = _rec("archive", ident, kind, it.get("title") or ident, f"https://archive.org/details/{urllib.parse.quote(ident)}", None,
+                   f"https://archive.org/services/img/{urllib.parse.quote(ident)}" if kind in ("photo", "video") else None, None, None, None,
                    ", ".join(creator) if isinstance(creator, list) else creator or "", "", sl["label"] if sl["ok"] else "no verifiable licence" + (" (the uploader's link is not a Creative Commons page)" if lurl else ""),
                    sl["url"] if sl["ok"] else "", risk="safe" if sl["ok"] else "unverified", year=_year(str(it.get("year") or "")), identifier=ident)
         rec["_ok"] = True
@@ -228,6 +233,13 @@ def _archive_resolve(r: dict) -> str | None:
     """The smallest web-friendly file of an Internet Archive item."""
     ident = r.get("identifier") or r["id"].split("-", 1)[1]
     files = fvnet.fetch_json(f"https://archive.org/metadata/{urllib.parse.quote(ident)}").get("files") or []
+    if r["kind"] == "photo":
+        pics = [f for f in files if str(f.get("format", "")).lower() in ("jpeg", "png", "jpg") and str(f.get("name", "")).lower().endswith((".jpg", ".jpeg", ".png"))
+                and not str(f.get("name", "")).startswith("__ia_thumb") and 0 < int(f.get("size") or 0) <= 12 << 20]
+        if pics:
+            best = max(pics, key=lambda f: int(f.get("size") or 0))      # the biggest original that stays small enough to decode
+            return f"https://archive.org/download/{urllib.parse.quote(ident)}/{urllib.parse.quote(best['name'])}"
+        return None
     if r["kind"] == "video":
         order = [("h.264", ".mp4"), ("512kb mpeg4", ".mp4"), ("mpeg4", ".mp4"), ("ogg video", ".ogv")]
     else:
@@ -287,7 +299,7 @@ def _loc(q, kind, n):
 
 PROVIDERS = {"pexels": (_pexels, ("photo", "video")), "pixabay": (_pixabay, ("photo", "video")), "openverse": (_openverse, ("photo", "audio", "music", "sfx")),
              "wikimedia": (_wikimedia, ("photo", "video", "audio", "music", "sfx")), "nasa": (_nasa, ("photo", "video")), "loc": (_loc, ("photo",)), "freesound": (_freesound, ("sfx",)),
-             "archive": (_archive, ("video", "audio", "music", "sfx"))}
+             "archive": (_archive, ("photo", "video", "audio", "music", "sfx"))}
 TAKES_OPTS = {"wikimedia", "archive"}       # providers that understand before= (a year) and lang=
 
 
@@ -327,7 +339,8 @@ def search_providers(q: str, kind: str, providers=None, n: int = 12, unverified:
         if kind not in kinds:
             continue
         try:
-            got = fn(q, kind, n, **opts) if name in TAKES_OPTS else fn(q, kind, n)
+            o = {**opts, "licensed_only": not unverified} if name == "archive" else opts
+            got = fn(q, kind, n, **o) if name in TAKES_OPTS else fn(q, kind, n)
         except fvnet.NetError as e:
             warn(f"{name}: {e}")
             continue
@@ -599,6 +612,171 @@ def shot(project, urls, width: int = 1440, height: int = 900, dpr: float = 2, fu
     return out
 
 
+# ------------------------------------------------------------------ GitHub repo card and terminal card
+REPO_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,99})/[A-Za-z0-9._-]{1,100}$")
+
+
+def github(project, repo: str, beat: str | None = None, with_shot: bool = False, today: str | None = None) -> dict:
+    """Public GitHub metadata + the repo's social card, credited, with sourced facts added to brief.facts.
+
+    No key needed; GITHUB_TOKEN (env or .env) is sent as a header when present and never printed. The card goes to
+    assets/github/<owner>-<repo>-card.png; with `with_shot` the repo page is also screenshotted (read-only, see `shot`)."""
+    import datetime as dt
+    project = ensure_project(project)
+    if not REPO_RE.match(repo or "") or repo.split("/")[1] in (".", ".."):
+        raise FishError(f"repo must look like owner/name, got '{repo}'")
+    owner, name = repo.split("/")
+    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    token = secret("GITHUB_TOKEN", project)
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    d = fvnet.fetch_json(f"https://api.github.com/repos/{owner}/{name}", headers=headers)
+    full = d.get("full_name") or repo
+    html_url = d.get("html_url") or f"https://github.com/{full}"
+    meta = {"full_name": full, "description": d.get("description"), "stars": d.get("stargazers_count"), "forks": d.get("forks_count", d.get("forks")),
+            "license": (d.get("license") or {}).get("spdx_id"), "homepage": d.get("homepage") or None, "pushed_at": d.get("pushed_at"),
+            "topics": d.get("topics") or [], "html_url": html_url}
+    stem = fvnet.safe_name(f"{owner}-{name}-card")
+    dest = project / "assets" / "github" / f"{stem}.png"
+    fvnet.download_file(f"https://opengraph.githubassets.com/1/{owner}/{name}", dest, timeout=60, max_bytes=MAX_BYTES["photo"], types=("image/",))
+    rel = str(dest.relative_to(project)).replace("\\", "/")
+    add_credit(project, {"id": f"screenshot-{stem}", "provider": "screenshot", "kind": "photo", "title": f"{full} on GitHub (social card)", "url": html_url,
+                         "author": owner, "license": "screenshot of a public page (editorial use)", "license_url": "", "attribution_required": False,
+                         "risk": "platform", "file": rel})
+    meta["card"] = rel
+    # sourced facts, in the shape research.check_claims reads: brief.facts = [{text, value, source}]
+    day = today or dt.date.today().isoformat()
+    bf = project / "brief.yaml"
+    brief = load_yaml(bf) or {}
+    facts = [f for f in (brief.get("facts") or []) if not (f.get("source") == html_url and re.search(r"GitHub (stars|forks) \(as of", str(f.get("text", ""))))]
+    added = []
+    for label, val in (("stars", meta["stars"]), ("forks", meta["forks"])):
+        if isinstance(val, int):
+            f = {"text": f"{full} has {val:,} GitHub {label} (as of {day})", "value": f"{val:,}", "source": html_url}
+            facts.append(f)
+            added.append(f["text"])
+    brief["facts"] = facts
+    if html_url not in (brief.get("sources") or []):
+        brief["sources"] = (brief.get("sources") or []) + [html_url]
+    save_yaml(bf, brief)
+    meta["facts_added"] = added
+    if with_shot:
+        got = shot(project, [html_url])
+        meta["shot"] = str(Path(got[0]).resolve().relative_to(project.resolve())).replace("\\", "/") if got else None
+    if beat:
+        _beat_patch(project, beat, rel, "illustrative")
+        meta["beat"] = beat
+    print(json.dumps(meta, indent=2, ensure_ascii=False))
+    return meta
+
+
+TERM_FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", "/usr/share/fonts/dejavu/DejaVuSansMono.ttf", "/Library/Fonts/DejaVuSansMono.ttf",
+              "C:/Windows/Fonts/consola.ttf", "/System/Library/Fonts/Menlo.ttc", "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf")
+
+
+def _mono_font(px: int):
+    from PIL import ImageFont
+    bundled = sorted((SKILL / "node_modules" / "@fontsource").glob("*mono*/files/*latin-400-normal.woff")) if (SKILL / "node_modules" / "@fontsource").exists() else []
+    for f in [*TERM_FONTS]:
+        if Path(f).exists():
+            try:
+                return ImageFont.truetype(f, px)
+            except OSError:
+                continue
+    for f in bundled:                      # PIL reads .woff only when built with the right libs; skipped silently when not
+        try:
+            return ImageFont.truetype(str(f), px)
+        except OSError:
+            continue
+    try:
+        return ImageFont.load_default(px)
+    except TypeError:
+        return ImageFont.load_default()
+
+
+def terminal_lines(cmds=None, lines=None, from_file=None) -> list[tuple[str, str]]:
+    """[(kind, text)] with kind `cmd` or `out`. --from-file: `$ x` lines are commands, the rest output. Otherwise commands then outputs, as given."""
+    out: list[tuple[str, str]] = []
+    if from_file:
+        for ln in Path(from_file).read_text(encoding="utf-8").splitlines():
+            out.append(("cmd", ln[2:]) if ln.startswith("$ ") else ("out", ln))
+    out += [("cmd", c) for c in (cmds or [])]
+    out += [("out", l) for l in (lines or [])]
+    if not out:
+        raise FishError("terminal needs at least one --cmd (or --from-file)")
+    return out
+
+
+def render_terminal(lines: list[tuple[str, str]], title: str = "zsh", size: tuple[int, int] = (1600, 1000), scale: int = 1):
+    """A dark terminal window as a PIL image (rounded corners, three dots, mono text). Drawn at 2x and reduced, so edges are smooth; same input -> same pixels."""
+    from PIL import Image, ImageDraw
+    W, H = size
+    S = 2 * scale
+    img = Image.new("RGB", (W * S, H * S), "#07090d")
+    dr = ImageDraw.Draw(img)
+    m, bar = 48 * S, 64 * S
+    x0, y0, x1, y1 = m, m, W * S - m, H * S - m
+    dr.rounded_rectangle((x0, y0, x1, y1), radius=26 * S, fill="#0d1117", outline="#262c36", width=2 * S)
+    dr.rounded_rectangle((x0, y0, x1, y0 + bar + 26 * S), radius=26 * S, fill="#161b22")
+    dr.rectangle((x0 + 2 * S, y0 + bar, x1 - 2 * S, y0 + bar + 26 * S), fill="#0d1117")
+    dr.line((x0 + 2 * S, y0 + bar, x1 - 2 * S, y0 + bar), fill="#262c36", width=S)
+    for i, c in enumerate(("#ff5f57", "#febc2e", "#28c840")):
+        cx, cy, r = x0 + (36 + i * 38) * S, y0 + bar // 2, 11 * S
+        dr.ellipse((cx - r, cy - r, cx + r, cy + r), fill=c)
+    tf = _mono_font(24 * S)
+    tw = dr.textlength(title, font=tf)
+    dr.text(((x0 + x1 - tw) / 2, y0 + bar // 2), title, font=tf, fill="#8b949e", anchor="lm")
+    pad = 40 * S
+    avail_w, avail_h = (x1 - x0) - 2 * pad, (y1 - (y0 + bar)) - 2 * pad
+    px = 40
+    while True:                                               # the largest type (40 px down to 18) that fits every line, unwrapped, and the height
+        f = _mono_font(px * S)
+        cw = dr.textlength("M", font=f)
+        lh = int(px * S * 1.5)
+        if (max(len(("$ " if k == "cmd" else "") + t) for k, t in lines) * cw <= avail_w and len(lines) * lh <= avail_h) or px <= 18:
+            break
+        px -= 2
+    maxc = int(avail_w // cw)
+    x, y = x0 + pad, y0 + bar + pad
+    for kind, text in lines[: max(1, avail_h // lh)]:
+        if kind == "cmd":
+            dr.text((x, y), "$ ", font=f, fill="#3fb950")
+            body, bx, col = text, x + 2 * cw, "#e6edf3"
+            body = body if len(body) + 2 <= maxc else body[: maxc - 3] + "\u2026"
+        else:
+            body, bx, col = text if len(text) <= maxc else text[: maxc - 1] + "\u2026", x, "#9da7b3"
+        dr.text((bx, y), body, font=f, fill=col)
+        y += lh
+    out = img.resize((W * scale, H * scale), Image.LANCZOS)
+    return out
+
+
+def terminal(project, cmds=None, lines=None, out: str | None = None, beat: str | None = None, title: str = "zsh", from_file=None,
+             size: tuple[int, int] = (1600, 1000), scale: int = 1) -> Path:
+    """Render a terminal card into assets/own/<name>.png, credit it (made locally; `illustrative` when output text was supplied), optionally point a beat at it."""
+    project = ensure_project(project)
+    seq = terminal_lines(cmds, lines, from_file)
+    has_out = any(k == "out" for k, _ in seq)
+    name = fvnet.safe_name(out or "terminal-" + slugify(next(t for k, t in seq if k == "cmd") if any(k == "cmd" for k, _ in seq) else "card")[:40])
+    dest = project / "assets" / "own" / f"{name}.png"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    render_terminal(seq, title, size, scale).save(dest, optimize=False, pnginfo=None)
+    rel = str(dest.relative_to(project)).replace("\\", "/")
+    rec = {"id": f"terminal-{name}", "provider": "own", "kind": "photo", "title": f"terminal card: {seq[0][1][:60]}", "url": "made locally", "author": "Fish Video Skill (made locally)",
+           "license": "terminal card made by the skill" + ("; output written by the author" if has_out else "; commands only"), "license_url": "",
+           "attribution_required": False, "risk": "safe", "file": rel}
+    if has_out:
+        rec["label"] = "illustrative"
+    items = load_credits(project)
+    items = [i for i in items if not (i.get("provider") == "own" and i.get("id") == rec["id"])]
+    items.append(rec)
+    save_json(credits_path(project), items)                  # re-rendering a name replaces its record
+    if beat:
+        _beat_patch(project, beat, rel, "illustrative")
+    log(f"terminal card -> {rel}" + ("  [illustrative: output text written by the author]" if has_out else ""))
+    return dest
+
+
 # ------------------------------------------------------------------ Kenney SFX pack
 KENNEY_PACKS = ["interface-sounds", "impact-sounds", "ui-audio"]
 CUE_KEYWORDS = {
@@ -673,7 +851,7 @@ def sfx_pack(dest=None) -> dict:
 
 # ------------------------------------------------------------------ CLI
 # ------------------------------------------------------------------ source: one command from beat to credited file
-SOURCE_PROVIDERS = ("wikimedia", "nasa", "loc")           # keyless, licence confirmed by the API; stock keys are added when configured
+SOURCE_PROVIDERS = ("wikimedia", "nasa", "loc", "archive")           # keyless, licence confirmed by the API; stock keys are added when configured
 
 
 def _beat_patch(project: Path, beat: str, rel: str, label: str) -> None:
@@ -918,6 +1096,10 @@ def cli(argv=None) -> int:
     a = sp.add_parser("shot"); a.add_argument("project"); a.add_argument("urls", nargs="+"); a.add_argument("--width", type=int, default=1440)
     a.add_argument("--height", type=int, default=900); a.add_argument("--dpr", type=float, default=2); a.add_argument("--full", action="store_true")
     a.add_argument("--wait", type=float, default=2.5); a.add_argument("--keep-banners", action="store_true"); a.add_argument("--allow-private", action="store_true")
+    a = sp.add_parser("github"); a.add_argument("project"); a.add_argument("repo", help="owner/name"); a.add_argument("--beat"); a.add_argument("--shot", action="store_true", help="also screenshot the repo page")
+    a = sp.add_parser("terminal"); a.add_argument("project"); a.add_argument("--cmd", dest="cmds", action="append", default=[], help="a command line (shown after `$ `)")
+    a.add_argument("--line", action="append", default=[], help="an output line; marks the card `illustrative`"); a.add_argument("--out"); a.add_argument("--beat")
+    a.add_argument("--title", default="zsh"); a.add_argument("--from-file", help="lines starting with `$ ` are commands, the rest output"); a.add_argument("--scale", type=int, default=1, choices=[1, 2])
     a = sp.add_parser("logo"); a.add_argument("project"); a.add_argument("brand"); a.add_argument("--color", default="brand")
     a = sp.add_parser("icon"); a.add_argument("project"); a.add_argument("q"); a.add_argument("--color"); a.add_argument("-n", type=int, default=12)
     a = sp.add_parser("emoji"); a.add_argument("project"); a.add_argument("emoji"); a.add_argument("--set", dest="eset", default="openmoji", choices=["openmoji", "twemoji"])
@@ -943,6 +1125,10 @@ def cli(argv=None) -> int:
         return 0 if len(get(ns.project, ns.ids, ns.accept_risk)) == len(ns.ids) else 1
     elif ns.cmd == "shot":
         return 0 if shot(ns.project, ns.urls, ns.width, ns.height, ns.dpr, ns.full, ns.wait, ns.keep_banners, ns.allow_private) else 1
+    elif ns.cmd == "github":
+        github(ns.project, ns.repo, ns.beat, ns.shot)
+    elif ns.cmd == "terminal":
+        terminal(ns.project, ns.cmds, ns.line, ns.out, ns.beat, ns.title, ns.from_file, scale=ns.scale)
     elif ns.cmd in ("logo", "icon", "emoji"):
         import icons
         if ns.cmd == "logo":

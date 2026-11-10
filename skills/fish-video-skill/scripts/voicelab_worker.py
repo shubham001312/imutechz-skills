@@ -6,7 +6,7 @@ It runs INSIDE an isolated engine environment, never in the skill's own venv:
 
 Jobs ({"op": ...}):
   probe       which engine modules this environment has
-  tts         {"engine": "chatterbox"|"kokoro", "items": [{text, out, seed, ...}]}  ->  16-bit mono WAV per item
+  tts         {"engine": "chatterbox"|"kokoro"|"qwen3", "items": [{text, out, seed, ...}]}  ->  16-bit mono WAV per item
   transcribe  {"files": [...], "model": "small.en", "language": "en"}  ->  words with times per file
   watermark   {"files": [...]}  ->  Chatterbox's PerTh watermark score per file (1.0 = present)
   quality     {"files": [...]}  ->  torchaudio SQUIM_OBJECTIVE estimates (a signal-quality proxy)
@@ -24,7 +24,7 @@ import sys
 import time
 import wave
 
-MODULES = ("chatterbox", "kokoro", "faster_whisper", "perth", "torchaudio", "torch", "numpy")
+MODULES = ("chatterbox", "kokoro", "qwen_tts", "faster_whisper", "perth", "torchaudio", "torch", "numpy")
 
 
 def _has(mod: str) -> bool:
@@ -165,12 +165,39 @@ def tts_kokoro(job: dict) -> list[dict]:
     return out
 
 
+def tts_qwen3(job: dict) -> list[dict]:
+    """Qwen3-TTS CustomVoice (Apache-2.0): a preset speaker directed by a plain-English `instruct` per sentence."""
+    import torch
+    from qwen_tts import Qwen3TTSModel
+    _threads()
+    cuda = torch.cuda.is_available() and job.get("device") != "cpu"
+    model_id = job.get("model") or "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+    model = Qwen3TTSModel.from_pretrained(model_id, device_map="cuda:0" if cuda else "cpu",
+                                          dtype=torch.bfloat16 if cuda else torch.float32)
+    out = []
+    for it in job["items"]:
+        t0 = time.time()
+        seed_all(int(it.get("seed", 0)))
+        kw = {"text": it["text"], "language": it.get("language") or "English", "speaker": it.get("voice") or "Ryan"}
+        if it.get("instruct"):
+            kw["instruct"] = it["instruct"]
+        wavs, sr = model.generate_custom_voice(**kw)
+        x = wavs[0]
+        x = x.detach().float().cpu().numpy() if hasattr(x, "detach") else x
+        dur = write_wav16(it["out"], x, sr)
+        out.append({"out": it["out"], "sr": sr, "duration": round(dur, 3), "seconds": round(time.time() - t0, 2),
+                    "device": "cuda" if cuda else "cpu"})
+    return out
+
+
 def op_tts(job: dict) -> dict:
     engine = job.get("engine")
     if engine == "chatterbox":
         return {"items": tts_chatterbox(job), "watermark": True}
     if engine == "kokoro":
         return {"items": tts_kokoro(job)}
+    if engine == "qwen3":
+        return {"items": tts_qwen3(job)}
     raise RuntimeError(f"unknown engine: {engine}")
 
 

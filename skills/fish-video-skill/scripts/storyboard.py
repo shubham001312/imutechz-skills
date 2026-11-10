@@ -37,7 +37,9 @@ SCENE_TYPES = {"title", "kinetic", "bullets", "stat", "chart", "diagram", "white
                # long-format roadmap explainers
                "roadmap", "pile",
                # image-led and word-synced scenes (scenes/story.js)
-               "story", "statement", "cards", "flow", "site", "bold"}
+               "story", "statement", "cards", "flow", "site", "bold",
+               # kinetic-explainer: the narration as stacked type with one attached element (scenes/kinetic.js)
+               "kstack"}
 TRANSITIONS = {"fade", "cut", "wipe", "zoom", "flash", "defocus", "flip", "flood", "dip", "iris", "through", "world", "match"}
 CAPTION_STYLES = {"pop", "karaoke", "minimal", "none"}
 TEXTURES = {"paper", "grain", "clean", "grid", "blueprint", "halftone", "scanlines", "notebook", "dots", "sunburst", "stripes", "film"}
@@ -221,7 +223,7 @@ def min_visual(scene: dict, cfg: dict, beat: float, shots: dict) -> float:
 DEFAULT_ENERGY = {"title": 2, "kinetic": 1, "end": 0, "tour": 3, "whiteboard": 2, "diagram": 2, "chart": 2, "stat": 3,
                   "bullets": 2, "steps": 2, "terminal": 2, "quote": 1, "compare": 2, "image": 1, "thumbnail": 0,
                   "collage": 2, "split": 3, "cone": 1, "coinflip": 3, "orbit": 2, "neonline": 3, "glowshape": 2,
-                  "tunnel": 3, "ringbloom": 3, "footage": 2, "stepcard": 2, "meme": 3}
+                  "tunnel": 3, "ringbloom": 3, "footage": 2, "stepcard": 2, "meme": 3, "kstack": 2}
 
 
 # ------------------------------------------------------------------ validation
@@ -372,6 +374,8 @@ def resolve(project: Path, platform: str, cfg: dict, sb: dict, clips: dict | Non
         music.append([t_bar, energy])
         if s["type"] == "meme":
             s["params"] = _meme_params(project, s.get("params") or {})
+        if s["type"] == "kstack":
+            s["params"] = _kstack_params(s.get("params") or {})
         out_scenes.append({"id": s["id"], "type": s["type"], "t0": round(t0, 4), "t1": round(t1, 4), "bars": bars, "ts": ts,
                            "params": {**(s.get("params") or {}), **({"cues": s["cues"]} if s.get("cues") else {}), **_px_params(project, s)}, "chapter": s.get("chapter"), "transition": s.get("transition", "fade" if i else "cut"),
                            "hud": s.get("hud"), "energy": energy,
@@ -431,7 +435,7 @@ def resolve(project: Path, platform: str, cfg: dict, sb: dict, clips: dict | Non
         "lang": brief.get("language", "en-IN"), "title": brief.get("title", ""),
         "theme": theme, "brand": {**{k: brand.get(k, "") for k in ("name", "url", "logo", "tagline")}, "explicit_name": bool((brief.get("brand") or {}).get("name"))},
         "style": sb.get("style") or brief.get("style"), "anchor": sb.get("anchor"),
-        "safe": prof.get("safe"), "hud": sb.get("hud", {"chapter": True, "rail": True}), "grain": sb.get("grain", True),
+        "safe": prof.get("safe"), "hud": sb.get("hud", {"chapter": True, "rail": True}), "grain": sb.get("grain", True), "vignette": sb.get("vignette", True),
         "background": sb.get("background", "dots"), "legibility": {"min_px": prof.get("min_text_px", 22)},
         "captions": {"burn": burn, "max_chars": capcfg["max_chars"], "max_lines": capcfg["max_lines"], "cues": cues,
                      "style": cap_style, "delivery": (brief.get("voice") or {}).get("delivery")},
@@ -517,6 +521,26 @@ def _ground_copies(project: Path, srcs: list[str]) -> dict:
             out[r] = str(dst.relative_to(project)).replace("\\", "/")
         except Exception:                                         # noqa: BLE001 - fall back to the original
             pass
+    return out
+
+
+def _kstack_params(params: dict) -> dict:
+    """kstack logo items may name a simple-icons `slug`: resolve it to the icon path, brand colour and tile (the marks belong to their owners)."""
+    import copy
+    out = copy.deepcopy(params)
+
+    def fix(it):
+        if isinstance(it, dict) and it.get("slug") and not it.get("d"):
+            import thumbs
+            it.update({k: v for k, v in thumbs.resolve_logos([it["slug"]])[0].items() if k in ("slug", "title", "hex", "d", "tile") and k not in it or k == "d"})
+    for k in ("pill", "orbit"):
+        o = out.get(k)
+        if not isinstance(o, dict):
+            continue
+        fix(o.get("logo"))
+        fix(o.get("center"))
+        for it in o.get("items") or []:
+            fix(it)
     return out
 
 

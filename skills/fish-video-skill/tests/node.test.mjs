@@ -133,3 +133,44 @@ test("a long video has at least 3 distinct music sections and neighbours differ"
   assert.ok(new Set(sigs).size >= 3, sigs.join(","));
   for (let i = 1; i < sigs.length; i++) assert.notEqual(sigs[i], sigs[i - 1]);
 });
+
+/* ---- kstack (kinetic-explainer): the pure helpers of scenes/kinetic.js run in a bare context ---- */
+function kstack() {
+  const window = {};
+  const ctx = vm.createContext({ window, console, Math, URLSearchParams });
+  vm.runInContext(fs.readFileSync(new URL("../scripts/stage/lib.js", import.meta.url), "utf8"), ctx);
+  ctx.L = window.L;
+  vm.runInContext(fs.readFileSync(new URL("../scripts/stage/scenes/kinetic.js", import.meta.url), "utf8"), ctx);
+  return { K: window.KSTACK, S: window.SCENES };
+}
+
+test("kstack: markup parses into glue, key, accent and italic words", () => {
+  const { K, S } = kstack();
+  assert.ok(S.kstack && typeof S.kstack.build === "function" && typeof S.kstack.update === "function" && typeof S.kstack.cues === "function");
+  const l = K.parseLine("Third is **Open Source** ==free.== *really*");
+  assert.equal(JSON.stringify(l.map((t) => [t.text, t.kind])), JSON.stringify([["Third", "glue"], ["is", "glue"], ["Open", "key"], ["Source", "key"], ["free.", "acc"], ["really", "it"]]));
+  const lines = K.parse({ number: "First", lines: ["one **thing**", "and *more*"] });
+  assert.equal(lines[0][0].kind, "num");
+  assert.equal(lines.length, 3);
+});
+
+test("kstack: words land on their spoken word, the rest are interpolated, in order, deterministically", () => {
+  const { K } = kstack();
+  const lines = K.parse({ lines: ["It's called", "**Ollama** today"] });
+  const words = [{ w: "It's", lt: 0.1, lt1: 0.3 }, { w: "called", lt: 0.5, lt1: 0.8 }, { w: "Ollama.", lt: 1.2, lt1: 1.7 }];
+  const t = K.schedule(lines, words, 4);
+  assert.equal(JSON.stringify(t.slice(0, 3)), JSON.stringify([0.1, 0.5, 1.2]));
+  assert.ok(t[3] > 1.2 && t[3] < 4, "an unmatched word follows its neighbour");
+  for (let i = 1; i < t.length; i++) assert.ok(t[i] >= t[i - 1]);
+  assert.equal(JSON.stringify(t), JSON.stringify(K.schedule(lines, words, 4)));
+  const none = K.schedule(lines, [], 4);
+  assert.equal(none.length, 4); assert.ok(none[0] < none[3]);
+  const g = K.groups([0.1, 0.2, 0.9, 1.0, 2.0]);
+  assert.equal(JSON.stringify(g.map((x) => x.first)), JSON.stringify([0, 2, 4]));
+});
+
+test("kstack: realT undoes the entrance lead and is monotonic", () => {
+  const { K } = kstack();
+  const warp = (lt, lead) => lt + lead * (1 - Math.min(1, Math.max(0, lt / 1.2)));
+  for (const lead of [0, 0.45, 0.6]) for (const lt of [0, 0.2, 0.7, 1.19, 3]) assert.ok(Math.abs(K.realT(warp(lt, lead), { lead }) - lt) < 1e-4, `${lead}/${lt}`);
+});

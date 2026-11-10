@@ -14,7 +14,7 @@ A weaker model on another device can now get close to the best videos, because t
 - **Scenes**: `story` (photo-led), `statement`, `cards`, `flow`, `site`, `bold`, all theme-aware and word-synced.
 - **14 themes** with different type, texture, layout and motion: `fishvideo themes`, `fishvideo themes preview`.
 - **Gates**: `fishvideo gates` (measured image coverage), `fishvideo signoff` (frame-sheet checklist), and a required thumbnail: `fishvideo thumbnail` (headline plus logo or picture tiles on a glowing road; `package` refuses without it). Logos come from the CC0 `simple-icons` package and are trademarks of their owners: use only brands the video is about.
-- **Voice**: the `chatterbox-soft` preset is the recommended default everywhere (`fishvideo voice setup --engine chatterbox` once).
+- **Voice**: Qwen3-TTS (speaker Ryan, style `storyteller`) is the recommended default: an expressive narrator directed line by line, paced to about 3 words per second (`fishvideo voice setup --engine qwen3` once). `chatterbox-soft` stays as a calmer option.
 - `SKILL.md` is now a short numbered path; the long form is in `references/pipeline-details.md`. See `references/recipes-and-themes.md`.
 
 ## Follow-up fixes
@@ -112,7 +112,7 @@ The default narrator is the ElevenLabs voice `fydPJq00SigRIaPxWgiS` (English, In
 ELEVENLABS_API_KEY=...
 ```
 
-The default voice is the free local **Chatterbox soft** preset (`chatterbox-soft`): run `fishvideo voice setup --engine chatterbox` once. If Chatterbox is not installed the build stops and prints that command; it never switches voice silently. ElevenLabs and edge-tts remain available when you choose them. For a non-English video pick `edge-tts` or `elevenlabs` on purpose (Chatterbox is English only).
+The default voice is the free local **Qwen3-TTS** narrator (speaker Ryan, style `storyteller`): run `fishvideo voice setup --engine qwen3` once (`--gpu` on an NVIDIA machine). If it is not installed the build stops and prints that command; it never switches voice silently. Chatterbox, Kokoro, ElevenLabs and edge-tts remain available when you choose them.
 
 ## Make a video from one prompt
 

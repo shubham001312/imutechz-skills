@@ -26,9 +26,9 @@ def test_recipes_exist_and_name_recommended_themes():
         assert rec["gate"] and rec["assets"] and rec["beats"]
 
 
-def test_recipe_brief_has_the_soft_voice_pacing_and_mix():
+def test_recipe_brief_has_the_expressive_voice_pacing_and_mix():
     b = recipes.brief_over("roadmap-explainer")
-    assert b["voice"]["provider"] == "chatterbox" and b["voice"]["studio"]["style"] == "chatterbox-soft"
+    assert b["voice"]["provider"] == "qwen3" and b["voice"]["studio"]["style"] == "storyteller" and b["voice"]["studio"]["speaker"] == "Ryan"
     assert b["pacing"]["max_word_gap"] == 0.9 and b["pacing"]["line_gap"] == 0.2
     assert b["mix"]["music_under_voice_db"] == -12 and b["recipe"] == "roadmap-explainer"
 
@@ -349,9 +349,10 @@ SOFT_POST = ("highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-2,equalizer=f=3200:t=q:
              "highshelf=f=8000:g=1.5,deesser=i=0.35,acompressor=threshold=-20dB:ratio=1.8:attack=15:release=180:makeup=1.2,aecho=0.9:0.9:19|37:0.04|0.025")
 
 
-def test_chatterbox_soft_is_the_default_with_the_exact_recipe():
+def test_qwen3_is_the_default_and_chatterbox_soft_keeps_its_exact_recipe():
     c = vl.config()
-    assert c["defaults"]["style"] == "chatterbox-soft" and c["defaults"]["seed"] == 11 and c["defaults"]["temperature"] == 0.75
+    assert c["defaults"]["engine"] == "qwen3" and c["defaults"]["style"] == "storyteller" and c["defaults"]["seed"] == 11 and c["defaults"]["temperature"] == 0.75
+    assert c["engine_styles"]["chatterbox"] == "chatterbox-soft"
     sty = c["styles"]["chatterbox-soft"]
     assert sty["post"] == SOFT_POST and sty["loudnorm"] == "loudnorm=I=-18:TP=-2:LRA=9"
     assert sty["exaggeration_range"] == [0.32, 0.55] and sty["cfg_fixed"] == 0.25 and sty["pause_range"] == [0.35, 0.55]
@@ -382,7 +383,9 @@ def test_other_styles_are_unchanged_and_still_selectable():
 def test_voice_is_offered_first_and_recommended_in_the_interview():
     q = next(q for r in iv.bank()["rounds"] for q in r["questions"] if q["id"] == "voice")
     opts = iv._options(q, {"language": "en-US", "voice_energy": "punchy"})
-    assert opts[0]["value"] == "chatterbox-soft" and "Recommended" in opts[0]["label"]
+    assert opts[0]["value"] == "qwen-ryan" and "Recommended" in opts[0]["label"]
+    q3 = iv.apply({"interview": {"answers": {"voice": "qwen-ryan", "language": "en-US", "voice_energy": "punchy"}}})
+    assert q3["voice"]["provider"] == "qwen3" and q3["voice"]["studio"] == {"gender": "male", "style": "storyteller", "speaker": "Ryan", "pace": "fast"}
     brief = {"interview": {"answers": {"voice": "chatterbox-soft", "language": "en-US", "voice_energy": "calm"}}}
     out = iv.apply(brief)
     assert out["voice"]["provider"] == "chatterbox" and out["voice"]["studio"]["style"] == "chatterbox-soft"

@@ -10,7 +10,7 @@ Everything a weaker model needs to reach the quality of the benchmark videos: st
 | `story-short` | the two Onoda Shorts (26 s) | history, true stories, people; series with part 2 | archive-doc, noir-crime, news-broadcast, luxury-finance, nature-calm | images 85%+, 10+ new images/min, no gap over 6 s, text cards under 10% |
 | `bold-short` | the bold typographic Short | facts, rules, deadlines when no licensed photo exists | bold-shorts, comic-pop, news-broadcast, kids-playful, retro-arcade | drawn or photo visuals 85%+, text cards under 15% (it has no photographs by design: add some whenever the topic has them) |
 
-A recipe fills the brief (theme, pacing, `max_word_gap 0.9`, `line_gap 0.05`, `music_under_voice_db -12`, the Chatterbox soft voice), a storyboard skeleton (scene types, order, timing; every word a TODO), and `assets/PLAN.md` (what to collect, with the command). The skeleton never contains copy, so nothing can leak into a video.
+A recipe fills the brief (theme, pacing, `max_word_gap 0.9`, `line_gap 0.05`, `music_under_voice_db -12`, the Qwen3 Ryan storyteller voice), a storyboard skeleton (scene types, order, timing; every word a TODO), and `assets/PLAN.md` (what to collect, with the command). The skeleton never contains copy, so nothing can leak into a video.
 
 ## Imagery gate (`fishvideo gates <dir>`)
 
@@ -44,7 +44,7 @@ Writes `build/<p>/review/SIGNOFF.md`: a checklist and one row per scene. For eac
 
 ## Themes (`fishvideo themes`, `themes preview`, `brief.theme`)
 
-14 themes in `config/themes.yaml`: archive-doc (documentary), editorial-serif, tech-dark, bold-shorts, retro-arcade, retro-70s, minimal-light, kids-playful, news-broadcast, noir-crime, notebook-class, luxury-finance, comic-pop, nature-calm. Each differs from every other in at least two of: display font, texture (12 exist: paper, grain, clean, grid, blueprint, halftone, scanlines, notebook, dots, sunburst, stripes, film), layout (kicker style, card style, radius, caps, shadow) and motion (speed, travel, camera push). Tests check contrast (ink/bg 7:1, muted/bg 4.5:1, accent/bg 3:1). Fonts are OFL or Apache-2.0 and fetched by `npm install`; nothing is committed. `theme_overrides:` changes single values. A brief without `theme:` renders exactly as before. `themes preview` draws one gallery image per theme with generated placeholders (no photos are bundled).
+15 themes in `config/themes.yaml`: archive-doc (documentary), insider-light (off-white kinetic-typography explainer, the kinetic-explainer default), editorial-serif, tech-dark, bold-shorts, retro-arcade, retro-70s, minimal-light, kids-playful, news-broadcast, noir-crime, notebook-class, luxury-finance, comic-pop, nature-calm. Each differs from every other in at least two of: display font, texture (12 exist: paper, grain, clean, grid, blueprint, halftone, scanlines, notebook, dots, sunburst, stripes, film), layout (kicker style, card style, radius, caps, shadow) and motion (speed, travel, camera push). Tests check contrast (ink/bg 7:1, muted/bg 4.5:1, accent/bg 3:1). Fonts are OFL or Apache-2.0 and fetched by `npm install`; nothing is committed. `theme_overrides:` changes single values. A brief without `theme:` renders exactly as before. `themes preview` draws one gallery image per theme with generated placeholders (no photos are bundled).
 
 ## The thumbnail (`fishvideo thumbnail <dir>`, required)
 
@@ -62,4 +62,6 @@ thumbnail: {title: "GenAI Engineer Roadmap", accent: "GenAI", tag: "7 STEPS, IN 
 
 ## Voice
 
-`chatterbox-soft` is the recommended default everywhere a voice is chosen (interview, brief template, recipes, voice studio, README). It needs Chatterbox once: `fishvideo voice setup --engine chatterbox`. If it is missing, `voice`, `audition` and `render` stop and print that command; there is no silent fallback. Another voice is always a choice the user can make, and you say what changes (less natural pacing, no per-sentence emotion). English only.
+The Qwen3 Ryan `storyteller` voice is the recommended default everywhere a voice is chosen (interview, recipes, voice studio). It needs Qwen3-TTS once: `fishvideo voice setup --engine qwen3`. If it is missing, `voice`, `audition` and `render` stop and print that command; there is no silent fallback. `chatterbox-soft` stays available as a calmer choice. English only.
+
+Recipes: `roadmap-explainer` (long), `story-short`, `bold-short`, and `kinetic-explainer` (an off-white kinetic-typography explainer for tools and tech: words stack on their spoken word, with pills, screenshot cards, orbit diagrams and cut-out heroes; `kstack` scenes in the [scene catalogue](scene-catalogue.md)). Every Short defaults to under 30 s; the interview asks the length.

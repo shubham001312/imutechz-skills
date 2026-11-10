@@ -68,6 +68,8 @@ def classify(scene: dict) -> tuple[str, list[str]]:
         return "image", srcs
     if t in TEXT_TYPES:
         return "text", []
+    if t == "kstack" and not any(params.get(k) for k in ("card", "pill", "orbit", "hero")) and params.get("element") in (None, "none"):
+        return "text", []                                   # kinetic type with no element attached is a text card
     return "graphic", []
 
 

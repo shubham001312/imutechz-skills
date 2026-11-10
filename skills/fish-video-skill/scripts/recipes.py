@@ -24,6 +24,7 @@ TODO_PARAMS = {
     "footage": {"clip": "TODO", "title": "TODO"},
     "end": {"name": "TODO", "tagline": "TODO"},
     "bold": {"shape": "burst", "g": "TODO", "lines": [{"text": "TODO", "word": "TODO"}]},
+    "kstack": {"lines": ["TODO", "**TODO**"], "element": "none"},
 }
 
 
@@ -45,27 +46,38 @@ def get(name: str) -> dict:
     return r
 
 
-def expand(recipe: dict) -> list[dict]:
-    """The beat list with `repeat: step` blocks unrolled."""
+def points_for_length(recipe: dict, length: float | None = None) -> int:
+    """How many repeated points a recipe has at this length (s): recipes with a `points:` rule scale with it, the rest keep `steps`."""
+    rule = recipe.get("points")
+    if not rule or not length:
+        return int(recipe.get("steps", 3))
+    n = round((float(length) - float(rule.get("base_s", 12))) / float(rule.get("per_point_s", 12)))
+    return max(int(rule.get("min", 2)), min(int(rule.get("max", 5)), n))
+
+
+def expand(recipe: dict, length: float | None = None, optional: bool = False) -> list[dict]:
+    """The beat list with `repeat: step` blocks unrolled. `optional` beats (an interview decision, e.g. a CTA) are left out unless asked for."""
     out = []
     for b in recipe["beats"]:
         if "repeat" in b:
-            for n in range(1, int(recipe.get("steps", 3)) + 1):
+            for n in range(1, points_for_length(recipe, length) + 1):
                 for s in b["scenes"]:
                     out.append({**s, "id": s["id"].format(n=n)})
+        elif b.get("optional") and not optional:
+            continue
         else:
             out.append(b)
     return out
 
 
-def storyboard(name: str) -> dict:
+def storyboard(name: str, length: float | None = None) -> dict:
     r = get(name)
     scenes = []
-    for b in expand(r):
+    for b in expand(r, length):
         sc = {"id": b["id"], "type": b["type"], "bars_min": b["bars"], "transition": "cut" if b["type"] != "footage" else "flash",
               "say": "TODO: narration for this beat", "params": _clone(TODO_PARAMS.get(b["type"], {}))}
         scenes.append(sc)
-    return {"title": "TODO", "bpm": 120, "style": r.get("style"), "texture": None, "scenes": scenes, **({"end_card": False} if r.get("end_card") is False else {}),
+    return {"title": "TODO", "bpm": 120, "style": r.get("style"), "texture": None, "scenes": scenes, **({"end_card": False} if r.get("end_card") is False else {}), **({"background": r["background"]} if r.get("background") else {}), **({"vignette": False} if r.get("vignette") is False else {}),
             "thumbnail": {"title": "TODO", "logos": []}}
 
 
@@ -78,13 +90,13 @@ def brief_over(name: str) -> dict:
     r, sh = get(name), config()["shared"]
     pacing = {**sh["pacing"], **(r.get("pacing") or {})}
     return {"recipe": name, "audience": r.get("audience"), "language": r.get("language"), "theme": r["theme"], "structure": r["structure"], "goal": r["goal"], "platforms": r["platforms"], "length": r["length"],
-            "style": r.get("style"), "pacing": pacing, "mix": {**sh["mix"], **(r.get("mix") or {})}, "voice": sh["voice"], "captions": sh["captions"],
-            "music": {"mood": r.get("music")}}
+            "style": r.get("style"), "pacing": pacing, "mix": {**sh["mix"], **(r.get("mix") or {})}, "voice": sh["voice"], "captions": {**sh["captions"], **(r.get("captions") or {})},
+            "music": {"mood": r.get("music")}, **({"sfx": r["sfx"]} if r.get("sfx") else {})}
 
 
-def asset_plan(name: str) -> str:
+def asset_plan(name: str, length: float | None = None) -> str:
     r = get(name)
-    n = int(r.get("steps", 3))
+    n = points_for_length(r, length)
     lines = [f"# Asset plan: {r['label']}", "", f"Recipe `{name}` (from {r['from']}). Recommended themes: {', '.join(r['themes'])}.", "",
              "Collect these BEFORE writing the storyboard. The imagery gate (`fishvideo gates <dir>`) fails the render when too little of the video shows real images.", "",
              "| need | how | count |", "|---|---|---|"]
@@ -96,11 +108,21 @@ def asset_plan(name: str) -> str:
     lines += ["", "## Beats (the storyboard holds none of this text, so none of it can leak into the video)", "",
               f"Each beat has a minimum of `bars` x {sec} s at 120 BPM (`bars_min`); the narration then sets the real length, so a longer line stretches its beat instead of overflowing it. The word budget below is the length the beat was designed for: `fishvideo budget <dir>` shows it before any voice is generated.", "",
               "| beat | scene | bars | seconds | max words | what it is for |", "|---|---|---|---|---|---|"]
-    for b in expand(r):
+    for b in expand(r, length, optional=True):
         secs = b["bars"] * sec
-        lines.append(f"| {b['id']} | {b['type']} | {b['bars']} | {secs} | {max(3, int((secs - 0.6) * 2.3))} | {b['note']} |")
+        lines.append(f"| {b['id']}{' (optional)' if b.get('optional') else ''} | {b['type']} | {b['bars']} | {secs} | {max(3, int((secs - 0.6) * 2.3))} | {b['note']} |")
     lines += ["", f"Gate for this recipe: {', '.join(f'{k} {v}' for k, v in g.items())}.", ""]
     return "\n".join(lines)
+
+
+def _brief_length(project: Path) -> float | None:
+    """The length the brief asks for (s), so a repeatable beat block scales with it; None keeps the recipe default."""
+    try:
+        from fvcore import project_config
+        v = project_config(project)["brief"].get("length")
+        return float(v) if v else None
+    except Exception:                                   # noqa: BLE001 - a missing brief just means the recipe default
+        return None
 
 
 def create(project: Path, name: str) -> None:
@@ -110,10 +132,11 @@ def create(project: Path, name: str) -> None:
     sbf = project / "storyboard.yaml"
     if sbf.exists():
         raise FishError(f"{sbf} exists: refusing to overwrite it with a recipe skeleton")
-    save_yaml(sbf, storyboard(name))
+    length = _brief_length(project)
+    save_yaml(sbf, storyboard(name, length))
     (project / "assets").mkdir(exist_ok=True)
-    (project / "assets" / "PLAN.md").write_text(asset_plan(name), encoding="utf-8")
-    log(f"recipe {name}: storyboard skeleton ({len(storyboard(name)['scenes'])} scenes, every word a TODO) and assets/PLAN.md written")
+    (project / "assets" / "PLAN.md").write_text(asset_plan(name, length), encoding="utf-8")
+    log(f"recipe {name}: storyboard skeleton ({len(storyboard(name, length)['scenes'])} scenes, every word a TODO) and assets/PLAN.md written")
 
 
 def cli(argv=None) -> int:

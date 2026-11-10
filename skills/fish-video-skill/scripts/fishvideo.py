@@ -7,7 +7,7 @@
     fishvideo storyboard <dir> [--table youtube]
     fishvideo factcheck <dir>
     fishvideo capture <dir> [shot ...]
-    fishvideo voice <dir> [--provider elevenlabs|edge-tts|chatterbox|kokoro|none] [--force]
+    fishvideo voice <dir> [--provider elevenlabs|edge-tts|qwen3|chatterbox|kokoro|none] [--force]
     fishvideo voice setup|engines|say|audition|check|redo|measure ...   free local voices (references/local-voices.md)
     fishvideo music <dir> [--platform youtube]
     fishvideo music source <dir> [--q "style words"]    licensed CC0 / CC BY track for the trend, else the synthesised score
@@ -43,7 +43,7 @@
   Themes (config/themes.yaml):
     fishvideo themes [show <id> | preview [--out DIR] [--only a,b] | apply <dir> <id>]    list the looks, render one gallery image per theme
   Finish:
-    fishvideo clean <dir> [--yes] [--keep-voice]   remove intermediates (only after the user approves + agrees)
+    fishvideo clean <dir> [--final-only] [--yes] [--keep-voice]   after the user approves: --final-only keeps only out/ (video + metadata + post texts)
 
 Run with the skill's venv Python:  .venv/Scripts/python scripts/fishvideo.py ...  (Windows)
                                    .venv/bin/python scripts/fishvideo.py ...      (macOS/Linux)
@@ -273,12 +273,12 @@ def cmd_doctor(keys: bool = False) -> int:
             ok = False
             log(f"  MISS  {name:<14} {e}")
 
-    def _chatterbox():
+    def _qwen3():
         import voicelab
-        if not voicelab.engine_ready("chatterbox"):
-            raise RuntimeError("not installed: the recommended soft voice needs `fishvideo voice setup --engine chatterbox` (one command); until then pick another voice on purpose")
-        return "installed (recommended soft voice: style chatterbox-soft)"
-    chk("chatterbox", _chatterbox)
+        if not voicelab.engine_ready("qwen3"):
+            raise RuntimeError("not installed: the recommended expressive voice needs `fishvideo voice setup --engine qwen3` (one command; add --gpu on an NVIDIA machine); until then pick another voice on purpose")
+        return "installed (recommended voice: Qwen3 Ryan, style storyteller)"
+    chk("qwen3", _qwen3)
 
     def _fonts():
         import themes
@@ -347,14 +347,14 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--length", type=float, default=None)
         p.add_argument("--lang", default=None)
         p.add_argument("--title", default=None)
-        p.add_argument("--recipe", default=None, help="roadmap-explainer | story-short | bold-short (fishvideo recipes)")
+        p.add_argument("--recipe", default=None, help="roadmap-explainer | story-short | bold-short | kinetic-explainer (fishvideo recipes)")
         p.add_argument("--force", action="store_true")
         if name == "all":
             p.add_argument("--platform", default=None, help="render only these (comma list)")
             p.add_argument("--scale", type=float, default=1.0)
             p.add_argument("--workers", type=int, default=4)
             p.add_argument("--fast", action="store_true")
-            p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "chatterbox", "kokoro", "none"])
+            p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"])
             p.add_argument("--recapture", action="store_true")
             p.add_argument("--skip-reference", action="store_true")
             p.add_argument("--no-lint", action="store_true")
@@ -367,7 +367,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = proj("storyboard"); p.add_argument("--table", default=None)
     proj("factcheck")
     p = proj("capture"); p.add_argument("shots", nargs="*")
-    p = proj("voice"); p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "chatterbox", "kokoro", "none"]); p.add_argument("--force", action="store_true")
+    p = proj("voice"); p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"]); p.add_argument("--force", action="store_true")
     p = proj("music"); p.add_argument("--platform", default=None)
     proj("captions")
     p = proj("stills"); p.add_argument("--platform", default=None); p.add_argument("--at", default=None); p.add_argument("--scenes", action="store_true"); p.add_argument("--every", default=None)
