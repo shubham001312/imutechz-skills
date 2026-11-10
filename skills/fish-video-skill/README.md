@@ -6,6 +6,15 @@ It is an agent skill: `SKILL.md` is what an AI agent reads. It also works as a p
 
 Videos are rendered from code. Every frame is a pure function of time, drawn in headless Chromium and encoded with ffmpeg, so renders are deterministic and parallel. Real assets can be mixed in: licensed photos, b-roll, music and SFX, plus your own screen recordings, each one logged with its licence. No number appears on screen without a source.
 
+## What's new in 2.6: people, news and fact Shorts
+
+- **`news-short` recipe and `newsstory` scene** for two-part Shorts about real people and recent news (actresses, actors, celebrity stories, fact series), under 25 s each. Every frame is a real photo or real footage, with layered headline lines, quote cards, stamps, chips and real meme stickers that land on spoken words. Splits, polaroid collages and a "which one?" mystery blur for Part 1 endings.
+- **Real memes, not emoji:** meme stickers inside a scene (`fx: {kind: meme}`), checked by `memes lint` like meme scenes. Emoji remain only as a fallback.
+- **`yt search --cc`:** YouTube's Creative Commons filter with each result's licence re-checked; `info` now reports whether the channel is verified.
+- **Render fix:** when a parallel frame render fails (several headless browsers can fail `Page.captureScreenshot` on image-dense scenes), `render` retries with one browser instead of failing.
+- **Clip fix:** when `yt clip`'s range download crashes inside ffmpeg, it downloads the whole video once and cuts it locally.
+- **Guide:** [people, news and fact Shorts](references/news-and-people-shorts.md): picking a story, honesty rules for rumours and quotes, image and footage sourcing, framing, meme-per-beat rules, the layer and motion system, and render lessons.
+
 ## What's new in 2.5: portable quality
 
 A weaker model on another device can now get close to the best videos, because the quality moved from project files into tools:

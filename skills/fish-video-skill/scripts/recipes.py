@@ -25,6 +25,9 @@ TODO_PARAMS = {
     "end": {"name": "TODO", "tagline": "TODO"},
     "bold": {"shape": "burst", "g": "TODO", "lines": [{"text": "TODO", "word": "TODO"}]},
     "kstack": {"lines": ["TODO", "**TODO**"], "element": "none"},
+    "newsstory": {"tag": "TODO", "slides": [{"src": "assets/photo/TODO.jpg", "label": "TODO: who, where, when"}],
+                  "lines": [{"text": "TODO", "word": "TODO"}],
+                  "fx": [{"kind": "meme", "src": "assets/meme/TODO.png", "word": "TODO", "x": 0.82, "y": 0.4, "w": 0.32}]},
 }
 
 

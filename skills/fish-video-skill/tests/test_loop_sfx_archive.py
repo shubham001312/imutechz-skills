@@ -211,3 +211,10 @@ def test_trends_keeps_acronyms_and_matches_whole_words():
     assert "ai" in ws and "emotions" in ws
     assert trends._mentions("is ai alive", "ai") and not trends._mentions("she said so", "ai")
     assert trends._mentions("emotional robot", "emotion")
+
+
+def test_thumbnail_accent_survives_a_long_key_run():
+    import thumbs
+    assert thumbs.pick_accent("What if AI felt?", "felt") == "felt?"
+    assert thumbs.pick_accent("What if AI felt?", "AI felt") == "AI felt?"
+    assert thumbs.pick_accent("Five AI Tools Nobody Uses", "Nobody") == "Nobody"            # long run: only the accent

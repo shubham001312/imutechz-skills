@@ -5,6 +5,7 @@
 #   roadmap-explainer  <- the long GenAI roadmap video (555 s: 44% images, 13 new images/min, 36% text cards)
 #   story-short        <- the two Onoda Shorts (26 s: photo-led frames, 14 new images/min)
 #   bold-short         <- the bold typographic Short (all drawn shapes, huge words, no photographs)
+#   news-short         <- the four actress Shorts (22-24 s each: real photos or footage in every frame, 20+ new images/min, meme stickers)
 # sharp_share_min: measured on the rendered frames (QA), the share of the frame covered by sharp picture rather than a blurred backdrop.
 # The gate keys: image_share_min, image_beats_min (share of beats with a real image), image_changes_pm_min, longest_no_image_max (s), text_share_max,
 # graphic_share_min, screenshot_of_images_max (a site screenshot may not be the main visual). Every image must also exist, carry source, licence and author in
@@ -80,6 +81,35 @@ recipes:
       - {need: "one real photo per scene (6), PD or CC licensed, portrait-friendly", how: "assets source <dir> '<person or place>' --beat <id> [--depicts '<who>'] (Commons, NASA, Library of Congress)", count: 6}
       - {need: "a second photo for the scene that swaps (srcs)", how: "assets source <dir> '<query>' --beat <id>", count: 1}
       - {need: "credit every photo: assets/credits.json is filled by `assets get`", how: "automatic", count: 0}
+  news-short:
+    label: "People / news / fact Short (two-part)"
+    from: "video #007: the Zendaya and Sydney Sweeney and the Deepika Padukone two-part Shorts"
+    best_for: "actress and actor news, celebrity stories, 'what really happened' fact Shorts, any two-part curiosity series about real, recent events (under 25 s each)"
+    structure: story
+    end_card: false
+    audience: "fans of the people named; write for the fandom, not a general audience"
+    language: en-US
+    goal: explain
+    platforms: [shorts]
+    length: 22
+    themes: [news-broadcast, noir-crime, luxury-finance]
+    theme: news-broadcast
+    style: glow-metaphor
+    music: dark-drone
+    pacing: {change_every: 0.9, hard_cuts_per_15s: 3, transitions: [cut, flash], snap: speech, lead_in: 0.1, tail: 0.15, max_word_gap: 0.6, line_gap: 0.1}
+    gate: {sharp_share_min: 0.45, image_share_min: 0.9, image_changes_pm_min: 16, longest_no_image_max: 3, text_share_max: 0.05, image_beats_min: 0.9, screenshot_of_images_max: 0.0, photo_share_min: 0.85}
+    beats:
+      - {id: n1, type: newsstory, bars: 2, note: "hook in frame 0: the two faces (split) or the one face, and a 2-3 line conflict that is TRUE and sourced ('Same show. Same premiere. No photo together.'). A flash on the last line."}
+      - {id: n2, type: newsstory, bars: 2, note: "the setup: when and where as a chip ('APRIL 2026 · LOS ANGELES'); real footage or a photo with a label that says what it is"}
+      - {id: n3, type: newsstory, bars: 2, note: "the evidence: a quote card from the source, verbatim, with the outlet and date in the card head"}
+      - {id: n4, type: newsstory, bars: 2, note: "the reaction beat: one REAL reaction meme sticker that matches the moment (memes templates / memes films); a stamp ('FEUD?')"}
+      - {id: n5, type: newsstory, bars: 2, note: "the hedge, said out loud: what is NOT confirmed ('Neither actress had confirmed any of it'); an UNCONFIRMED stamp"}
+      - {id: n6, type: newsstory, bars: 2, note: "open loop: Part 1 ends on a question the next part answers (a mystery split blurs both faces); Part 2 ends on a viewer question ('Real feud, or internet spin?'). A WATCH PART 2 chip only when brief.series is true."}
+    assets:
+      - {need: "6-10 recent, openly licensed photos of the people (CC BY, CC BY-SA, CC0), face-led, 1300 px+ tall", how: "assets search <dir> '<name>' --providers wikimedia; read the date and licence on each file page; prefer the last 2 years", count: 8}
+      - {need: "1-3 short CC BY clips of the people (interviews, red carpets), muted, labelled with source and year", how: "yt search with the Creative Commons filter, then yt info: licence must be CC BY AND the uploader must own the footage (the outlet's own verified channel, or the journalist's own interview); assets clip --width 1280", count: 2}
+      - {need: "2-4 real reaction memes, one per reaction beat, never the same gag twice", how: "memes templates <dir> '<reaction>' (unverified tier: needs memes.policy viral) or memes films <dir> '<reaction>' (public-domain film, safe tier), then assets get / memes add", count: 3}
+      - {need: "every fact on screen has a source URL in brief.sources; quotes are verbatim", how: "web search, then open the article itself; record outlet and date", count: 0}
   bold-short:
     label: "Bold typographic Short"
     from: "video #002: the bold cut-paper Short"

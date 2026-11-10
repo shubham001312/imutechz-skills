@@ -390,12 +390,15 @@ def pick_accent(title: str, accent: str | None = None) -> str:
             i = j
         else:
             i += 1
-    runs = [(a, min(b, a + 3)) for a, b in runs]
-    if accent:
+    if accent:                                                # the window of at most 3 key words that holds the author's accent
         aw = [norm(w) for w in accent.split() if norm(w) not in STOPWORDS]
         for a, b in runs:
-            if aw and all(w in [norm(x) for x in words[a:b]] for w in aw):
-                return " ".join(words[a:b])
+            idx = [i for i in range(a, b) if norm(words[i]) in aw]
+            if aw and all(w in [norm(x) for x in words[a:b]] for w in aw) and idx and idx[-1] - idx[0] < 3:
+                if b - a <= 3:                                # a short run stays whole ("Won" -> "Emus Won")
+                    return " ".join(words[a:b])
+                return " ".join(words[idx[0]:idx[-1] + 1])     # a long run narrows to the accent words themselves
+    runs = [(a, min(b, a + 3)) for a, b in runs]
     if runs:
         a, b = max(runs, key=lambda r: sum(len(w) for w in words[r[0]:r[1]]))
         return " ".join(words[a:b])
