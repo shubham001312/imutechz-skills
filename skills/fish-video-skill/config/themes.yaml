@@ -207,3 +207,19 @@ themes:
     style: glow-metaphor
     music: cinematic-swell
     delivery: calm
+  insider-light:
+    label: "Insider light (kinetic type)"
+    genre: kinetic
+    best_for: "kinetic-typography explainers about AI and dev tools: narration as stacked type on an off-white canvas, one accent colour"
+    mode: light
+    # one accent colour: change it with theme_overrides: {colors: {accent: "#2457e6"}} (keep accent/bg contrast >= 3)
+    colors: {bg: "#f2f2f2", surface: "#ffffff", paper: "#ececec", ink: "#0e0e10", fg: "#18181b", muted: "#4a4a50", dim: "#7a7a82", accent: "#d9531e", accent2: "#3a3a40"}
+    fonts: {display: "Inter", sans: "Inter", serif: "Fraunces", mono: "JetBrains Mono", hand: "Caveat"}
+    texture: clean          # "grid" gives the faint wallpaper some of these channels use: theme_overrides: {texture: grid}
+    layout: {kicker: pill, card: flat, radius: 30, border: 0, caps: false, weight: 800, track: -0.02, shadow: soft, align: center, scrim: 0.4, dim: 0.85}
+    # blur_cut: seconds of heavy blur at each section change (kstack scenes; 0.1 = 3 frames)
+    motion: {speed: 1.0, rise: 0.9, push: 0.6, blur_cut: 0.1}
+    captions: {style: none}
+    style: studio-kinetic
+    music: lofi-tech
+    delivery: punchy

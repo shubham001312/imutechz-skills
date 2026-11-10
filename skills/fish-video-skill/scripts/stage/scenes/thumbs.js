@@ -11,6 +11,8 @@
              frame     the best frame of the video in a card, the title beside it
              road      the house thumbnail (`fishvideo thumbnail`): tag, huge two-tone headline, audience line, and logo or picture
                        tiles along a glowing road (params.tiles); see the road() comment
+             insider   the light kinetic-explainer cover: one hero (cut-out, card or logo network), lead / huge keyword / mid /
+                       black chip, scattered accent asterisks; see the insider() comment
 
    params: title, accent (the word to mark; "*word*" also marks), kicker, badge,
            image (subject or frame, project path), baked (true: the PNG already has its outline and glow),
@@ -293,7 +295,8 @@
     const fitHead = () => {
       let px = parseFloat(head.style.fontSize) || 124 * k;
       const wide = () => Math.max(...[...head.querySelectorAll(".fv-hl")].map((e) => e.offsetWidth));
-      for (let i = 0; i < 60 && px > 40 * k && wide() > colW; i++) { px *= 0.97; head.style.fontSize = px + "px"; }
+      const low = () => !c.P && head.offsetTop + head.offsetHeight > 0.86 * Hh - 70 * k;   /* never past the bottom: room for the audience line */
+      for (let i = 0; i < 60 && px > 40 * k && (wide() > colW || low()); i++) { px *= 0.97; head.style.fontSize = px + "px"; }
     };
     const growHead = () => {                                  /* a short headline grows to fill the left column, like the approved design */
       if (c.P) return;
@@ -301,7 +304,7 @@
       const target = Math.min(0.56 * Hh, 0.86 * Hh - 96 * k) - parseFloat(head.style.top);        /* room is kept below for the audience line */
       const wide = () => Math.max(...[...head.querySelectorAll(".fv-hl")].map((e) => e.offsetWidth));
       for (let i = 0; i < 40 && head.offsetHeight < target * 0.9 && wide() < colW * 0.96 && px < 210 * k; i++) { px *= 1.04; head.style.fontSize = px + "px"; }
-      if (wide() > colW) fitHead();
+      fitHead();
     };
     fitHead(); growHead(); fits.push(fitHead, growHead);
     const subTxt = String(p.sub || "");
@@ -323,7 +326,157 @@
     return {};
   }
 
-  const LAYOUTS = { subject, number, split, caption, frame, road };
+  /* ------------------------------------------------------------ insider */
+  /* The light kinetic-explainer cover (theme insider-light): an off-white canvas with a faint grid, ONE hero visual on top
+     (9:16) or on the left (16:9), and below / beside it a centred mixed-weight stack: a small regular lead line, ONE huge
+     black keyword line, an optional medium line, and a final line in a black box with white bold type, slightly turned.
+     2 to 4 accent asterisks are scattered (some large and half off the frame), never over the words.
+     params: lead, title (the huge keyword: 1-3 words), mid, chip, handle,
+             hero {src, kind: cutout|card, color (keep colour), ar (card)} | tiles [{d, hex, title} | {src}] (the network hero),
+             bursts (2-4, default 3). "*word*" in lead or mid sets that word bold. */
+  const INK = "#0e0e10";
+  function asterisk(parent, r, color, seed) {
+    /* an asterisk with rounded arms of uneven length: deterministic from seed */
+    const svg = L.svg("svg", { width: r * 2, height: r * 2, viewBox: `${-r} ${-r} ${r * 2} ${r * 2}` }, parent);
+    svg.style.cssText = "position:absolute;left:0;top:0;overflow:visible";
+    const n = 11 + (seed % 3), w = r * 0.2;
+    for (let i = 0; i < n; i++) {
+      const a = (360 / n) * i + (seed * 37) % 30, len = r * (0.78 + 0.22 * Math.abs(Math.sin((i + 1) * (seed + 3) * 1.7)));
+      L.svg("line", { x1: 0, y1: 0, x2: len - w / 2, y2: 0, stroke: color, "stroke-width": w, "stroke-linecap": "round", transform: `rotate(${a.toFixed(2)})` }, svg);
+    }
+    return svg;
+  }
+  const richLine = (txt) => String(txt).split(/\s+/).filter(Boolean).map((w) => /^\*.+\*[.,!?:;]*$/.test(w) ? `<b style="font-weight:800;color:${INK}">${L.esc(w.replace(/\*/g, ""))}</b>` : L.esc(w)).join(" ");
+  const overlaps = (a, b, m = 0) => a.x < b.x + b.w + m && a.x + a.w > b.x - m && a.y < b.y + b.h + m && a.y + a.h > b.y - m;
+
+  function insider(root, c) {
+    const p = c.p, W = c.W, Hh = c.H, s = c.safe, P = c.P, u = P ? W / 1080 : Hh / 720;
+    const acc = C.accent, bgc = L.isDark(C.bg) ? "#f2f2f2" : C.bg, FONT = "'Inter', var(--sans)";
+    const bg = el("div", "abs", root); L.pos(bg, 0, 0, W, Hh);
+    bg.style.background = `radial-gradient(ellipse 80% 60% at 50% ${P ? 30 : 50}%, #fbfbfb 0%, ${bgc} 70%)`;
+    const grid = el("div", "abs", root); L.pos(grid, 0, 0, W, Hh);
+    grid.style.cssText += `;background-image:linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.035) 1px,transparent 1px);background-size:${72 * u}px ${72 * u}px;background-position:${W / 2}px 0`;
+    const bl = el("div", "abs", root); L.pos(bl, 0, 0, W, Hh);              /* the scattered asterisks, under everything else */
+    /* zones */
+    const hz = P ? { x: s.x, y: s.y + s.h * 0.04, w: s.w, h: s.h * 0.6 } : { x: s.x, y: s.y + s.h * 0.04, w: s.w * 0.46, h: s.h * 0.92 };
+    const tz = P ? { x: s.x, y: s.y + s.h * 0.67, w: s.w, h: s.h * 0.33 } : { x: s.x + s.w * 0.49, y: s.y, w: s.w * 0.51, h: Math.min(s.h, 0.84 * Hh - s.y) };
+    const heroRects = [];
+    /* ---- hero */
+    const hero = p.hero || {};
+    const tiles = (p.tiles || []).slice(0, 7);
+    const shadow = (a = 0.22) => `0 ${14 * u}px ${34 * u}px rgba(15,15,20,${a}), 0 ${3 * u}px ${8 * u}px rgba(15,15,20,.08)`;
+    if (tiles.length >= 2) {
+      /* network: round white tiles in rows of two on either side of a dashed trunk, an odd last one centred under it */
+      /* 9:16: the network may use the whole upper part, above the safe top too (no words go there) */
+      const nz = P ? { x: hz.x, y: Hh * 0.05, w: hz.w, h: tz.y - 40 * u - Hh * 0.05 } : hz;
+      const n = tiles.length, rows = Math.ceil(n / 2), pitch = Math.min(nz.h / rows, nz.w * 0.42), d = Math.min(pitch * 0.84, (P ? 240 : 150) * u);
+      const cx = nz.x + nz.w / 2, dx = Math.min(nz.w * 0.26, d * 1.1), y0 = nz.y + (nz.h - pitch * rows) / 2 + pitch / 2;
+      const spots = tiles.map((t, i) => { const r = Math.floor(i / 2), last = n % 2 === 1 && i === n - 1; return { t, x: last ? cx : cx + (i % 2 ? dx : -dx), y: y0 + r * pitch }; });
+      const svg = L.svg("svg", { width: W, height: Hh }, root); svg.style.cssText = "position:absolute;left:0;top:0;overflow:visible";
+      const line = (x1, y1, x2, y2) => L.svg("line", { x1, y1, x2, y2, stroke: "#a9a9ae", "stroke-width": 2.2 * u, "stroke-dasharray": `${7 * u} ${6 * u}` }, svg);
+      const yEnd = spots[n - 1].x === cx ? spots[n - 1].y - d / 2 : spots[n - 1].y;
+      line(cx, spots[0].y, cx, yEnd);
+      spots.forEach((q) => { if (q.x !== cx) line(q.x + (q.x < cx ? d / 2 : -d / 2), q.y, cx, q.y); });
+      spots.forEach((q) => {
+        const e = el("div", "abs", root); L.pos(e, q.x - d / 2, q.y - d / 2, d, d); e.dataset.tile = "1";
+        e.style.cssText += `;border-radius:50%;background:#fff;box-shadow:${shadow(0.2)};display:flex;align-items:center;justify-content:center;overflow:hidden`;
+        const ic = d * 0.5, t = q.t;
+        if (t.src) { const im = el("img", "", e); im.style.cssText = `width:${ic}px;height:${ic}px;object-fit:contain`; L.setImg(im, L.projUrl(t.src)); }
+        else { const hex = String(t.hex || "0e0e10").replace("#", ""), light = !L.isDark("#" + hex) && parseInt(hex.slice(0, 2), 16) * 0.299 + parseInt(hex.slice(2, 4), 16) * 0.587 + parseInt(hex.slice(4, 6), 16) * 0.114 > 200;
+          e.innerHTML = `<svg viewBox="0 0 24 24" width="${ic}" height="${ic}" role="img" aria-label="${L.esc(t.title || "")}"><path fill="${light ? INK : "#" + hex}" d="${t.d}"/></svg>`; }
+        heroRects.push({ x: q.x - d / 2, y: q.y - d / 2, w: d, h: d });
+      });
+    } else if (hero.src && (hero.kind || (isCut(hero.src, p) ? "cutout" : "card")) === "cutout") {
+      /* a cut-out over a big accent asterisk */
+      const url = L.projUrl(hero.src), info = L.cutInfo(url), asp = info ? (info.h * info.nh) / (info.w * info.nw) : 1.2;
+      let h = hz.h, w = h / asp; if (w > hz.w * 0.82) { w = hz.w * 0.82; h = w * asp; }
+      const x = hz.x + (hz.w - w) / 2, y = hz.y + hz.h - h;
+      const r = Math.min(hz.w * 0.48, h * 0.62), sh = el("div", "abs", root);
+      L.pos(sh, x + w * 0.5 - r + (P ? w * 0.08 : 0), y + h * 0.42 - r, r * 2, r * 2);
+      asterisk(sh, r, acc, 5); sh.style.filter = `drop-shadow(0 ${16 * u}px ${20 * u}px rgba(15,15,20,.18))`;
+      const node = el("div", "abs", root); L.pos(node, x, y, w, h); node.dataset.tile = "1";
+      const img = el("img", "", node);
+      if (info) { const iw = w / info.w, ih = h / info.h; img.style.cssText = `position:absolute;left:${-info.x * iw}px;top:${-info.y * ih}px;width:${iw}px;height:${ih}px;max-width:none`; }
+      else img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain";
+      node.style.filter = `${hero.color ? "" : "grayscale(1) contrast(1.12) "}drop-shadow(${5 * u}px 0 0 #fff) drop-shadow(-${5 * u}px 0 0 #fff) drop-shadow(0 ${5 * u}px 0 #fff) drop-shadow(0 -${5 * u}px 0 #fff) drop-shadow(${10 * u}px ${18 * u}px ${22 * u}px rgba(15,15,20,.35))`;
+      L.setImg(img, url);
+      heroRects.push({ x, y, w, h });
+    } else if (hero.src) {
+      /* a rounded, shadowed card holding a picture */
+      const ar = +hero.ar || 1.6;
+      let w = hz.w * (P ? 0.86 : 0.92), h = w / ar; if (h > hz.h * 0.86) { h = hz.h * 0.86; w = h * ar; }
+      const x = hz.x + (hz.w - w) / 2, y = hz.y + (hz.h - h) / 2 + (P ? hz.h * 0.06 : 0);
+      const cd = el("div", "abs", root); L.pos(cd, x, y, w, h); cd.dataset.tile = "1";
+      cd.style.cssText += `;border-radius:${26 * u}px;overflow:hidden;background:#fff;border:${6 * u}px solid #fff;box-shadow:${shadow(0.3)};transform:rotate(${P ? -1.5 : -2}deg)`;
+      const im = el("img", "", cd); im.style.cssText = `width:100%;height:100%;object-fit:cover;border-radius:${20 * u}px`; L.setImg(im, L.projUrl(hero.src));
+      heroRects.push({ x, y, w, h });
+    }
+    /* ---- the text stack */
+    const st = el("div", "abs", root); L.pos(st, tz.x, tz.y, tz.w);
+    st.style.cssText += `;display:flex;flex-direction:column;align-items:center;text-align:center;font-family:${FONT};color:${INK}`;
+    const row = (grp, html, css) => { const e = el("div", "", st, html); e.dataset.grp = grp; e.style.cssText += `;white-space:nowrap;${css}`; return e; };
+    const lead = p.lead ? row("lead", richLine(p.lead), `font-weight:400;font-size:${66 * u}px;line-height:1.08;letter-spacing:-.02em;color:#2b2b30`) : null;
+    const tw = String(p.title || "").split(/\s+/).filter(Boolean);
+    const title = tw.length ? row("title", "", `font-weight:800;font-size:${(P ? 250 : 150) * u}px;line-height:.98;letter-spacing:-.045em;color:${INK}`) : null;
+    const mid = p.mid ? row("mid", richLine(p.mid), `font-weight:500;font-size:${64 * u}px;line-height:1.1;letter-spacing:-.02em;color:#2b2b30`) : null;
+    let chip = null, chipT = null;
+    if (p.chip) {
+      chip = el("div", "", st); chip.dataset.block = "chip";
+      chip.style.cssText += `;margin-top:${18 * u}px;background:${INK};border-radius:${14 * u}px;padding:${8 * u}px ${30 * u}px ${12 * u}px;transform:rotate(-2deg);box-shadow:0 ${14 * u}px ${30 * u}px rgba(15,15,20,.3)`;
+      chipT = el("div", "", chip, L.esc(p.chip)); chipT.dataset.grp = "chip";
+      chipT.style.cssText += `;white-space:nowrap;font:800 ${84 * u}px/1.12 ${FONT};letter-spacing:-.02em;color:#fff`;
+    }
+    const lim = tz.w * 0.96;
+    const shrink = (e, max, min) => { let px = max; e.style.fontSize = px + "px"; for (let i = 0; i < 60 && px > min && e.scrollWidth > lim; i++) { px *= 0.97; e.style.fontSize = px + "px"; } return px; };
+    const handle = p.handle ? el("div", "abs", root, L.esc(p.handle)) : null;
+    if (handle) { handle.dataset.free = "1"; handle.style.cssText += `;font:700 ${(P ? 46 : 26) * u}px ${FONT};color:rgba(14,14,16,.2);white-space:nowrap`; }
+    const bursts = [];
+    const run = () => {
+      const k0 = 1;
+      let scale = k0;
+      for (let pass = 0; pass < 12; pass++) {
+        if (lead) shrink(lead, 66 * u * scale, 30 * u);
+        if (title) {
+          const max = (P ? 250 : 150) * u * scale;
+          title.innerHTML = L.esc(tw.join(" "));
+          let px = shrink(title, max, 60 * u);
+          if (tw.length >= 3 && px < max * 0.72) {                       /* a long keyword line breaks in two, both lines as big as they can be */
+            let best = 1, bd = 1e9; for (let i = 1; i < tw.length; i++) { const dd = Math.abs(tw.slice(0, i).join(" ").length - tw.slice(i).join(" ").length); if (dd < bd) { bd = dd; best = i; } }
+            title.innerHTML = `${L.esc(tw.slice(0, best).join(" "))}<br>${L.esc(tw.slice(best).join(" "))}`;
+            px = shrink(title, max, 60 * u);
+          }
+        }
+        if (mid) shrink(mid, 64 * u * scale, 30 * u);
+        if (chipT) { let px = 84 * u * scale; chipT.style.fontSize = px + "px"; for (let i = 0; i < 60 && px > 30 * u && chip.offsetWidth > lim; i++) { px *= 0.97; chipT.style.fontSize = px + "px"; } }
+        if (st.offsetHeight <= tz.h) break;
+        scale *= 0.92;
+      }
+      st.style.top = (P ? tz.y : tz.y + (tz.h - st.offsetHeight) / 2) + "px";
+      if (handle) { if (P) L.pos(handle, W / 2 - handle.offsetWidth / 2, Math.min(Hh - s.y * 0.6, st.offsetTop + st.offsetHeight + 90 * u)); else L.pos(handle, s.x, s.y + s.h - handle.offsetHeight); }
+      /* asterisks: candidate spots, kept only when clear of every word (with a margin) */
+      bl.innerHTML = ""; bursts.length = 0;
+      const words = { x: st.offsetLeft, y: st.offsetTop, w: st.offsetWidth, h: st.offsetHeight };
+      const cand = P
+        ? [[W * 0.97, Hh * 0.93, 280], [W * 0.07, Hh * 0.07, 120], [W * 0.92, Hh * 0.46, 72], [W * 0.06, Hh * 0.6, 64], [W * 1.0, Hh * 1.0, 250]]
+        : [[W * 0.04, Hh * 0.98, 170], [W * 0.98, Hh * 0.04, 120], [W * 0.5, Hh * 0.12, 46], [W * 0.47, Hh * 0.86, 40]];
+      const want = Math.max(2, Math.min(4, +p.bursts || 3)) - (hero.kind === "cutout" || (hero.src && isCut(hero.src, p) && !hero.kind) ? 1 : 0);
+      for (const [x, y, r0] of cand) {
+        if (bursts.length >= want) break;
+        const r = r0 * u, b = { x: x - r, y: y - r, w: 2 * r, h: 2 * r };
+        if (overlaps(b, words, 24 * u) || (handle && overlaps(b, { x: handle.offsetLeft, y: handle.offsetTop, w: handle.offsetWidth, h: handle.offsetHeight }, 8 * u))) continue;
+        if (!P && x - r < W * 0.84 && x + r > W * 0.84 && y + r > Hh * 0.86) continue;            /* the duration stamp corner */
+        if (!P && x > W * 0.8 && y > Hh * 0.8) continue;
+        if (heroRects.some((h) => overlaps(b, h, -Math.min(h.w, h.h) * 0.3))) continue;          /* a little behind a hero edge is fine, not across it */
+        const e = el("div", "abs", bl); L.pos(e, b.x, b.y, b.w, b.h); asterisk(e, r, acc, bursts.length + 1);
+        if (r0 > 100) e.style.opacity = ".95";
+        bursts.push(b);
+      }
+    };
+    run(); fits.push(run);
+    return {};
+  }
+
+  const LAYOUTS = { subject, number, split, caption, frame, road, insider };
   S.thumbnail = {
     build(root, c) {
       const f = LAYOUTS[String((c.p || {}).layout || "")];

@@ -226,6 +226,8 @@ def apply(brief: dict, project: Path | None = None) -> dict:
     cta_text = {"follow": "Follow for more", "comment": "Comment below"}.get(a.get("cta"))
     if cta_text and not (brief.get("cta") or {}).get("text"):
         brief.setdefault("cta", {})["text"] = cta_text
+    if a.get("cta"):  # loop = no CTA, the last line flows into the hook (qa checks the frames match)
+        brief["ending"] = {"loop": "loop", "none": "none"}.get(a["cta"], "cta")
     if a.get("theme") in (None, "", "none"):
         if a.get("theme") == "none":
             brief.pop("theme", None)
@@ -336,6 +338,14 @@ def _apply_voice(brief: dict, a: dict) -> None:
         pac.update({"max_word_gap": 0.9, "line_gap": 0.2})
         brief.setdefault("mix", {})["music_under_voice_db"] = -12
         return
+    elif v["provider"] == "qwen3":               # the recommended expressive narrator (config/voicelab.yaml -> qwen3 + style)
+        voice["provider"] = "qwen3"
+        voice["studio"] = {"gender": "male", "style": v.get("style") or "storyteller", "speaker": v["voice"],
+                           "pace": "fast" if a.get("voice_energy") == "punchy" else "slow" if a.get("voice_energy") == "cinematic" else "natural"}
+        voice["delivery"] = a.get("voice_energy") or "punchy"
+        brief.setdefault("pacing", {}).update({"max_word_gap": 0.9, "line_gap": 0.15})
+        brief.setdefault("mix", {})["music_under_voice_db"] = -12
+        return
     elif v["provider"] == "kokoro":
         voice["provider"] = "kokoro"
         voice["kokoro"] = {"voice": v["voice"], "speed": round(pre["wps"] / 2.9, 2)}
@@ -365,9 +375,10 @@ def summary(project: Path) -> str:
     if c:
         lines.append("Colours: " + ", ".join(f"{k} {v}" for k, v in c.items() if k in ("bg", "ink", "accent", "accent2")))
     v = brief.get("voice") or {}
-    if v.get("provider") in ("chatterbox", "kokoro") and v.get("studio"):
+    if v.get("provider") in ("chatterbox", "kokoro", "qwen3") and v.get("studio"):
         stu = v["studio"]
-        lines.append(f"Voice: {v['provider']} preset {stu.get('style')} ({stu.get('gender', 'male')}, pace {stu.get('pace', 'natural')}; Chatterbox default voice, one sentence at a time, seed 11); language {v.get('language')}")
+        who = f"speaker {stu.get('speaker', 'Ryan')}, directed per line" if v["provider"] == "qwen3" else "Chatterbox default voice"
+        lines.append(f"Voice: {v['provider']} preset {stu.get('style')} ({stu.get('gender', 'male')}, pace {stu.get('pace', 'natural')}; {who}, one sentence at a time, seed 11); language {v.get('language')}")
     elif v.get("provider") == "none":
         lines.append("Voice: none (music and text)")
     else:
@@ -558,6 +569,15 @@ def audition(project: Path) -> list[dict]:
                                                                      "voice_settings": {"stability": pre["stability"], "similarity_boost": 0.8, "style": pre["eleven_style"], "use_speaker_boost": True}}}, key)
             elif v["provider"] == "kokoro":
                 audio = voicemod.kokoro_audio(line, {"voice": v["voice"], "speed": round(pre["wps"] / 2.9, 2)})
+            elif v["provider"] == "qwen3":
+                import voicelab
+                if not voicelab.engine_ready("qwen3"):
+                    res.append({"id": v["id"], "skipped": "Qwen3-TTS is not installed: run `fishvideo voice setup --engine qwen3` (one command), then audition again. Not substituted by another voice."})
+                    continue
+                f = out / f"{v['id']}.wav"
+                voicelab.say(line, f, "qwen3", {"gender": "male", "style": v.get("style") or "storyteller", "speaker": v["voice"]}, lang, out / "_qwen3")
+                res.append({"id": v["id"], "label": v["label"], "file": str(f)})
+                continue
             elif v["provider"] == "chatterbox":
                 import voicelab
                 if not voicelab.engine_ready("chatterbox"):

@@ -4,7 +4,7 @@ Everything here is a command you can run. The rule behind it: **every asset has 
 
 | tier | meaning | examples | what happens |
 |---|---|---|---|
-| `safe` | public domain, CC0, CC BY / BY-SA, or made by this code | Commons and Internet Archive film with a licence, `sounds synth`, the committed meme sound pack, icons, your own files | downloads freely |
+| `safe` | public domain, CC0, CC BY / BY-SA, or made by this code | Commons and Internet Archive films and photos with a licence, `sounds synth`, the committed meme sound pack, icons, your own files | downloads freely |
 | `platform` | no open licence, shown under the source's own terms | a website screenshot, a logo whose file licence is not open | allowed; QA warns; credits list it separately |
 | `unverified` | no licence evidence | Imgflip templates, a clip from Vlipsy, a Myinstants or Memeinstants sound, an Internet Archive item with no licence | **refused** unless the project is `viral` or you pass `--accept-risk`; QA warns; credits list it under "LICENCE NOT VERIFIED" |
 
@@ -18,6 +18,7 @@ The interview asks one optional question, `memes`: `safe` (recommended, and the 
 | `fishvideo memes templates <dir> [query] [--gif]` | most-captioned meme templates | Imgflip API, no key for the top list; `IMGFLIP_API_KEY` (paid) searches the full list | unverified |
 | `fishvideo memes trending <dir> --region world\|us\|in` | what is being memed now: titles and links, writes `research/memes.md` | Imgflip top list, YouTube search | research only |
 | `fishvideo memes films <dir> "<query>" [--region in] [--before 1931] [--unverified]` | public-domain and CC film for reaction cuts | Wikimedia Commons, Internet Archive | safe (archive items with no licence: unverified, hidden unless `--unverified`) |
+| `fishvideo assets search <dir> "<query>" --kind photo\|video\|audio\|sfx\|music [--providers a,b]` | candidates with licence, author and preview; provider order for photos: Pexels, Pixabay (keyed), Openverse, Wikimedia Commons, NASA, Library of Congress, Internet Archive (`archive`, key-less: movies and images whose `licenseurl` is CC0, public domain, CC BY or CC BY-SA; NC and ND are dropped, an item with no licence link is `unverified`); `assets source` tries Wikimedia, NASA, the Library of Congress, then the Internet Archive | see the provider | safe or unverified |
 | `fishvideo assets get <dir> <id> [--accept-risk]` | download a candidate (size cap, content-type check, http(s) only) | | per candidate |
 | `fishvideo memes add <dir> <file-or-url> --title T [--source S --source-url U --license L --author A --id name --accept-risk]` | register a picture or clip you brought | | per claim |
 | `fishvideo memes sheet <video> [--every 2]` | a contact sheet with timestamps, to find the moment | local | |
@@ -29,6 +30,8 @@ The interview asks one optional question, `memes`: `safe` (recommended, and the 
 | `fishvideo sounds add <dir> <file> <cue> [--start S --dur S --level dB --source S --source-url U --license L --accept-risk]` | trim to the hit, fade, normalise, install as cue `<cue>`, set its level, record the source | | per claim |
 | `fishvideo sounds list <dir>` / `sounds audition <dir>` | every cue type with its file and level / one montage of all of them with an index | | |
 | `fishvideo assets shot <dir> <url...>` | read-only website screenshot, cookie banners hidden by CSS (nothing is clicked) | any site | platform |
+| `fishvideo assets github <dir> <owner/repo> [--beat id] [--shot]` | the repo's social card (`assets/github/<owner>-<repo>-card.png`), plus sourced facts for `brief.facts` ("<repo> has 48,213 GitHub stars (as of date)", source = the repo URL; re-running replaces them) and a JSON summary (description, stars, forks, licence, homepage, pushed_at, topics). `--shot` also takes a read-only screenshot of the repo page. `GITHUB_TOKEN` in `.env` is used only to lift the rate limit and is never printed | GitHub public REST API, opengraph.githubassets.com | platform (screenshot of a public page, editorial use; author = the owner) |
+| `fishvideo assets terminal <dir> --cmd "<line>" [--cmd ...] [--line "<output>"] [--from-file script.txt] [--out name] [--beat id] [--title zsh] [--scale 2]` | a dark terminal-window card, 1600x1000 (`--scale 2` for 3200x2000), saved to `assets/own/<name>.png`. `--from-file`: lines starting with `$ ` are commands, the rest output. Output text is never invented: any `--line`/output makes the credit `illustrative` ("terminal card made by the skill; output written by the author") and the beat is labelled `illustrative`. Show real output by pasting what the tool printed | made locally (Pillow, DejaVu Sans Mono) | safe |
 | `fishvideo assets logo <dir> <brand>` | a brand mark | Simple Icons | safe; trademark note |
 | `fishvideo assets icon <dir> <query or set:name>` | an icon from an open-licence set only | Iconify | safe |
 | `fishvideo assets emoji <dir> <emoji or name> [--set openmoji\|twemoji]` | an emoji as SVG | OpenMoji CC BY-SA, Twemoji CC BY | safe |

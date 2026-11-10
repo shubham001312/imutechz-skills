@@ -44,7 +44,12 @@ A project can change a threshold with `brief.design.lint: {max_sizes: 5}` and si
    figure, needs `thumbnail.number` or a `stat` scene or a figure in the title), `split` (before / after)
    and `frame` (the best frame in a card). Frames are the video's own scenes, scored for detail, colour,
    contrast and emptiness. Storyboard `thumbnail:` params feed them: `title`, `accent`, `kicker`,
-   `badge`, `image`, `number`, `before`, `after`, `layout` (which one leads).
+   `badge`, `image`, `number`, `before`, `after`, `layout` (which one leads). Two more layouts are drawn by
+   the required `fishvideo thumbnail` step: `road` (the house design) and `insider` (the light cover of
+   kinetic-explainer videos: off-white canvas, one hero on top or left, a small lead line, one huge black
+   keyword, a black chip with white type, scattered accent asterisks). `insider` is used when
+   `thumbnail.layout: insider`, or when no layout is given and the recipe is `kinetic-explainer` (or the
+   theme `insider-light`); every other video keeps `road`. Params and examples: recipes-and-themes.md.
 2. `thumb check <dir> [--all] [--file f]` measures: file size and shape (the only FAILs), brightness,
    tonal range, saturation, the bottom-right corner a feed covers with the duration, word count (main
    text only; 6 or fewer), and the main text at 320x180 and 168x94: its size in px, and its contrast

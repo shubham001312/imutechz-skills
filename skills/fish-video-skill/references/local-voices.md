@@ -1,6 +1,19 @@
 # Local voices: make them yourself, free, with measured checks
 
-## The recommended default: `chatterbox-soft`
+## The recommended default: Qwen3-TTS, speaker Ryan, style `storyteller`
+
+Qwen3-TTS 1.7B CustomVoice (Apache-2.0) replaced Chatterbox as the default on 2026-11-10. Measured the same day: the 1.7B model follows the per-line `instruct`, while the 0.6B model ignores it completely (byte-identical audio for "calm" and "panic"), so 0.6B is only a fast fallback (`voice.studio.model: Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice`). It replaced Chatterbox, because Chatterbox read flat for Shorts and its maintainers retired it. Each sentence goes to a preset speaker with a plain-English `instruct`: the style's base direction ("a gripping, energetic YouTube Shorts storyteller..."), the pace hint, and a cue from the line's mood or `tag` (hook = urgent, reveal = excited, punchline = triumphant, setup = serious) and its punctuation. Edit the words in `config/voicelab.yaml` (`styles.storyteller.instruct`, `moods.*.instruct`, `punctuation_instruct`).
+
+- Setup: `fishvideo voice setup --engine qwen3` (one command; add `--gpu` on an NVIDIA machine, where it runs in bf16). The weights (about 1.8 GB) download on first use.
+- Speakers: Ryan (default, dynamic) and Aiden are English-native males. Serena and Vivian are Chinese-native females: audition their English before using them. Pick one with `voice.studio.speaker`.
+- Styles: `storyteller` (Shorts, energetic) and `documentary` (deep, measured). Every other studio style also works with qwen3, but only these two carry an instruct.
+- Pace: qwen3 has no speed knob (the earlier "speak fast" test was on 0.6B, which ignores instructions). The closed loop does it instead: silences inside a take are cut to 0.12 s (`pace_control.squeeze_gap`), the pauses are moved, then a time-stretch of up to 1.3x (`max_stretch_by_engine`) lands the target. Measured on 2026-11-10: a 43-word test went from 2.1 to 3.02 words per second at pace `fast`. The reference Shorts channel runs at 3.0-3.3.
+- Speed on a 16-core CPU with no GPU: 1.7B about 7 s of compute per second of speech (a 20 s Short voiced in about 4 minutes); 0.6B about 5 s. Every take is cached, so changing a line re-voices only that line.
+- Brief: `voice: {provider: qwen3, studio: {gender: male, style: storyteller, speaker: Ryan, pace: fast}}`.
+
+Nobody has judged the result by ear except the user. Audition it (`fishvideo voices <dir> --audition`) before a full run.
+
+## Calmer alternative: `chatterbox-soft`
 
 The named preset every recipe, the brief template and the interview use first. Chatterbox's own default voice, one sentence at a time, `exaggeration` 0.32-0.55 by sentence (mood and punctuation move it inside that range), `cfg_weight` 0.25, `temperature` 0.75, `seed` 11 (re-seeded for every sentence), pauses 0.35-0.55 s (under 6 words 0.35, a question 0.5, otherwise 0.45), then `highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-2,equalizer=f=3200:t=q:w=1.4:g=0.8,aexciter=freq=6500:amount=0.5:blend=0:ceil=11500,highshelf=f=8000:g=1.5,deesser=i=0.35,acompressor=threshold=-20dB:ratio=1.8:attack=15:release=180:makeup=1.2,aecho=0.9:0.9:19|37:0.04|0.025` and `loudnorm=I=-18:TP=-2:LRA=9`, 48 kHz. Brief: `voice: {provider: chatterbox, studio: {style: chatterbox-soft}}`, `pacing.max_word_gap: 0.9`, `pacing.line_gap: 0.05`, `mix.music_under_voice_db: -12`.
 

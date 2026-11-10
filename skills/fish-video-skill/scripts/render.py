@@ -160,7 +160,9 @@ def mix_audio(build: Path, music: Path | None, voice: Path | None, duration: flo
         lv = lufs(voice)
         gv = (vl - lv) if lv is not None else 0
         vi = len(inputs); inputs.append(voice)
-        split = "asplit=2[vk][vo]" if music else "anull[vo]"
+        # the sidechain copy is padded with silence: when the voice ended before the music, sidechaincompress raced the
+        # final amix at end of stream and ffmpeg hung about 1 run in 4 (measured 2026-11-10; 12/12 clean with apad + -t)
+        split = "asplit=2[vk0][vo];[vk0]apad[vk]" if music else "anull[vo]"
         chains.append(f"[{vi}:a]aformat=channel_layouts=stereo,volume={gv:.2f}dB,{split}")
         labels.append("[vo]")
     if music:
@@ -208,14 +210,15 @@ def mix_audio(build: Path, music: Path | None, voice: Path | None, duration: flo
     fc = ";".join(chains) + ";" + "".join(labels) + f"amix=inputs={len(labels)}:normalize=0:duration=longest,atrim=0:{dur}[out]"
     graph = build / "mix-graph.txt"
     graph.write_text(fc, encoding="utf-8")
-    args = [ff, "-y", "-loglevel", "error"]
+    args = [ff, "-y", "-nostdin", "-loglevel", "error"]
     for i in inputs:
         args += ["-i", str(i)]
-    _run_mix(args + ["-filter_complex_script", str(graph), "-map", "[out]", "-ar", "48000", "-c:a", "pcm_f32le", str(raw)], duration)
+    _run_mix(args + ["-filter_complex_script", str(graph), "-map", "[out]", "-t", dur, "-ar", "48000", "-c:a", "pcm_f32le", str(raw)], duration)
     save_json(build / "mix.json", {"voice_lufs_target": vl if voice else None,
                                    "music_offset_db": mixcfg.get("music_under_voice_db", -10) if (voice and music) else None,
                                    "music": str(music) if music else None, "sfx_stems": [str(s) for s in sfx],
-                                   "sfx_lufs": [lufs(s) for s in sfx], "duck": mixcfg.get("duck"), "phone": phone_report})
+                                   "sfx_lufs": [lufs(s) for s in sfx], "voice_gain_db": round(gv, 2) if gv is not None else None,
+                                   "sfx_gain_db": round(sfx_gain, 2), "duck": mixcfg.get("duck"), "phone": phone_report})
     target, tp = prof.get("loudness", mixcfg["loudness"]), prof.get("true_peak", mixcfg["true_peak"])
     # normalise with 0.5 dB of margin, then a brickwall limiter just under the ceiling:
     # linear loudnorm alone can overshoot the true-peak target after AAC encoding

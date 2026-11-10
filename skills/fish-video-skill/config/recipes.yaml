@@ -1,5 +1,5 @@
 # Recipes: a proven video format as a starting point.   fishvideo new <dir> --recipe <id> --prompt "..."
-# A recipe prefills the brief (theme, pacing, mix, the Chatterbox soft voice), a storyboard SKELETON (scene types and
+# A recipe prefills the brief (theme, pacing, mix, the Qwen3 Ryan storyteller voice), a storyboard SKELETON (scene types and
 # structure only: every word is a TODO you must write), an asset plan (assets/PLAN.md) and the measured imagery gate
 # (fishvideo gates). Thresholds were tuned on the three benchmark videos so they pass, and a text-card video fails.
 #   roadmap-explainer  <- the long GenAI roadmap video (555 s: 44% images, 13 new images/min, 36% text cards)
@@ -12,7 +12,7 @@
 # assets/credits.json, and photos of people or events need `label: archive photo|illustrative`. Opt-out only on the user's request: visuals: {mode: abstract, user_asked: true, reason: "..."}.
 
 shared:
-  voice: {provider: chatterbox, language: en-US, studio: {gender: male, style: chatterbox-soft, pace: natural}}
+  voice: {provider: qwen3, language: en-US, studio: {gender: male, style: storyteller, speaker: Ryan, pace: natural}}
   pacing: {snap: speech, lead_in: 0.1, tail: 0.15, max_word_gap: 0.9, line_gap: 0.2}
   mix: {music_under_voice_db: -12}
   captions: {style: pop}
@@ -136,3 +136,44 @@ recipes:
       - {id: end,   type: bold, bars: 2, note: "the rule to remember; shape: bar"}
     assets:
       - {need: "none required. Add a real photo or a brand logo cut-out (assets cutout) to a scene whenever the topic has one", how: "assets search / thumb logos", count: 0}
+  kinetic-explainer:
+    label: "Kinetic explainer (Short)"
+    from: "the grammar of kinetic-typography explainer Shorts about AI and dev tools (measured on 15 reference videos; grammar only, never their words, branding or footage)"
+    best_for: "a free tool, a release, a workflow, 'N things about X' for developers; the narration is the visual: stacked type, one element below it"
+    structure: listicle
+    end_card: false
+    goal: explain
+    audience: "developers and builders who scroll fast and want one tool or idea explained in under 30 seconds"
+    language: en-US
+    platforms: [shorts]
+    length: 28                 # Shorts default to UNDER 30 s (22-28 s of speech); the interview asks the length
+    long_form_ok: true         # a 60-90 s version (3-5 points) is used ONLY when the user picks a longer length:
+    long_form: {length: 75, note: "points scale with the chosen length (see points_for_length); the grammar, theme and gates are unchanged"}
+    points: {min: 2, max: 5, base_s: 12, per_point_s: 12}     # n points = clamp(round((length - base_s) / per_point_s), min, max): 28 s -> 2, 45 s -> 3, 60 s -> 4, 75 s -> 5
+    steps: 2
+    themes: [insider-light, minimal-light, bold-shorts, editorial-serif]
+    theme: insider-light
+    style: studio-kinetic
+    music: lofi-tech
+    sfx: rich                  # a soft tick or pop per word group, a whoosh on each card or section change, a low boom on the reveal (kstack cues; no new audio)
+    captions: {style: none, burn: false}    # the narration is already on screen as the type
+    background: plain          # a flat off-white canvas (no wash); vignette off
+    vignette: false
+    pacing: {change_every: 0.6, hard_cuts_per_15s: 3, transitions: [cut], snap: speech, lead_in: 0.1, tail: 0.15, max_word_gap: 0.9, line_gap: 0.2}
+    mix: {music_under_voice_db: -12, sfx_levels: {tick: -30, pop: -27, whoosh: -22, boom: -17}}
+    # graphic-led: cards, pills, orbits and cut-outs carry the pictures; text-only scenes (hook, payoff, cta) stay under ~45% of the time
+    gate: {image_share_min: 0.25, image_changes_pm_min: 4, longest_no_image_max: 12, text_share_max: 0.45, graphic_share_min: 0.55, image_beats_min: 0.25, screenshot_of_images_max: 1.0, photo_share_min: 0.0, sharp_share_min: 0.0}
+    beats:
+      - {id: hook,   type: kstack, bars: 2, note: "frame 0 is already full. The claim as a 3-beat repetition or a curiosity gap, 2 to 4 stacked lines, one **key** word huge, no element (or a hero). Under 10 words."}
+      - {id: name,   type: kstack, bars: 2, note: "'it's called X': a lead-in line, then the name huge; element pill (logo tile + UPPERCASE name; pill-only frames are mostly canvas, so keep them under ~2 s) or hero (grey cut-out over an accent shape) for a longer hold; boom: true on the name"}
+      - {repeat: step, scenes: [
+          {id: "point{n}", type: kstack, bars: 2, note: "number: First / Second / ... as huge type, one short line, element card (a real screenshot or screen recording that drifts) or orbit (5 to 8 logos); a new layout every 4 to 9 s"}]}
+      - {id: payoff, type: kstack, bars: 2, note: "the result or the one line to remember; key word huge, boom: true on the reveal; element card or none"}
+      - {id: cta,    type: kstack, bars: 1, optional: true, note: "OPTIONAL, 2 to 3 s. The interview decides: a CTA here, or none and a seamless loop (the last words lead back into the hook). The handle is only what the user's brief gives."}
+    assets:
+      - {need: "one real screenshot or screen recording frame per point for the card (the tool, its repo, its docs)", how: "assets shot <dir> <url>  (or fishvideo capture <dir> for a screen recording)", count: "steps"}
+      - {need: "the tool's GitHub repo card and its real star and fork counts (cited facts in brief.facts)", how: "assets github <dir> <owner/repo> --beat <id>  (add --shot for the repo page)", count: 1}
+      - {need: "a terminal card for the install or run command (output lines only as the author wrote them: the card is labelled illustrative)", how: "assets terminal <dir> --cmd \"<command>\" [--line \"<output>\"] --beat <id>", count: 1}
+      - {need: "brand logo tiles for the pill and the orbit (the tool and what it connects to): kstack resolves {slug} itself", how: "fishvideo thumb logos --find <name>  (then params slug)", count: 6}
+      - {need: "a cut-out of a person or object for the hero (only when the topic has a licensed one; transparent PNG)", how: "assets source <dir> '<what it shows>' --beat name, then assets cutout <src> <dst>", count: 1}
+      - {need: "the tool's name, the handle and any numbers come from the brief; never invent a handle", how: "interview", count: 0}

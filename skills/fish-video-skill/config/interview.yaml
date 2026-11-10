@@ -76,8 +76,9 @@ rounds:
         question: "How long should the main cut be?"
         maps_to: length
         options:
-          - {label: "15-30 s Short (Recommended)", value: 25, description: "One idea, a hook in 1 s, loops well"}
-          - {label: "30-60 s", value: 50, description: "Hook + 3 beats + payoff"}
+          - {label: "Under 30 s Short (Recommended)", value: 28, description: "The default for every Short: one idea, a hook in 1 s, about 22-28 s of speech, loops well"}
+          - {label: "30-60 s", value: 50, description: "Hook + 3 beats + payoff; only when the user asks for longer"}
+          - {label: "60-90 s list explainer", value: 80, description: "Hook, the name, 3-5 numbered points, payoff (kinetic-explainer long form); only on request"}
           - {label: "1-3 min", value: 120, description: "A full explainer with chapters"}
           - {label: "3-10 min", value: 300, description: "Tutorial / deep dive; needs real screen footage"}
       - id: style
@@ -249,7 +250,8 @@ rounds:
         question: "What should the viewer do at the end?"
         maps_to: cta.kind
         options:
-          - {label: "Follow / subscribe (Recommended)", value: follow, description: "Short end card, loop back to the hook"}
+          - {label: "Seamless loop (Recommended)", value: loop, description: "No CTA: the last line flows back into the hook so the Short replays; QA checks the last frame matches frame 0"}
+          - {label: "Follow / subscribe", value: follow, description: "A 2-3 s end card"}
           - {label: "Visit a link", value: link, description: "URL on the end card + description"}
           - {label: "Comment a keyword", value: comment, description: "Drives engagement on Shorts"}
           - {label: "No CTA", value: none, description: "End on the payoff"}

@@ -6,6 +6,14 @@
 # No tool in this skill can hear. Audition the result before you use it.
 
 engines:
+  qwen3:                      # Apache-2.0. The RECOMMENDED engine: a preset speaker directed by a plain-English instruction per sentence.
+    python: "3.12"            # Tested 2026-11-10 on a 16-core CPU (no GPU): ~5 s of compute per 1 s of speech. On an NVIDIA GPU it uses bf16.
+    packages: ["qwen-tts==0.1.1", "soundfile", "faster-whisper==1.2.1"]
+    torch: ["torch", "torchaudio"]
+    model: Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice      # follows the per-line `instruct` (measured 2026-11-10: "calm" 4.4 s vs "panic" 5.8 s, different audio).
+                                                     # The 0.6B CustomVoice IGNORES instruct (byte-identical audio for different instructions): use it only
+                                                     # when speed matters more than direction (voice.studio.model). 1.7B: ~3.5 GB of weights, ~7x real time on
+                                                     # a 16-core CPU; on a 4 GB GPU it may not fit in bf16 (untested): the worker falls back to the CPU.
   chatterbox:                 # MIT. English. Emotion control. Every file carries the PerTh watermark.
     python: "3.11"
     packages: ["chatterbox-tts==0.1.7", "setuptools<81", "faster-whisper==1.2.1"]
@@ -21,25 +29,39 @@ whisper_model: small.en       # word timings and the transcript check; "small" i
 # chatterbox-soft is the RECOMMENDED voice (the named preset the long roadmap video used): Chatterbox's own default voice,
 # one sentence at a time, exaggeration 0.32-0.55 by sentence, cfg_weight 0.25, temperature 0.75, seed 11 (re-seeded for every
 # sentence), pauses 0.35-0.55 s, then the post chain and loudnorm I=-18 TP=-2 LRA=9 at 48 kHz. Every other style stays available.
-defaults: {engine: chatterbox, gender: male, style: chatterbox-soft, pace: natural, seed: 11, temperature: 0.75}
+defaults: {engine: qwen3, gender: male, style: storyteller, pace: natural, seed: 11, temperature: 0.75}
+engine_styles: {qwen3: storyteller, chatterbox: chatterbox-soft, kokoro: chatterbox-soft}   # the style used when the brief names an engine but no style
 
 # A voice is labelled by its measured pitch, never by ear. Median F0 below `split_hz` reads as male.
 genders:
   split_hz: 165
   builtin: {chatterbox: male}                 # measured median F0 of Chatterbox's built-in voice: see the reference doc
-  male:   {kokoro: {a: am_michael, b: bm_george}}
-  female: {kokoro: {a: af_heart, b: bf_emma}}
+  male:   {kokoro: {a: am_michael, b: bm_george}, qwen3: Ryan}     # Qwen3 English-native speakers: Ryan (dynamic), Aiden
+  female: {kokoro: {a: af_heart, b: bf_emma}, qwen3: Serena}       # Serena/Vivian are Chinese-native: audition their English first
 
 # Pace = spoken words per second over the whole line, pauses included.
 paces:
-  slow:    {wps: 2.5, cfg_weight: 0.22, speed: 0.88, pause_scale: 1.25}
-  natural: {wps: 2.9, cfg_weight: 0.28, speed: 1.0,  pause_scale: 1.0}
-  fast:    {wps: 3.3, cfg_weight: 0.42, speed: 1.12, pause_scale: 0.75}
+  slow:    {wps: 2.5, cfg_weight: 0.22, speed: 0.88, pause_scale: 1.25, hint: "Unhurried pace."}
+  natural: {wps: 2.9, cfg_weight: 0.28, speed: 1.0,  pause_scale: 1.0,  hint: "Brisk, natural pace."}
+  fast:    {wps: 3.3, cfg_weight: 0.42, speed: 1.12, pause_scale: 0.75, hint: "Fast, punchy pace."}
 
 # exaggeration: Chatterbox emotion intensity for a plain sentence. pause: seconds between sentences.
 # air: band for energy above 6 kHz relative to the whole speech signal, in dB. Measured on both engines the recipes gave -12 to -19 dB,
 # so these bands (observed range plus 4 dB) catch a broken chain or a drifting line. They cannot say that a voice sounds airy or hissy: listen.
 styles:
+  storyteller:                      # qwen3: the RECOMMENDED Shorts narrator (energetic facts/insider storyteller)
+    instruct: "A gripping, energetic YouTube Shorts storyteller with natural emphasis on key words and real emotional range. Always the same adult male voice at a steady low-to-mid pitch: show emotion through energy and emphasis, never by raising the pitch."
+    exaggeration: 0.6               # used if this style runs on chatterbox
+    pause: 0.22
+    edges: {head: 0.03, tail: 0.2}
+    air: [-28, -6]
+    post: "highpass=f=75,equalizer=f=280:t=q:w=1.1:g=-1.5,equalizer=f=3500:t=q:w=1.4:g=1,deesser=i=0.3,acompressor=threshold=-20dB:ratio=2:attack=10:release=150:makeup=1.2"
+  documentary:                      # qwen3: calmer, lower, for history and serious stories
+    instruct: "A deep, measured documentary narrator; calm authority, with tension building on the key facts."
+    exaggeration: 0.45
+    pause: 0.45
+    air: [-28, -7]
+    post: "highpass=f=65,lowshelf=f=150:g=1.5,equalizer=f=3200:t=q:w=1.4:g=0.6,acompressor=threshold=-21dB:ratio=1.8:attack=15:release=180:makeup=1"
   chatterbox-soft:
     exaggeration: 0.36              # the base; each sentence moves it by its mood and punctuation, kept inside exaggeration_range
     exaggeration_range: [0.32, 0.55]
@@ -94,16 +116,17 @@ styles:
 
 # How a sentence's punctuation and its scene's `mood:` move the emotion and the pause after it.
 punctuation: {exclaim: 0.13, question: 0.05, ellipsis: -0.08}
+punctuation_instruct: {exclaim: "Emphatic.", question: "Questioning lift at the end.", ellipsis: "Trail off, then pause."}   # qwen3
 moods:
   neutral:    {exaggeration: 0.0,   pause: 1.0}
-  curious:    {exaggeration: 0.05,  pause: 1.0}
-  tense:      {exaggeration: 0.04,  pause: 1.1}
-  urgent:     {exaggeration: 0.14,  pause: 0.8}
-  excited:    {exaggeration: 0.18,  pause: 0.85}
-  warm:       {exaggeration: 0.0,   pause: 1.05}
-  serious:    {exaggeration: -0.06, pause: 1.15}
-  reflective: {exaggeration: -0.1,  pause: 1.3}
-  triumphant: {exaggeration: 0.16,  pause: 0.95}
+  curious:    {exaggeration: 0.05,  pause: 1.0, instruct: "Intrigued, leaning in."}
+  tense:      {exaggeration: 0.04,  pause: 1.1, instruct: "Low and tense, building suspense."}
+  urgent:     {exaggeration: 0.14,  pause: 0.8, instruct: "Urgent and punchy, grab attention immediately."}
+  excited:    {exaggeration: 0.18,  pause: 0.85, instruct: "Excited, rising energy."}
+  warm:       {exaggeration: 0.0,   pause: 1.05, instruct: "Warm and friendly."}
+  serious:    {exaggeration: -0.06, pause: 1.15, instruct: "Serious, lower tone."}
+  reflective: {exaggeration: -0.1,  pause: 1.3, instruct: "Reflective, slower and softer."}
+  triumphant: {exaggeration: 0.16,  pause: 0.95, instruct: "Triumphant, land it with confidence."}
 
 # Closed-loop pace: measure, then move the pauses, then a small time-stretch, then one regeneration.
 pace_control:
@@ -111,6 +134,8 @@ pace_control:
   min_words: 6               # shorter lines are too noisy to steer
   pause_range: [0.15, 0.9]
   max_stretch: 0.06
+  max_stretch_by_engine: {qwen3: 0.3}
+  squeeze_gap: {qwen3: 0.12}             # silences inside a take longer than this are cut to it (seconds); other engines untouched   # qwen3 has no speed knob and reads ~2.6-2.9 wps; atempo up to 1.25x carries it to the target
   max_rounds: 2              # regenerations with a changed engine setting (slow on a CPU)
   cfg_per_wps: 0.28          # Chatterbox: change in cfg_weight per word/second of articulation rate
   cfg_range: [0.15, 0.65]

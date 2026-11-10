@@ -1,6 +1,6 @@
 """Local voice studio: free narration made on this machine, with measured checks.
 
-    fishvideo voice setup --engine chatterbox|kokoro|all [--gpu] [--dry-run]
+    fishvideo voice setup --engine qwen3|chatterbox|kokoro|all [--gpu] [--dry-run]
     fishvideo voice engines                                  which engines are installed
     fishvideo voice say "text" --out a.wav [--engine E --gender G --style S --pace P]
     fishvideo voice audition --matrix [--out DIR | <project>] [--genders male,female --styles airy,soft]
@@ -37,7 +37,8 @@ from pathlib import Path
 from fvcore import (IS_WIN, SCRIPTS, SKILL, FishError, ensure_project, ffmpeg_bin, last_json_line, load_json, load_yaml, log,
                     main_guard, project_config, save_json, save_yaml, sha1, warn)
 
-ENGINES = ("chatterbox", "kokoro")
+ENGINES = ("qwen3", "chatterbox", "kokoro")
+ENGINE_MODULE = {"qwen3": "qwen_tts", "chatterbox": "chatterbox", "kokoro": "kokoro"}   # engine id -> the module its environment must import
 SUBCOMMANDS = ("setup", "engines", "say", "audition", "check", "redo", "measure", "words")
 SR_OUT = 48000
 _CFG = None
@@ -387,7 +388,7 @@ def probe(py: Path | str) -> dict:
 
 def engine_ready(engine: str) -> bool:
     py = engine_python(engine)
-    return bool(py and probe(py).get("modules", {}).get(engine))
+    return bool(py and probe(py).get("modules", {}).get(ENGINE_MODULE.get(engine, engine)))
 
 
 def whisper_python(prefer: str | None = None) -> Path | None:
@@ -408,7 +409,7 @@ def engines_status() -> dict:
     for e in ENGINES:
         py = engine_python(e)
         mods = probe(py).get("modules", {}) if py else {}
-        out[e] = {"installed": bool(mods.get(e)), "python": str(py) if py else None, "transcription": bool(mods.get("faster_whisper")),
+        out[e] = {"installed": bool(mods.get(ENGINE_MODULE.get(e, e))), "python": str(py) if py else None, "transcription": bool(mods.get("faster_whisper")),
                   "watermark": bool(mods.get("perth")) if e == "chatterbox" else None}
     out["transcription"] = bool(whisper_python())
     return out
@@ -453,7 +454,7 @@ def setup(engine: str, home: Path | None = None, gpu: bool = False, dry_run: boo
     dest, cmds = setup_commands(engine, home, gpu)
     marker, want = dest / "fish-engine.json", {"engine": engine, "packages": list(spec["packages"]) + list(spec.get("torch") or []), "gpu": bool(gpu)}
     py = env_python(dest)
-    if py.exists() and marker.exists() and load_json(marker, default={}) == want and probe(py).get("modules", {}).get(engine):
+    if py.exists() and marker.exists() and load_json(marker, default={}) == want and probe(py).get("modules", {}).get(ENGINE_MODULE.get(engine, engine)):
         log(f"{engine}: already set up at {dest}")
         return {"engine": engine, "path": str(dest), "changed": False}
     if dry_run:
@@ -469,7 +470,7 @@ def setup(engine: str, home: Path | None = None, gpu: bool = False, dry_run: boo
         warn(f"{dest} is a long path: espeak-ng (Kokoro) fails on paths past about 230 characters. Set FISH_TTS_HOME to a shorter one if voices fail.")
     _PROBE.pop(str(py), None)
     mods = probe(py).get("modules", {})
-    if not mods.get(engine):
+    if not mods.get(ENGINE_MODULE.get(engine, engine)):
         raise FishError(f"{engine} was installed but cannot be imported in {dest}")
     save_json(marker, want)
     log(f"{engine}: ready. Transcription: {'yes' if mods.get('faster_whisper') else 'no'}. The model weights download on first use.")
@@ -503,6 +504,8 @@ def studio_settings(voice_cfg: dict, engine: str, over: dict | None = None) -> d
     """Resolve brief.voice.studio (plus one line's overrides) into the numbers an engine needs."""
     c = config()
     st = {**c["defaults"], **(voice_cfg.get("studio") or {}), **(over or {})}
+    if "style" not in {**(voice_cfg.get("studio") or {}), **(over or {})}:      # no style asked for: the engine's own default
+        st["style"] = (c.get("engine_styles") or {}).get(engine, st["style"])
     gender, style = st.get("gender"), st.get("style")
     if gender not in ("male", "female"):
         raise FishError(f"voice.studio.gender must be male or female, not '{gender}'")
@@ -514,6 +517,8 @@ def studio_settings(voice_cfg: dict, engine: str, over: dict | None = None) -> d
          "pause": float(st.get("pause", sty["pause"])), "pause_scale": pace["pause_scale"], "post": st.get("post", sty.get("post") or ""),
          "air": sty.get("air"), "loudnorm": sty.get("loudnorm"), "edges": sty.get("edges"), "pause_range": sty.get("pause_range"), "ex_range": sty.get("exaggeration_range"), "language": voice_cfg.get("language") or "en-US", "aliases": st.get("aliases") or {},
          "mood": st.get("mood"), "verify": st.get("verify", True)}
+    if engine == "chatterbox" and "exaggeration" not in sty and "exaggeration" not in st:
+        raise FishError(f"style '{style}' is a qwen3 style (no exaggeration setting): pick a chatterbox style such as chatterbox-soft, or use engine qwen3")
     if engine == "chatterbox":
         S.update({"exaggeration": float(st.get("exaggeration", sty["exaggeration"])),
                   "exaggeration_fixed": "exaggeration" in (over or {}),
@@ -526,6 +531,10 @@ def studio_settings(voice_cfg: dict, engine: str, over: dict | None = None) -> d
             S["ref"] = {"kind": "kokoro", "voice": st.get("kokoro_voice") or c["genders"][gender]["kokoro"][_lang_letter(S["language"])]}
         else:
             S["ref"] = None
+    elif engine == "qwen3":
+        S.update({"voice": st.get("speaker") or c["genders"][gender]["qwen3"], "model": st.get("model") or c["engines"]["qwen3"]["model"],
+                  "instruct": st.get("instruct", sty.get("instruct", "")), "pace_hint": pace.get("hint", ""), "ref": None,
+                  "loop": True})        # no speed knob: the closed loop lands the pace with the pauses, then a time-stretch (max_stretch_by_engine)
     else:
         S.update({"voice": st.get("kokoro_voice") or c["genders"][gender]["kokoro"][_lang_letter(S["language"])],
                   "speed": float(st.get("speed", pace["speed"]))})
@@ -557,7 +566,7 @@ def resolve_reference(S: dict, workdir: Path, base: Path | None = None) -> tuple
     """(path of the reference clip or None, a label saying where the voice comes from)."""
     ref = S.get("ref")
     if S["engine"] != "chatterbox" or not ref:
-        return None, f"kokoro preset {S['voice']}" if S["engine"] == "kokoro" else "chatterbox built-in voice"
+        return None, {"kokoro": f"kokoro preset {S.get('voice')}", "qwen3": f"qwen3 speaker {S.get('voice')}"}.get(S["engine"], "chatterbox built-in voice")
     if ref["kind"] == "user":
         p = Path(ref["path"])
         p = check_reference(p if p.is_absolute() or not base else Path(base) / p, ref.get("consent", False))
@@ -596,6 +605,12 @@ def plan_line(say: str, mood: str | None, S: dict) -> list[dict]:
             ex = S["exaggeration"] if S.get("exaggeration_fixed") else S["exaggeration"] + md["exaggeration"] + (c["punctuation"].get(kind, 0) if kind else 0)
             lo_e, hi_e = S.get("ex_range") or (0.25, 0.95)
             it.update({"exaggeration": round(min(hi_e, max(lo_e, ex)), 2), "cfg_weight": S["cfg_weight"], "temperature": S["temperature"]})
+        elif S["engine"] == "qwen3":
+            cue = md.get("instruct") or ""
+            if kind and (c.get("punctuation_instruct") or {}).get(kind):
+                cue = f"{cue} {c['punctuation_instruct'][kind]}".strip()
+            it.update({"voice": S["voice"], "model": S["model"], "language": "English" if str(S["language"]).lower().startswith("en") else S["language"],
+                       "instruct": " ".join(x for x in (S["instruct"], S.get("pace_hint"), cue) if x).strip()})
         else:
             it.update({"voice": S["voice"], "speed": round(S["speed"], 3)})
         items.append(it)
@@ -603,7 +618,7 @@ def plan_line(say: str, mood: str | None, S: dict) -> list[dict]:
 
 
 # ------------------------------------------------------------------ takes
-_TAKE_KEYS = ("text", "seed", "exaggeration", "cfg_weight", "temperature", "voice", "speed")
+_TAKE_KEYS = ("text", "seed", "exaggeration", "cfg_weight", "temperature", "voice", "speed", "instruct", "model", "language")
 
 
 def _take_paths(it: dict, S: dict, takes: Path) -> tuple[Path, Path]:
@@ -648,6 +663,36 @@ def _trim(x, sr: int, pad: float = 0.03) -> tuple[int, int]:
     return max(0, int(idx[0] * hop - pad * sr)), min(len(x), int((idx[-1] + 1) * hop + pad * sr))
 
 
+def _squeeze(seg, sr: int, max_gap: float | None):
+    """Shorten every silence INSIDE a take to max_gap seconds (qwen3 leaves long gaps at commas and colons).
+    Returns (new samples, a function mapping a time in the old take to the new one)."""
+    if not max_gap or len(seg) < sr // 5:
+        return seg, (lambda t: t)
+    import numpy as np
+    mask, hop = _speech_mask(seg, sr)
+    cuts, run = [], None                        # (start, end) sample ranges to remove
+    for i, on in enumerate(list(mask) + [True]):
+        if not on and run is None:
+            run = i
+        elif on and run is not None:
+            n = (i - run) * hop
+            if n > max_gap * sr:
+                keep = int(max_gap * sr)
+                a0 = run * hop + keep // 2
+                cuts.append((a0, a0 + n - keep))
+            run = None
+    if not cuts:
+        return seg, (lambda t: t)
+    parts, last = [], 0
+    for a0, b0 in cuts:
+        parts.append(seg[last:a0]); last = b0
+    parts.append(seg[last:])
+    removed = [(a0 / sr, (b0 - a0) / sr) for a0, b0 in cuts]
+    def tmap(t):
+        return t - sum(d if t >= a0 + d else max(0.0, t - a0) for a0, d in removed if t > a0)
+    return np.concatenate(parts), tmap
+
+
 def solve_pace(n_words: int, durs: list[float], pauses: list[float], target: float | None, engine: str, setting: float) -> dict:
     """The closed loop's arithmetic. Given the speech length of each sentence take and the planned pauses, return the
     pauses and time-stretch that land on `target` words per second, or the engine setting to regenerate with.
@@ -658,7 +703,8 @@ def solve_pace(n_words: int, durs: list[float], pauses: list[float], target: flo
     res = {"target": target, "stretch": 1.0, "pauses": p, "wps": round(wps(), 3), "converged": None, "regen": None}
     if not target or n_words < int(P["min_words"]):
         return res
-    tol, (lo, hi), ms = float(P["tolerance"]), P["pause_range"], float(P["max_stretch"])
+    tol, (lo, hi) = float(P["tolerance"]), P["pause_range"]
+    ms = float((P.get("max_stretch_by_engine") or {}).get(engine, P["max_stretch"]))
     T = n_words / target
     if p and sum(p) > 0 and abs(wps() - target) > tol / 2:
         k = (T - D) / sum(p)
@@ -675,7 +721,7 @@ def solve_pace(n_words: int, durs: list[float], pauses: list[float], target: flo
             a, b = P["cfg_range"]
             new = round(min(b, max(a, setting + (art_need - art_now) * float(P["cfg_per_wps"]))), 3)
             res["regen"] = {"cfg_weight": new} if abs(new - setting) >= 0.02 else None
-        else:
+        elif engine == "kokoro":
             a, b = P["speed_range"]
             new = round(min(b, max(a, setting * art_need / art_now)), 3)
             res["regen"] = {"speed": new} if abs(new - setting) >= 0.02 else None
@@ -712,7 +758,7 @@ def _assemble(st: dict, out_wav: Path) -> dict:
     for k, it in enumerate(st["items"]):
         x, sr = read_wav(it["wav"])
         a, b = _trim(x, sr)
-        seg = x[a:b].copy()
+        seg, tmap = _squeeze(x[a:b].copy(), sr, (c["pace_control"].get("squeeze_gap") or {}).get(S["engine"]))
         f = min(int(0.005 * sr), len(seg) // 4)
         if f:
             seg[:f] *= np.linspace(0, 1, f)
@@ -720,8 +766,8 @@ def _assemble(st: dict, out_wav: Path) -> dict:
         sw, est = _script_words(it["text"], it["meta"].get("words"), a / sr, b / sr)
         estimated |= est
         for w in sw:
-            w0 = min(max(w["start"] - a / sr, 0.0), len(seg) / sr)
-            w1 = min(max(w["end"] - a / sr, w0), len(seg) / sr)
+            w0 = min(max(tmap(w["start"] - a / sr), 0.0), len(seg) / sr)
+            w1 = min(max(tmap(w["end"] - a / sr), w0), len(seg) / sr)
             words.append({"text": w["text"], "start": round((t + w0) / s, 3), "end": round((t + w1) / s, 3), "char": it["start"] + w["char"]})
         parts.append(seg)
         t += len(seg) / sr
@@ -824,13 +870,14 @@ def synth_lines(lines: list[dict], voice_cfg: dict, engine: str, outdir: Path, f
             continue
         for st in state.values():
             S, durs = st["S"], []
+            sq = (config()["pace_control"].get("squeeze_gap") or {}).get(engine)
             for it in st["items"]:
                 x, sr = read_wav(it["wav"])
                 a, b = _trim(x, sr)
-                durs.append((b - a) / sr)
-            key = "cfg_weight" if engine == "chatterbox" else "speed"
+                durs.append(len(_squeeze(x[a:b], sr, sq)[0]) / sr)
+            key = {"chatterbox": "cfg_weight", "kokoro": "speed"}.get(engine)
             st["sol"] = solve_pace(sum(count_words(it["text"]) for it in st["items"]), durs, [it["pause"] for it in st["items"][:-1]],
-                                   S["target_wps"] if S.get("loop", True) else None, engine, st["items"][0][key])
+                                   S["target_wps"] if S.get("loop", True) else None, engine, st["items"][0][key] if key else 1.0)
             if st["sol"]["regen"] and st["rounds"] < max_rounds and not last:
                 st["rounds"] += 1
                 for it in st["items"]:
@@ -856,7 +903,7 @@ def synth_lines(lines: list[dict], voice_cfg: dict, engine: str, outdir: Path, f
 def handles(voice_cfg: dict, provider: str) -> bool:
     """Chatterbox always runs here. Kokoro runs here when the brief has voice.studio, or when Kokoro is not
     importable in the skill's own environment but its isolated environment is installed."""
-    if provider == "chatterbox":
+    if provider in ("chatterbox", "qwen3"):
         return True
     if provider != "kokoro":
         return False

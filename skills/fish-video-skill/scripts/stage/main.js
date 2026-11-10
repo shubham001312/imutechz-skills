@@ -62,7 +62,7 @@
       await bg.firstChild.decode().catch(() => {});
     } else if (L.TEXTURES_CSS.includes(TEX) && TEX !== "grid" && TEX !== "blueprint") bg.innerHTML = `<div class="abs" style="inset:0;${L.textureCSS(TEX, C)}"></div>`;
     else if (TEX === "grid" || TEX === "blueprint") bg.innerHTML = `<div class="abs" style="inset:0;${L.textureCSS(TEX, C)}"></div>${TEX === "blueprint" ? '<div class="abs" style="inset:0;background:radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0,0,0,.35) 100%)"></div>' : ""}`;
-    else if (TEX === "clean" || TEX === "grain") bg.innerHTML = wash;
+    else if (TEX === "clean" || TEX === "grain") bg.innerHTML = TEX === "clean" && TL.background === "plain" ? `<div class="abs" style="inset:0;background:${C.bg}"></div>` : wash;
     else bg.innerHTML = TL.background === "plain" ? "" : `${wash}${TL.background === "dots" || !TL.background ? '<div class="dots"></div>' : ""}`;
     layers.scenes = el("div", "", stage); layers.scenes.id = "scenes";
     layers.hud = el("div", "", stage); layers.hud.id = "hud";

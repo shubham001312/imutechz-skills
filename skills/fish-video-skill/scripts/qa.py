@@ -11,6 +11,8 @@ Checks per platform (each PASS / WARN / FAIL):
   black       no black frames outside the first/last 0.5 s (blackdetect)
   captions    SRT parses; no overlaps; line length; reading speed; every spoken word covered
   lint        on-screen text inside the safe area, not clipped, not below the minimum size (stills.mjs --lint)
+  loop        brief.ending: loop only - the last frame matches frame 0 and the last line flows into the first
+  sfx         every placed SFX cue is audible against the voice (WARN when silent or > 18 dB under)
   facts       every number on screen or in the narration appears in a source or brief.facts (research.py)
 Outputs build/<platform>/qa.json, a contact sheet build/<platform>/contact.png, and build/qa.md.
 """
@@ -325,6 +327,131 @@ def bare_regions(video: Path, hold: float = 1.5, flat: float = 3.0, fps: float =
             "detail": "no quarter of the frame stays empty (heuristic: still open the frame sheet)" if not found else f"{len(found)} empty regions, open these frames: {found[:8]}"}
 
 
+# ------------------------------------------------------------------ seamless loop ending
+LOOP_MAD_MAX = 18.0      # mean absolute grey difference (0-255) between the last and the first frame above which a "loop" is not seamless
+LOOP_SSIM_MIN = 0.55
+
+
+def frame_similarity(a, b) -> dict:
+    """Perceptual closeness of two equal-sized greyscale arrays (0-255): mean absolute difference and a global SSIM."""
+    import numpy as np
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    mad = float(np.abs(a - b).mean())
+    c1, c2 = (0.01 * 255) ** 2, (0.03 * 255) ** 2
+    ma, mb, va, vb = a.mean(), b.mean(), a.var(), b.var()
+    cov = float(((a - ma) * (b - mb)).mean())
+    ssim = float(((2 * ma * mb + c1) * (2 * cov + c2)) / ((ma ** 2 + mb ** 2 + c1) * (va + vb + c2)))
+    return {"mad": mad, "ssim": ssim}
+
+
+def first_last_frames(video: Path, w: int = 96, h: int = 54):
+    """(first, last) greyscale frames of a video as (h, w) arrays."""
+    import numpy as np
+    def grab(before=(), after=()):
+        raw = subprocess.run([ffmpeg_bin(), "-v", "error", *before, "-i", str(video), "-vf", f"scale={w}:{h}:flags=area,format=gray", *after, "-f", "rawvideo", "-"],
+                             capture_output=True, check=True).stdout
+        n = len(raw) // (w * h)
+        if not n:
+            raise FishError(f"could not decode a frame from {video.name}")
+        return np.frombuffer(raw, dtype=np.uint8)[: n * w * h].reshape(n, h, w)
+    first = grab(after=["-frames:v", "1"])[0]
+    last = grab(before=["-sseof", "-0.3"])[-1]            # every frame of the last 0.3 s; the final one is the loop point
+    return first, last
+
+
+def loop_narration(lines: list[dict]) -> str | None:
+    """Convention (references/storyboard-templates.md): the last narration line ends open, so it flows into the first line.
+    Returns a problem text, or None when it does."""
+    if len(lines) < 2:
+        return "a loop needs a narration with at least two lines"
+    last = str(lines[-1].get("say") or "").strip()
+    if not last:
+        return None
+    if re.search(r"[.!?][\"')\]]*$", last) and not re.search(r"(\.\.\.|\u2026)$", last):
+        return f"the last line ends on a full stop ({last[-30:]!r}): end mid-thought (comma, dash, ellipsis or an open clause) so it runs into the first line"
+    return None
+
+
+def loop_ending(video: Path, tl: dict, ending: str | None) -> dict | None:
+    """Only for brief.ending == 'loop': WARN when the last rendered frame does not match frame 0, or the last line does not flow into the first."""
+    if ending != "loop":
+        return None
+    probs = []
+    try:
+        first, last = first_last_frames(video)
+        sim = frame_similarity(first, last)
+        detail = f"last frame vs frame 0: mean difference {sim['mad']:.1f}/255, SSIM {sim['ssim']:.2f}"
+        if sim["mad"] > LOOP_MAD_MAX or sim["ssim"] < LOOP_SSIM_MIN:
+            probs.append("the last frame does not match the first, so the loop jumps: end on the hook's own frame (same scene, same layout) or fade into it")
+    except Exception as e:                                  # noqa: BLE001 - numpy missing or decode failure: say so, do not pass
+        return {"check": "loop ending", "status": "WARN", "detail": f"not measured ({type(e).__name__}: {str(e)[:80]})"}
+    nar = loop_narration(tl.get("voice_lines") or [])
+    if nar:
+        probs.append(nar)
+    return {"check": "loop ending", "status": "PASS" if not probs else "WARN", "detail": detail + (f"; {probs}" if probs else "")}
+
+
+# ------------------------------------------------------------------ SFX audibility
+def sfx_cue_check(sfx, voice, sr: int, cues: list[dict], sfx_gain_db: float = 0.0, voice_gain_db: float = 0.0,
+                  margin_db: float = 18.0, silent_db: float = -60.0, pre: float = 0.1, post: float = 0.5) -> dict:
+    """Pure core. `sfx` and `voice` are mono float arrays (the stems before the mix) at `sr`; the gains are the ones the mix applied.
+    For each cue (dict with `t`): the SFX peak 50 ms RMS in [t-pre, t+post] against the voice RMS in the same window.
+    silent = nothing in the SFX stem there; buried = more than `margin_db` below the voice (only counted when the voice is speaking)."""
+    import numpy as np
+    db = lambda x: float(20 * np.log10(np.sqrt(float(np.mean(np.square(x)))) + 1e-9)) if len(x) else -120.0
+    hop = max(1, int(0.05 * sr))
+    silent, buried, checked = [], [], 0
+    for q in cues:
+        t = float(q["t"])
+        a, b = max(0, int((t - pre) * sr)), int((t + post) * sr)
+        seg = np.asarray(sfx[a:b], float)
+        if len(seg) < hop:
+            continue
+        checked += 1
+        n = len(seg) // hop
+        lvl = max(db(seg[i * hop:(i + 1) * hop]) for i in range(n))
+        if lvl < silent_db:
+            silent.append(round(t, 2))
+            continue
+        v = np.asarray(voice[a:b], float)
+        vl = db(v) + voice_gain_db
+        if vl > -50 and vl - (lvl + sfx_gain_db) > margin_db:
+            buried.append((round(t, 2), round(vl - (lvl + sfx_gain_db), 1)))
+    return {"checked": checked, "silent": silent, "buried": buried}
+
+
+def sfx_audibility(b: Path, cues: list[dict], density: str = "rich") -> dict | None:
+    """WARN when a placed SFX cue is silent in the SFX stems or sits more than ~18 dB under the voice. None when the render has no cues."""
+    need = {"rich": 1, "standard": 2, "minimal": 3}.get(density, 1)
+    cues = [q for q in cues if q.get("lvl", 2) >= need and q.get("type") != "typing" and "t" in q]
+    if not cues:
+        return None
+    stems = [p for p in (b / "sfx.wav", b / "sfx-samples.wav") if p.exists()]
+    voice = b / "voice.wav"
+    if not stems or not voice.exists():
+        return {"check": "sfx audibility", "status": "WARN", "detail": "not measured (no sfx or voice stem in build/; render with voice and music on)"}
+    try:
+        import numpy as np
+        import dissect
+        x = [dissect.load_audio(p) for p in stems]
+        n = max(len(a) for a in x)
+        sfx = sum(np.pad(a, (0, n - len(a))) for a in x)
+        v = dissect.load_audio(voice)
+        mix = load_json(b / "mix.json", default={}) if (b / "mix.json").exists() else {}
+        r = sfx_cue_check(sfx, v, dissect.SR, cues, float(mix.get("sfx_gain_db") or 0), float(mix.get("voice_gain_db") or 0))
+    except Exception as e:                                  # noqa: BLE001
+        return {"check": "sfx audibility", "status": "WARN", "detail": f"not measured ({type(e).__name__}: {str(e)[:80]})"}
+    bad = r["silent"] + [t for t, _ in r["buried"]]
+    detail = f"{r['checked']} cues measured"
+    if r["silent"]:
+        detail += f"; silent at {r['silent'][:8]}s"
+    if r["buried"]:
+        detail += f"; under the voice by more than 18 dB at {[f'{t}s ({d} dB)' for t, d in r['buried'][:6]]}"
+    if bad:
+        detail += ": raise mix.sfx_gain_db / mix.sfx_under_voice_db, or check the cue type has a sound"
+    return {"check": "sfx audibility", "status": "WARN" if bad else "PASS", "detail": detail}
+
+
 def qa_platform(project: Path, platform: str, lint: bool = True, preview: bool = False) -> dict:
     cfg = project_config(project)
     prof = dict(cfg["platforms"][platform])
@@ -361,6 +488,13 @@ def qa_platform(project: Path, platform: str, lint: bool = True, preview: bool =
     res.append(explicit_cues(load_yaml(project / "storyboard.yaml"), info.get("cues", []), (tl.get("sfx") or {}).get("density") or "rich"))
     res.append(bare_regions(video))
     res.append(cue_sounds(project, load_yaml(project / "storyboard.yaml")))
+    if not preview:
+        ra = sfx_audibility(b, info.get("cues", []), (tl.get("sfx") or {}).get("density") or "rich")
+        if ra:
+            res.append(ra)
+        rl = loop_ending(video, tl, (cfg["brief"] or {}).get("ending"))
+        if rl:
+            res.append(rl)
     try:
         import gates
         _g = gates.recipe_gate((project_config(project)["brief"] or {}).get("recipe"))

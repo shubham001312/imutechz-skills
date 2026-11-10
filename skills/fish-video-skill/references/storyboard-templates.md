@@ -104,6 +104,43 @@ thumbnail: {kicker: "ACME", title: "Boil without fire", accent: fire, badge: "60
 facts_ok: []                          # numbers you have verified out-of-band (prefer brief.facts)
 ```
 
+## Beat grammars for Shorts and explainers
+
+Named beat orders for the three most common short formats. They are **starting points**: the live trend direction (`fv trends`, step 4) may reorder, drop or add beats, and a hook the trending videos use beats the one below. The gates (real imagery, facts with sources, captions) still apply to whatever you build. Tags are the delivery tags of a narration line (`hook`, `setup`, `reveal`, `punchline`); see [voice direction](voice-direction.md).
+
+| Beat | Job | Typical length |
+|---|---|---|
+| HOOK | the surprise or the tension, under 10 words, first frame already moving | 0-2.5 s |
+| SETUP | the one fact the viewer needs to feel the gap | 2-5 s |
+| QUIZ | a question the viewer answers in their head (a pause, a countdown, two options) | 2-4 s |
+| REVEAL | the answer, with the proof on screen (a sourced number or the real picture) | 3-6 s |
+| TWIST | the turn: "but", the exception, the second fact that changes the first | 3-5 s |
+| PAYOFF | the line the viewer repeats to a friend | 2-4 s |
+| LOOP | the last line runs into the first (see below) | 1-2 s |
+
+### A. Facts Short (about 20 s): HOOK / SETUP / QUIZ / REVEAL / TWIST / LOOP
+
+HOOK ("Honey never spoils.") -> SETUP (jars found in a tomb, still edible) -> QUIZ ("Why?" with two guesses on screen) -> REVEAL (low water, acid, hydrogen peroxide; the sourced figure) -> TWIST (one thing that does ruin it) -> LOOP (ends on "...and that is why") -> back to the hook. Recipe: `bold-short`. One fact per beat; a QUIZ needs a 0.5-0.8 s pause before the REVEAL.
+
+### B. Story Short (about 24 s): HOOK / SETUP / ESCALATE / TURN / PAYOFF
+
+HOOK (the stake: "In 1962 one man stopped a war.") -> SETUP (who, where, when, with an archive photo) -> ESCALATE (two beats, each worse than the last) -> TURN (the decision, the single most cinematic image) -> PAYOFF (what it changed, one sourced number). Keep names and dates on screen only when they are in `brief.facts`. Recipe: `story-short`. End on an open clause when `ending: loop`.
+
+### C. Tool explainer (about 24 s): HOOK / PROBLEM / DEMO / PROOF / CTA
+
+HOOK (the result: "This ships a site in one command.") -> PROBLEM (the slow way, 1 beat) -> DEMO (the real screen or terminal, one callout) -> PROOF (a sourced number or a before/after) -> CTA (install line or "follow"). Uses `tour`/`terminal` scenes with a captured shot, never a screenshot as the main visual. With `ending: cta` the last beat is the call to action; with `ending: loop` swap it for a LOOP line.
+
+### D. Myth-buster Short (about 22 s): HOOK / MYTH / QUIZ / REVEAL / TWIST / LOOP
+
+HOOK ("You were lied to about this.") -> MYTH (say the common belief, strikethrough on screen) -> QUIZ (true or false?) -> REVEAL (the sourced fact) -> TWIST (why the myth stuck) -> LOOP. Best when the trend data shows comment-bait or "did you know" hooks.
+
+## Seamless loop ending (`ending: loop`)
+
+Set `ending: loop` in the brief (the interview does it when the viewer chooses a loop instead of a call to action; `cta` and `none` are the other values, and a brief without the key behaves as before). A Short that loops replays itself and lifts watch time. Two things make the seam invisible, and `fv qa` checks both (as a WARN, `loop ending`):
+
+1. **Frames.** The last rendered frame must look like frame 0: same scene, same layout and background, ideally the hook's own opening state. QA downscales both to greyscale and compares them (mean absolute difference above 18/255 or SSIM below 0.55 is a WARN). An `end` card with a logo on a different background fails this on purpose: either drop the end card (`end_card: false`) or end on the hook scene.
+2. **Words.** The last narration line ends open, with no full stop: a comma, a dash, an ellipsis or a dangling connective ("...and that is why", "so"). The first line then completes the thought, so the first line may begin in lower case in the script's own logic ("honey never spoils.", read after "...and that is why"). QA warns when the last line ends in `.`, `!` or `?`. Write the pair together: line 1 is the hook, the last line is its lead-in. Keep the final word short and let the voice end on a rising or held tone (`tag: setup`, no `pause`).
+
 ## Scene-writing checklist
 
 - [ ] One idea per scene, and the `say` lines carry exactly that idea.
