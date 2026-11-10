@@ -69,6 +69,10 @@ Giphy (its terms forbid storing copies of its media), Tenor (shut down) and Redd
 
 `fit: contain` (default) shows the whole picture over a blurred copy; `fit: full` fills the frame. Everything is a function of the scene time and sits inside the safe area. See the [scene catalogue](scene-catalogue.md).
 
+## Meme stickers inside a scene
+
+A full-screen `meme` scene is a break. In a fast people or news Short, a reaction works better as a **sticker** inside the beat: the `newsstory` scene takes `fx: [{kind: meme, src: assets/meme/x.png, word: "<spoken word>", x, y, w, top, bottom}]`. The same rules apply (registered file, credit record, policy, no repeated gag), and `memes lint` checks stickers too. Match the meme to the beat's reaction (shock, side-eye, popcorn, applause); use emoji only when the brief says no memes. See [people, news and fact Shorts](news-and-people-shorts.md).
+
 ## The committed sound pack
 
 `sfx/library/meme/` holds 12 short licensed recordings (sad trombone, sting, rimshot, applause, laugh, boing, gong, whip, kazoo, party horn, horn, clock): CC0, public domain or CC BY. `pack.json` maps each to a cue type and a default level; `LICENSES.md` has author, licence, source URL and SHA-256. When a render plays a CC BY sound, its credit is added to the project's ledger and appears in the package credits. The famous viral sounds are never committed.

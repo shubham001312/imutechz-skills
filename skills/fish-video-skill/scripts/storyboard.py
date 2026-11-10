@@ -37,7 +37,9 @@ SCENE_TYPES = {"title", "kinetic", "bullets", "stat", "chart", "diagram", "white
                # long-format roadmap explainers
                "roadmap", "pile",
                # image-led and word-synced scenes (scenes/story.js)
-               "story", "statement", "cards", "flow", "site", "bold"}
+               "story", "statement", "cards", "flow", "site", "bold",
+               # people / news / fact Shorts (scenes/newsstory.js)
+               "newsstory"}
 TRANSITIONS = {"fade", "cut", "wipe", "zoom", "flash", "defocus", "flip", "flood", "dip", "iris", "through", "world", "match"}
 CAPTION_STYLES = {"pop", "karaoke", "minimal", "none"}
 TEXTURES = {"paper", "grain", "clean", "grid", "blueprint", "halftone", "scanlines", "notebook", "dots", "sunburst", "stripes", "film"}
@@ -221,7 +223,7 @@ def min_visual(scene: dict, cfg: dict, beat: float, shots: dict) -> float:
 DEFAULT_ENERGY = {"title": 2, "kinetic": 1, "end": 0, "tour": 3, "whiteboard": 2, "diagram": 2, "chart": 2, "stat": 3,
                   "bullets": 2, "steps": 2, "terminal": 2, "quote": 1, "compare": 2, "image": 1, "thumbnail": 0,
                   "collage": 2, "split": 3, "cone": 1, "coinflip": 3, "orbit": 2, "neonline": 3, "glowshape": 2,
-                  "tunnel": 3, "ringbloom": 3, "footage": 2, "stepcard": 2, "meme": 3}
+                  "tunnel": 3, "ringbloom": 3, "footage": 2, "stepcard": 2, "meme": 3, "newsstory": 3}
 
 
 # ------------------------------------------------------------------ validation
@@ -251,6 +253,9 @@ def validate(sb: dict, cfg: dict | None = None) -> tuple[list[str], list[str]]:
             warns.append(f"{where}: a stat with no source — every number needs one")
         if s.get("type") == "chart" and not p.get("source"):
             warns.append(f"{where}: a chart with no source")
+        if s.get("type") == "newsstory":
+            errors += _newsstory_errors(where, p)
+            warns += _newsstory_warns(where, p)
         if s.get("type") == "meme":
             if not (p.get("src") or p.get("clip")):
                 errors.append(f"{where}: a meme scene needs `src` (a picture under the project) or `clip` (cut with `memes cut`)")
@@ -276,6 +281,52 @@ def validate(sb: dict, cfg: dict | None = None) -> tuple[list[str], list[str]]:
     return errors, warns
 
 
+def _inside(ref) -> bool:
+    return not (str(ref).startswith(("/", "\\")) or ".." in Path(str(ref)).parts or re.match(r"^[a-z]+:", str(ref), re.I))
+
+
+def _newsstory_errors(where: str, p: dict) -> list[str]:
+    """A newsstory scene shows real pictures: it needs at least one slide, and every path stays inside the project."""
+    out = []
+    slides = p.get("slides") or []
+    if not slides:
+        out.append(f"{where}: a newsstory scene needs `slides` (a real photo, a clip, a split or a collage)")
+    refs = []
+    for q in slides:
+        if not (q.get("src") or q.get("clip")):
+            out.append(f"{where}: every newsstory slide needs `src` (a photo) or `clip` (footage cut with `assets clip` or `memes cut`)")
+        refs += [q.get("src"), q.get("src2")] + [it.get("src") for it in q.get("items") or []]
+        nm = q.get("clip")
+        if nm and (not isinstance(nm, str) or re.sub(r"[^A-Za-z0-9._-]+", "-", nm).strip("-.") != nm or ".." in nm):
+            out.append(f"{where}: clip name {nm!r} must be a plain name (letters, digits, . _ -)")
+    for f in p.get("fx") or []:
+        if f.get("kind") == "meme":
+            if not f.get("src"):
+                out.append(f"{where}: a meme sticker needs `src` (a picture under the project, for example assets/meme/x.png)")
+            refs.append(f.get("src"))
+        elif f.get("kind") not in {"emoji", "card", "stamp", "chip", "flash"}:
+            out.append(f"{where}: fx kind {f.get('kind')!r} must be one of meme, emoji, card, stamp, chip, flash")
+    for ref in refs:
+        if ref and not _inside(ref):
+            out.append(f"{where}: picture {ref!r} must be a path inside the project")
+    return out
+
+
+def _newsstory_warns(where: str, p: dict) -> list[str]:
+    """Labels and layout: a photo of a person or unrelated footage must say what it is; fx stay clear of the captions."""
+    out = []
+    for q in p.get("slides") or []:
+        if q.get("mode") != "collage" and not q.get("label") and not q.get("mystery"):
+            out.append(f"{where}: slide {q.get('src') or q.get('clip')!s} has no `label`: say who and when (\"SYDNEY SWEENEY, TIFF 2024\"), "
+                       "and mark footage that is not of the event (\"VIDEO: WEF 2017 · NOT ABOUT THIS\")")
+    for f in p.get("fx") or []:
+        if f.get("kind") in {"meme", "emoji", "stamp", "chip"} and float(f.get("y", 0.5)) > 0.66:
+            out.append(f"{where}: fx {f.get('kind')} at y {f.get('y')} sits on the burned-in captions (keep y <= 0.66)")
+    if (p.get("fx") or []) and not any(f.get("kind") == "meme" for f in p.get("fx") or []) and any(f.get("kind") == "emoji" for f in p.get("fx") or []):
+        out.append(f"{where}: emoji stickers only: prefer a real reaction meme that fits the beat (`fishvideo memes templates` / `memes films`)")
+    return out
+
+
 # ------------------------------------------------------------------ timeline
 def _meme_params(project: Path, p: dict) -> dict:
     """A meme scene names its clip; the frame count and rate come from the clip's own meta.json (an explicit value wins)."""
@@ -288,6 +339,20 @@ def _meme_params(project: Path, p: dict) -> dict:
     p = fill(dict(p))
     if isinstance(p.get("inset"), dict):
         p["inset"] = fill(dict(p["inset"]))
+    return p
+
+
+def _newsstory_params(project: Path, p: dict) -> dict:
+    """Each footage slide of a newsstory scene gets its frame count and rate from the clip's meta.json (an explicit value wins)."""
+    p = dict(p)
+    slides = []
+    for q in p.get("slides") or []:
+        mj = Path(project) / "build" / "clips" / str(q.get("clip") or "") / "meta.json"
+        if q.get("clip") and mj.is_file():
+            meta = load_json(mj)
+            q = {"frames": meta.get("frames"), "fps": meta.get("fps"), **q}
+        slides.append(q)
+    p["slides"] = slides
     return p
 
 
@@ -372,6 +437,8 @@ def resolve(project: Path, platform: str, cfg: dict, sb: dict, clips: dict | Non
         music.append([t_bar, energy])
         if s["type"] == "meme":
             s["params"] = _meme_params(project, s.get("params") or {})
+        elif s["type"] == "newsstory":
+            s["params"] = _newsstory_params(project, s.get("params") or {})
         out_scenes.append({"id": s["id"], "type": s["type"], "t0": round(t0, 4), "t1": round(t1, 4), "bars": bars, "ts": ts,
                            "params": {**(s.get("params") or {}), **({"cues": s["cues"]} if s.get("cues") else {}), **_px_params(project, s)}, "chapter": s.get("chapter"), "transition": s.get("transition", "fade" if i else "cut"),
                            "hud": s.get("hud"), "energy": energy,
