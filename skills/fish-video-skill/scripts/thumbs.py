@@ -5,7 +5,8 @@
     fishvideo thumb sheet <dir>                        a mock feed, light and dark, with the variants among grey placeholders
     fishvideo thumb pick <dir> <n> [--cover m]         record the chosen variant: `package` ships it
     fishvideo thumb cutout <image> [--out f] [--outline 10] [--glow 34]   a subject with outline and glow, ready for a layout
-    fishvideo thumbnail <dir> [--no-covers]            THE REQUIRED STEP: the house `road` thumbnail (+ 9:16 covers), checked, picked: `package` refuses without it
+    fishvideo thumbnail <dir> [--no-covers]            THE REQUIRED STEP: the house thumbnail (+ 9:16 covers), checked, picked: `package` refuses without it.
+                                                       `insider` for kinetic-explainer videos (or thumbnail.layout: insider), else `road`
     fishvideo thumb logos [<dir>] [--find text] [--slugs a,b]   brand logos (simple-icons) for the tiles: search, resolve, relevance check
 
 Layouts (scripts/stage/scenes/thumbs.js, drawn by the stage like every other frame):
@@ -48,8 +49,10 @@ LIMITS = {
     "stamp": (0.84, 0.86),   # the bottom-right corner a feed covers with the duration: x and y start, as shares of the frame
     "stamp_edges": 0.06,     # the share of edge pixels allowed in it
 }
-LAYOUTS = ["road", "subject", "caption", "number", "split", "frame"]
-VERTICAL_LAYOUTS = ["road", "subject", "caption"]
+LAYOUTS = ["road", "insider", "subject", "caption", "number", "split", "frame"]
+VERTICAL_LAYOUTS = ["road", "insider", "subject", "caption"]
+INSIDER_RECIPES = {"kinetic-explainer"}
+INSIDER_THEMES = {"insider-light"}
 SKIP_TYPES = {"end", "thumbnail", "title"}
 SCREENSHOT_TYPES = {"site", "tour", "pile", "capture", "browser"}     # scenes that show a website: never a thumbnail or cover
 SCREENSHOT_HINTS = ("screenshot", "capture", "shot-", "/shots/", "browser")
@@ -178,7 +181,7 @@ def render_one(project: Path, name: str, params: dict, dest: Path, *, W: int | N
         fr = load_json(res["probe"])["frames"][0]
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(fr["file"], dest)
-        return {"texts": fr["texts"], "tiles": fr.get("tiles") or [], "blocks": fr.get("blocks") or [], "issues": fr["issues"], "W": tl["W"], "H": tl["H"]}
+        return {"texts": fr["texts"], "tiles": fr.get("tiles") or [], "blocks": fr.get("blocks") or [], "issues": fr["issues"], "W": tl["W"], "H": tl["H"], "safe": tl.get("safe")}
     finally:
         f.unlink(missing_ok=True)
         shutil.rmtree(pdir, ignore_errors=True)
@@ -421,52 +424,135 @@ def order_tiles(project: Path, tiles: list[dict]) -> list[dict]:
     return sorted(tiles, key=lambda t: -min(_native(project, t["src"]) or (0, 0)))[:3]
 
 
+def thumb_layout(brief: dict, sb: dict) -> str:
+    """The layout `fishvideo thumbnail` draws: the storyboard's (or brief's) thumbnail.layout when it is insider or road; else
+    `insider` for a kinetic-explainer video (recipe kinetic-explainer or theme insider-light); else the house `road`."""
+    th = {**(brief.get("thumbnail") or {}), **(sb.get("thumbnail") or {})}
+    lay = str(th.get("layout") or "").strip().lower()
+    if lay in ("insider", "road"):
+        return lay
+    if lay:
+        raise FishError(f"thumbnail.layout {lay!r}: `fishvideo thumbnail` draws insider or road (other layouts: `fishvideo thumb make`)")
+    return "insider" if (brief.get("recipe") in INSIDER_RECIPES or brief.get("theme") in INSIDER_THEMES) else "road"
+
+
+def _strip_marks(t: str) -> str:
+    return re.sub(r"\*([^*]+)\*", r"\1", str(t or "")).strip()
+
+
+def insider_params(project: Path, th: dict, brief: dict, sb: dict) -> tuple[dict, str]:
+    """The params of the insider cover from the thumbnail block: lead, title (the huge keyword), mid, chip (else sub), handle,
+    and ONE hero: hero {src, kind: cutout|card}, else a network of logo tiles (hero.logos or thumbnail.logos: slugs, or icon/picture
+    files), else the project's first licensed picture in a card. Returns (params, note)."""
+    params = {k: str(th[k]) for k in ("lead", "title", "mid", "chip", "handle") if th.get(k)}
+    if not params.get("chip") and th.get("sub"):
+        params["chip"] = _strip_marks(th["sub"])
+    if not params.get("lead") and th.get("tag"):
+        params["lead"] = _strip_marks(th["tag"]).lower()
+    params.setdefault("title", brief.get("title", ""))
+    params["chip"] = _strip_marks(params.get("chip", "")) or None
+    if not params["chip"]:
+        params.pop("chip")
+    hero = th.get("hero")
+    if isinstance(hero, str):
+        hero = {"src": hero}
+    hero = dict(hero or {})
+    logos = hero.pop("logos", None) if hero.get("logos") else None
+    if hero.get("src"):
+        src = str(hero["src"])
+        if not (project / src).exists() or not src.lower().endswith((".png", ".webp", ".jpg", ".jpeg", ".svg")) or is_screenshot_path(src):
+            raise FishError(f"thumbnail.hero {src!r}: not a picture in the project (or it looks like a screenshot)")
+        kind = hero.get("kind") or ("cutout" if src.lower().endswith((".png", ".webp", ".svg")) else "card")
+        if kind not in ("cutout", "card"):
+            raise FishError(f"thumbnail.hero.kind {kind!r}: cutout or card")
+        params["hero"] = {**{k: v for k, v in hero.items() if k in ("color", "ar")}, "src": src, "kind": kind}
+        return params, f"insider: {kind} {src}"
+    items = logos or th.get("logos") or []
+    if items:
+        slugs = [x for x in items if not (isinstance(x, str) and Path(x).suffix)]
+        files = [x for x in items if isinstance(x, str) and Path(x).suffix]
+        for v in files:
+            if not (project / v).exists() or is_screenshot_path(v):
+                raise FishError(f"thumbnail logo {v!r}: not a file in the project (or it looks like a screenshot)")
+        lg = resolve_logos(slugs) if slugs else []
+        bad = logos_related(project, lg)
+        if bad and not th.get("allow_unrelated_logos"):
+            raise FishError("logos that the video never mentions: " + ", ".join(bad) + ". Use only brands the video is about (trademarks stay with their owners), or set thumbnail.allow_unrelated_logos: true and say why.")
+        by = {x["slug"]: x for x in lg}
+        tiles = []
+        for x in items:
+            if isinstance(x, str) and Path(x).suffix:
+                tiles.append({"src": x})
+            else:
+                g = by[_norm(x["slug"] if isinstance(x, dict) else x)]
+                tiles.append({"d": g["d"], "hex": g["hex"], "title": g["title"], "slug": g["slug"]})
+        tiles = tiles[:7]
+        if len(tiles) < 2:
+            raise FishError("the insider network hero needs 2 to 7 logos (thumbnail.hero.logos or thumbnail.logos)")
+        params["tiles"] = tiles
+        return params, "insider: network of " + ", ".join(t.get("slug") or t["src"] for t in tiles)
+    pics, _ = resolve_tiles(project, {}, sb, {k: v for k, v in brief.items() if k != "thumbnail"})
+    pics = order_tiles(project, [t for t in pics if t.get("src")])
+    if not pics:
+        raise FishError("the insider cover needs ONE hero: thumbnail.hero: {src: assets/cutout/x.png, kind: cutout} (or kind: card for a picture), "
+                        "or thumbnail.logos: [slug, ...] for the logo network. A website screenshot is never used.")
+    params["hero"] = {"src": pics[0]["src"], "kind": "card"}
+    return params, f"insider: card {pics[0]['src']} (the project's sharpest licensed picture)"
+
+
 def thumbnail(project: Path, covers: bool = True) -> dict:
-    """THE required step. Draw the house `road` thumbnail (1280x720) and a 9:16 cover per vertical platform, check them, pick them."""
+    """THE required step. Draw the house thumbnail (1280x720) and a 9:16 cover per vertical platform, check them, pick them.
+    The layout is `insider` for kinetic-explainer videos (or thumbnail.layout: insider), else `road`."""
     project = ensure_project(project)
     cfg = project_config(project)
     brief = cfg["brief"]
     sbf = project / "storyboard.yaml"
     sb = load_yaml(sbf) if sbf.exists() else {}
-    tl = dz.ensure_timeline(project, "thumbnail")
-    p0 = dict(tl["scenes"][0]["params"] or {})
-    p0.pop("layout", None)
-    tiles, note = resolve_tiles(project, p0, sb, brief)
-    if len(tiles) < 2:
-        raise FishError("the thumbnail needs 2 or more tiles: brand logos the video is about (thumbnail.logos: [slug, ...] in storyboard.yaml; "
-                        "find slugs with `fishvideo thumb logos --find <name>`) or licensed pictures (thumbnail.tiles: [assets/photo/a.jpg, ...], or assets in assets/credits.json). "
-                        "A website screenshot is never used.")
     th = {**(brief.get("thumbnail") or {}), **(sb.get("thumbnail") or {})}
-    params = {k: th[k] for k in ("title", "accent", "tag", "sub") if th.get(k)}      # what the author wrote for the thumbnail wins
-    for k in ("title", "accent", "tag", "sub"):
-        if p0.get(k) and k not in params:
-            params[k] = p0[k]
-    params.setdefault("title", brief.get("title", ""))
-    if not params.get("tag") and th.get("kicker"):
-        params["tag"] = th["kicker"]
-    if not params.get("sub") and th.get("badge"):
-        params["sub"] = th["badge"]
-    params["tiles"] = order_tiles(project, tiles)
-    params["accent"] = pick_accent(params.get("title", ""), params.get("accent"))
+    layout = thumb_layout(brief, sb)
+    if layout == "insider":
+        params, note = insider_params(project, th, brief, sb)
+        tile_px = [_native(project, params["hero"]["src"])] if params.get("hero") else [None for _ in params.get("tiles", [])]
+    else:
+        tl = dz.ensure_timeline(project, "thumbnail")
+        p0 = dict(tl["scenes"][0]["params"] or {})
+        p0.pop("layout", None)
+        tiles, note = resolve_tiles(project, p0, sb, brief)
+        if len(tiles) < 2:
+            raise FishError("the thumbnail needs 2 or more tiles: brand logos the video is about (thumbnail.logos: [slug, ...] in storyboard.yaml; "
+                            "find slugs with `fishvideo thumb logos --find <name>`) or licensed pictures (thumbnail.tiles: [assets/photo/a.jpg, ...], or assets in assets/credits.json). "
+                            "A website screenshot is never used.")
+        params = {k: th[k] for k in ("title", "accent", "tag", "sub") if th.get(k)}      # what the author wrote for the thumbnail wins
+        for k in ("title", "accent", "tag", "sub"):
+            if p0.get(k) and k not in params:
+                params[k] = p0[k]
+        params.setdefault("title", brief.get("title", ""))
+        if not params.get("tag") and th.get("kicker"):
+            params["tag"] = th["kicker"]
+        if not params.get("sub") and th.get("badge"):
+            params["sub"] = th["badge"]
+        params["tiles"] = order_tiles(project, tiles)
+        params["accent"] = pick_accent(params.get("title", ""), params.get("accent"))
+        tile_px = [_native(project, t["src"]) if t.get("src") else None for t in params["tiles"]]
     out = tdir(project) / "variants"
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
-    png = out / "thumb-1-road.png"
-    info = render_one(project, "thumbroad", {**params, "layout": "road"}, png)
+    png = out / f"thumb-1-{layout}.png"
+    info = render_one(project, f"thumb{layout}", {**params, "layout": layout}, png)
     final = save_small(png)
-    save_json(final.with_suffix(".json"), {"layout": "road", "image": None, "tile_px": [_native(project, t["src"]) if t.get("src") else None for t in params["tiles"]], **info})
-    items = [{"n": 1, "layout": "road", "file": str(final.relative_to(project)).replace("\\", "/"), "bytes": final.stat().st_size, "note": note, "W": info["W"], "H": info["H"]}]
-    cv = make_covers(project, [{"layout": "road", "params": params}]) if covers and portrait_platforms(project) else []
+    save_json(final.with_suffix(".json"), {"layout": layout, "image": (params.get("hero") or {}).get("src"), "tile_px": tile_px, **info})
+    items = [{"n": 1, "layout": layout, "file": str(final.relative_to(project)).replace("\\", "/"), "bytes": final.stat().st_size, "note": note, "W": info["W"], "H": info["H"]}]
+    cv = make_covers(project, [{"layout": layout, "params": params}]) if covers and portrait_platforms(project) else []
     rep = {"variants": items, "covers": cv, "frames": []}
     save_json(tdir(project) / "variants.json", rep)
-    save_json(tdir(project) / "pick.json", {"n": 1, "layout": "road", "file": items[0]["file"], **({"cover": cv[0]["n"]} if cv else {}), "inputs": json.loads(json.dumps(thumb_inputs(project), default=str))})
+    save_json(tdir(project) / "pick.json", {"n": 1, "layout": layout, "file": items[0]["file"], **({"cover": cv[0]["n"]} if cv else {}), "inputs": json.loads(json.dumps(thumb_inputs(project), default=str))})
     res = check(project, only_pick=True)
     bad = [(r["name"], c) for r in res["results"] for c in r["checks"] if c["status"] == "FAIL"]
     for nm, c in bad:
         log(f"FAIL {nm}: {c['check']}: {c['detail']}")
     log(f"thumbnail: {final} ({note}); details build/thumbnail/check.md" + (f"; cover {cv[0]['file']}" if cv else ""))
     if bad:
-        raise FishError("the thumbnail fails its check (above). Fix the tiles or the title and run `fishvideo thumbnail <dir>` again.")
+        raise FishError("the thumbnail fails its check (above). Fix the hero, tiles or the words and run `fishvideo thumbnail <dir>` again.")
     return rep
 
 
@@ -549,7 +635,8 @@ def make_covers(project: Path, specs: list[dict]) -> list[dict]:
                 warn(str(e))
                 continue
             final = save_small(png)
-            save_json(final.with_suffix(".json"), {"layout": sp["layout"], "tile_px": [_native(project, t["src"]) if t.get("src") else None for t in params.get("tiles", [])], **info})
+            tpx = [_native(project, params["hero"]["src"])] if (params.get("hero") or {}).get("src") else [_native(project, t["src"]) if t.get("src") else None for t in params.get("tiles", [])]
+            save_json(final.with_suffix(".json"), {"layout": sp["layout"], "tile_px": tpx, **info})
             res.append({"n": n, "platform": plat, "layout": sp["layout"], "file": str(final.relative_to(project)).replace("\\", "/"), "bytes": final.stat().st_size, "W": info["W"], "H": info["H"]})
             log(f"  cover {n}  {plat} {sp['layout']}  {final.name}")
     return res
@@ -647,6 +734,8 @@ def check_image(path: Path, sidecar: dict | None = None, kind: str = "thumbnail"
                 soft.append(f"tile {i} is {int(b[2])} px from a {nat[0]}x{nat[1]} picture")
         rows.append(_row("tile pictures are sharp", "FAIL" if soft else "PASS", ("enlarged past " + str(LIMITS["tile_upscale"]) + "x: " + "; ".join(soft)) if soft else "no tile picture is enlarged past " + str(LIMITS["tile_upscale"]) + "x", hard=True))
         rows.append(_row("words clear of the tiles", "FAIL" if hits else "PASS", ("words touch or overlap a tile (gap under " + str(LIMITS["tile_gap"]) + " px): " + ", ".join(hits[:4])) if hits else f"every word is at least {LIMITS['tile_gap']} px from every tile (measured from the layout boxes)", hard=True))
+    if (sidecar or {}).get("layout") == "insider":
+        rows += insider_rows(sidecar, W, H)
     # light and colour
     g = (rgb.astype(np.float32) @ np.array([0.299, 0.587, 0.114], dtype=np.float32)) / 255
     mean, lo, hi = float(g.mean()), float(np.percentile(g, 2)), float(np.percentile(g, 98))
@@ -704,6 +793,29 @@ def check_image(path: Path, sidecar: dict | None = None, kind: str = "thumbnail"
         if worst < 99:
             st = "PASS" if worst >= LIMITS["contrast"] else "FAIL" if worst < LIMITS["contrast_floor"] else "WARN"
             rows.append(_row(f"words survive at {sw}x{sh}", st, f"{worst:.1f}:1 against what is behind {who!r} after shrinking" + ("" if st == "PASS" else " (the words blur into their background: a plate or a darker scrim behind them)")))
+    return rows
+
+
+def insider_rows(sidecar: dict, W: int, H: int) -> list[dict]:
+    """The insider cover's own hard checks: a hero is drawn, every word sits inside the safe area, no word touches the hero."""
+    rows = []
+    tiles, texts = sidecar.get("tiles") or [], [t for t in (sidecar.get("texts") or []) if not t.get("free")]
+    rows.append(_row("hero present", "PASS" if tiles else "FAIL", f"{len(tiles)} hero element(s)" if tiles else "no hero drawn: thumbnail.hero {src, kind} or thumbnail.logos", hard=True))
+    sf = sidecar.get("safe") or {}
+    if "left" in sf:                                     # the timeline stores insets; the stage measures a box
+        sf = {"x": sf["left"], "y": sf["top"], "w": W - sf["left"] - sf["right"], "h": H - sf["top"] - sf["bottom"]}
+    sf = sf if "x" in sf else {"x": 0, "y": 0, "w": W, "h": H}
+    tol = 2
+    out_ = [t["text"][:20] for t in texts if t["box"][0] < sf["x"] - tol or t["box"][1] < sf["y"] - tol or t["box"][0] + t["box"][2] > sf["x"] + sf["w"] + tol or t["box"][1] + t["box"][3] > sf["y"] + sf["h"] + tol]
+    rows.append(_row("text inside the safe area", "FAIL" if out_ else "PASS", ("outside the safe area: " + ", ".join(map(repr, out_[:4]))) if out_ else f"every word is inside the safe area ({sf['w']:.0f}x{sf['h']:.0f} at {sf['x']:.0f},{sf['y']:.0f})", hard=True))
+    hits = []
+    for t in texts:
+        tx, ty, tw, th_ = t["box"]
+        ty, th_ = ty + 0.12 * th_, 0.76 * th_
+        for i, b in enumerate(tiles, 1):
+            if tx < b[0] + b[2] and tx + tw > b[0] and ty < b[1] + b[3] and ty + th_ > b[1]:
+                hits.append(f"{t['text'][:18]!r} / hero {i}")
+    rows.append(_row("words clear of the hero", "FAIL" if hits else "PASS", ("words over the hero: " + ", ".join(hits[:4])) if hits else "no word overlaps the hero", hard=True))
     return rows
 
 
@@ -1023,7 +1135,7 @@ def cli(argv=None) -> int:
 
 
 def thumbnail_cli(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="fishvideo thumbnail", description="The required thumbnail step: the house road design, checked and picked.")
+    ap = argparse.ArgumentParser(prog="fishvideo thumbnail", description="The required thumbnail step: the house design (insider for kinetic-explainer videos, else road), checked and picked.")
     ap.add_argument("project"); ap.add_argument("--no-covers", action="store_true")
     a = ap.parse_args(argv)
     thumbnail(Path(a.project), covers=not a.no_covers)

@@ -59,6 +59,21 @@ thumbnail: {title: "GenAI Engineer Roadmap", accent: "GenAI", tag: "7 STEPS, IN 
 - **Tiles** are brand logos from the `simple-icons` npm package (`fishvideo thumb logos --find <name>`; icon files are CC0, but the marks are trademarks of their owners). Use only brands the video is about: a logo the brief and storyboard never mention is refused. A topic with no brands uses licensed pictures from `assets/credits.json` or `thumbnail.tiles: [assets/photo/a.jpg]`. Some brands are not in simple-icons; the error lists close matches.
 - **Never a website screenshot.** Screenshot scenes (`site`, `tour`, `pile`) are skipped when frames are chosen, and the check fails any picture with a browser window or a screenshot path.
 - **Checks** (all FAIL when missed): 1280x720 (9:16 for covers), under 2 MB, no screenshot, at least 2 tiles, every tile inside the frame, no word box within 12 px of a tile (measured from layout boxes), headline readable at 246 px wide (main text 12 px or more there and 3:1 contrast), plus the older WARN checks for brightness, saturation and the time-stamp corner.
+### The insider cover (kinetic-explainer videos)
+
+`fishvideo thumbnail` draws the `insider` layout instead of the road when the storyboard says `thumbnail: {layout: insider}`, or when no layout is given and the brief's recipe is `kinetic-explainer` (or its theme is `insider-light`). `layout: road` forces the road back. It is the light cover grammar of kinetic-typography explainer channels: an off-white canvas (`#f2f2f2`, the insider-light ground) with a faint grid; ONE hero visual on top (9:16) or on the left (16:9); under / beside it a centred mixed-weight stack: a small regular `lead` line, ONE huge black `title` (the keyword, 1 to 3 words; 3 words may break into two lines), an optional medium `mid` line and a `chip` line in a black box with white bold type, turned 2 degrees, with a soft shadow; 2 to 4 accent asterisks scattered (some large and half off the frame), never over the words; an optional faint `handle` (only when given, never invented).
+
+```yaml
+# storyboard.yaml
+thumbnail: {layout: insider, lead: "what if", title: "AI could feel", mid: "the same way we do", chip: "bored. scared. jealous.",
+            hero: {src: assets/cutout/sophia.png, kind: cutout}}      # or kind: card (a picture in a rounded shadowed card)
+thumbnail: {layout: insider, lead: "if you use", title: "these 5", chip: "you need this", hero: {logos: [anthropic, googlegemini, meta, assets/icons/openai.svg]}}
+```
+
+- **Hero**: `hero: {src, kind: cutout}` (a transparent cut-out, greyscale with a white sticker edge over a big accent asterisk; `color: true` keeps its colour), `hero: {src, kind: card, ar: 1.6}` (a picture in a rounded, shadowed card), or a **network**: 2 to 7 round white logo tiles with soft shadows on a dashed grey trunk (`hero.logos` or `thumbnail.logos`: simple-icons slugs, or icon / picture files in the project). With none of these the project's sharpest licensed picture goes in a card. The logo rule above applies (only brands the video mentions).
+- `chip` falls back to `sub` (its `*marks*` removed) and `lead` to `tag`, so a road block still draws. `*word*` in `lead` or `mid` sets that word bold.
+- **Checks** add, all FAIL when missed: a hero is drawn, every word is inside the platform's safe area, no word overlaps the hero. The 16:9 keeps the bottom-right corner (duration stamp) free.
+
 - **Enforced:** `package` (and `all`) stop and name `fishvideo thumbnail <dir>` when there is no thumbnail, the check fails, or the storyboard changed after it was made. `--no-thumbnail` exists only for a user who asks for no thumbnail.
 
 ## Voice

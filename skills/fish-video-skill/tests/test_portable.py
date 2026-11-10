@@ -596,6 +596,107 @@ def test_package_gate_reports_a_failing_check_with_the_command(tmp_path):
     assert any("tiles inside the frame" in e and "fishvideo thumbnail" in e for e in errs)
 
 
+# ------------------------------------------------------------------ the insider cover (kinetic-explainer videos)
+def test_insider_layout_is_chosen_for_kinetic_explainer_and_road_otherwise():
+    L = thumbs.thumb_layout
+    assert L({"recipe": "kinetic-explainer"}, {}) == "insider"
+    assert L({"theme": "insider-light"}, {}) == "insider"
+    assert L({"recipe": "roadmap-explainer", "theme": "tech-dark"}, {}) == "road"
+    assert L({}, {}) == "road"
+    assert L({"recipe": "kinetic-explainer"}, {"thumbnail": {"layout": "road"}}) == "road"          # an explicit layout wins
+    assert L({"recipe": "story-short"}, {"thumbnail": {"layout": "insider"}}) == "insider"
+    assert L({"thumbnail": {"layout": "insider"}}, {}) == "insider"
+    with pytest.raises(FishError):
+        L({}, {"thumbnail": {"layout": "subject"}})
+
+
+def _insider_project(tmp_path, th, recipe="kinetic-explainer"):
+    from PIL import Image, ImageDraw
+    p = tmp_path / "ins"
+    (p / "assets" / "cutout").mkdir(parents=True)
+    im = Image.new("RGBA", (600, 760), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse([150, 40, 450, 380], fill=(120, 110, 100, 255))
+    d.rectangle([60, 360, 540, 760], fill=(60, 64, 70, 255))
+    im.save(p / "assets" / "cutout" / "bot.png")
+    save_yaml(p / "brief.yaml", {"title": "Docker for robots", "platforms": ["youtube", "shorts"], "language": "en-US", "recipe": recipe, "theme": "insider-light",
+                                 "voice": {"provider": "none"}, "captions": {"burn": False}, "brand": {"name": ""}})
+    save_yaml(p / "storyboard.yaml", {"title": "t", "bpm": 120, "thumbnail": th,
+                                      "scenes": [{"id": "a", "type": "story", "bars": 2, "say": "Docker and Python are used here.", "params": {"lines": ["x"]}}]})
+    return p
+
+
+def test_insider_params_map_the_thumbnail_block(tmp_path):
+    p = _insider_project(tmp_path, {})
+    th = {"tag": "WHAT IF", "title": "Robots felt", "sub": "Bored. *Jealous.*", "hero": {"src": "assets/cutout/bot.png", "kind": "cutout"}, "handle": "@me"}
+    params, note = thumbs.insider_params(p, th, load_yaml(p / "brief.yaml"), {})
+    assert params["chip"] == "Bored. Jealous." and params["lead"] == "what if" and params["title"] == "Robots felt" and params["handle"] == "@me"
+    assert params["hero"] == {"src": "assets/cutout/bot.png", "kind": "cutout"} and "cutout" in note
+    assert thumbs.insider_params(p, {"hero": "assets/cutout/bot.png"}, {}, {})[0]["hero"]["kind"] == "cutout"     # a .png defaults to a cut-out
+    with pytest.raises(FishError):
+        thumbs.insider_params(p, {"hero": {"src": "assets/cutout/missing.png"}}, {}, {})
+    with pytest.raises(FishError):
+        thumbs.insider_params(p, {"hero": {"src": "assets/cutout/bot.png", "kind": "poster"}}, {}, {})
+    with pytest.raises(FishError) as e:                                                                       # no hero at all: say how to give one
+        thumbs.insider_params(p, {"title": "x"}, {}, {})
+    assert "thumbnail.hero" in str(e.value)
+
+
+def test_insider_network_hero_resolves_logos_and_refuses_unrelated_ones(tmp_path):
+    _need_icons()
+    p = _insider_project(tmp_path, {})
+    params, note = thumbs.insider_params(p, {"title": "x", "hero": {"logos": ["docker", "python", "assets/cutout/bot.png"]}}, {}, load_yaml(p / "storyboard.yaml"))
+    assert [t.get("slug") or t.get("src") for t in params["tiles"]] == ["docker", "python", "assets/cutout/bot.png"] and params["tiles"][0]["d"]
+    assert "hero" not in params and "network" in note
+    with pytest.raises(FishError) as e:
+        thumbs.insider_params(p, {"title": "x", "logos": ["docker", "nvidia"]}, {}, {})
+    assert "NVIDIA" in str(e.value)
+
+
+def _insider_sidecar(tiles, texts, W=1080, H=1920):
+    return {"layout": "insider", "tiles": tiles, "texts": texts, "W": W, "H": H, "safe": {"top": 240, "right": 140, "bottom": 420, "left": 64}}
+
+
+def test_insider_check_wants_a_hero_and_words_inside_the_safe_area_clear_of_it(tmp_path):
+    f = _plain(tmp_path, 1080, 1920, "c.png")
+    word = {"text": "AI could feel", "box": [120, 1100, 800, 130], "px": 160, "color": "#0e0e10", "words": 3, "grp": "title"}
+    ok = _rows(f, _insider_sidecar([[290, 300, 420, 650]], [word]), "cover")
+    assert all(ok[k]["status"] == "PASS" for k in ("hero present", "text inside the safe area", "words clear of the hero"))
+    assert _rows(f, _insider_sidecar([], [word]), "cover")["hero present"]["status"] == "FAIL"
+    wide = {**word, "box": [20, 1100, 1000, 130]}
+    assert _rows(f, _insider_sidecar([[290, 300, 420, 650]], [wide]), "cover")["text inside the safe area"]["status"] == "FAIL"
+    over = {**word, "box": [120, 800, 800, 130]}
+    assert _rows(f, _insider_sidecar([[290, 300, 420, 650]], [over]), "cover")["words clear of the hero"]["status"] == "FAIL"
+    free = {**wide, "free": True}                                                                              # the faint handle is exempt
+    assert _rows(f, _insider_sidecar([[290, 300, 420, 650]], [word, free]), "cover")["text inside the safe area"]["status"] == "PASS"
+
+
+def test_insider_layout_exists_in_the_stage_and_draws_the_grammar():
+    js = (SKILL / "scripts" / "stage" / "scenes" / "thumbs.js").read_text()
+    assert "road, insider }" in js and 'dataset.block = "chip"' in js and "function asterisk(" in js
+    assert "insider" in thumbs.VERTICAL_LAYOUTS
+    assert "insider" in (SKILL / "SKILL.md").read_text() and "layout: insider" in (SKILL / "references" / "recipes-and-themes.md").read_text()
+
+
+@needs_browser
+def test_thumbnail_command_draws_the_insider_cover_for_a_kinetic_explainer(tmp_path):
+    p = _insider_project(tmp_path, {"lead": "what if", "title": "Robots felt", "chip": "bored. scared.", "hero": {"src": "assets/cutout/bot.png", "kind": "cutout"}})
+    try:
+        rep = thumbs.thumbnail(p)
+    except FishError as e:
+        if "browser" in str(e).lower() or "did not render" in str(e):
+            pytest.skip(str(e)[:80])
+        raise
+    assert rep["variants"][0]["layout"] == "insider" and rep["covers"] and rep["covers"][0]["layout"] == "insider"
+    for f in (rep["variants"][0]["file"], rep["covers"][0]["file"]):
+        side = json.loads((p / f).with_suffix(".json").read_text())
+        grps = {t.get("grp") for t in side["texts"]}
+        assert side["tiles"] and {"lead", "title", "chip"} <= grps and any(b["name"] == "chip" for b in side["blocks"])
+        title = next(t for t in side["texts"] if t.get("grp") == "title")
+        assert title["px"] == max(t["px"] for t in side["texts"])                                     # the keyword is the biggest line
+    assert thumbs.package_gate(p) == []
+
+
 def test_cli_exposes_the_required_step_and_the_opt_out():
     import fishvideo
     assert fishvideo.PASSTHRU["thumbnail"] == "thumbs"
