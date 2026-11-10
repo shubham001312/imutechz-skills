@@ -414,6 +414,10 @@ The narration is the visual. Spoken words enter one to three at a time on their 
 - Gates: a `kstack` with no element counts as a text card; with a pill or orbit as a graphic; with a `src` anywhere (card, hero) as an image.
 - Looks weak when: more than 4 lines or more than 3 key words per line; an element with no real picture or logo; several scenes in a row with the same element.
 
+- A card can hold a real video clip instead of a picture: `card: {clip: <id>, frames: <n>, fps: 30, ar: 0.8}`. Cut it with `fishvideo assets clip <dir> <video> <id> --start S --dur D --aspect 4:5 --width 720 --sharpen` (pictures only; the source video must be credited, e.g. fetched with `assets get`). Crop a letterboxed source first (`ffmpeg ... -vf cropdetect`), or the black bands end up inside the card. The clip plays from the card's entrance and loops.
+- In a Short the element takes all the room between the finished text stack and the bottom of the safe area, so a short stack never leaves the lower third empty. The strip under the safe area stays clear on purpose: the Shorts UI covers it.
+- A terminal card for a Short reads well at `fishvideo assets terminal <dir> --cmd "..." --size 820x640 --scale 2` (the default 1600x1000 shrinks the text too far inside a card).
+
 ### `footage`
 A stock clip played from pre-extracted frames: `build/clips/<clip>/f_00001.jpg`, and so on, at the project fps. Every frame goes through `L.setImg`.
 - Params: `clip`, `frames`, `fps`, `from` (1-based), `speed`, `loop` (true), `fit` (`full` or `card`), `treat: [bw, halftone, grain]`, `grade` (`warm`, `cool` or `teal-orange`), `title`, `kicker`, `title_at` (beat, 1), `title_pos` (`bottom`, `top` or `center`), `push` (0.06), `shape` (card).

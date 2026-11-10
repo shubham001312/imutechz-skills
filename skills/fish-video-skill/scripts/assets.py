@@ -492,7 +492,30 @@ def cutout(src, dst, model: str = "isnet-general-use") -> Path | None:
         warn(f"cutout failed: {str(e)[:200]}")
         return None
     log(f"cutout ({model}) -> {dst}")
+    _credit_derivative(src, dst, "background removed (rembg " + model + ")")
     return Path(dst)
+
+
+def _credit_derivative(src, dst, change: str) -> None:
+    """A cut-out is a modified copy: it keeps the source's licence and author, and says what changed (CC BY and BY-SA
+    require marking changes). Without a source record nothing is invented: the gate then asks for one."""
+    import fvnet
+    proj = fvnet.project_of(dst) or fvnet.project_of(src)
+    if not proj:
+        return
+    rel = lambda p: str(Path(p).resolve().relative_to(Path(proj).resolve())).replace("\\", "/")   # noqa: E731
+    try:
+        rs, rd = rel(src), rel(dst)
+    except ValueError:
+        return
+    orig = next((c for c in fvnet.load_credits(proj) if (c.get("file") or "").replace("\\", "/") == rs), None)
+    if not orig:
+        warn(f"{rs} has no credit record, so the cut-out has none either: record the source first")
+        return
+    rec = {**orig, "id": f"{orig.get('id')}:cutout:{Path(rd).stem}", "file": rd, "modified": change,
+           "title": f"{orig.get('title') or Path(rs).stem} ({change.split(' (')[0]})", "derived_from": rs}
+    fvnet.add_credit(proj, rec)
+    log(f"credit: {rd} inherits {orig.get('license')} by {orig.get('author')} from {rs} (marked modified)")
 
 
 GRADES = {
@@ -1099,7 +1122,7 @@ def cli(argv=None) -> int:
     a = sp.add_parser("github"); a.add_argument("project"); a.add_argument("repo", help="owner/name"); a.add_argument("--beat"); a.add_argument("--shot", action="store_true", help="also screenshot the repo page")
     a = sp.add_parser("terminal"); a.add_argument("project"); a.add_argument("--cmd", dest="cmds", action="append", default=[], help="a command line (shown after `$ `)")
     a.add_argument("--line", action="append", default=[], help="an output line; marks the card `illustrative`"); a.add_argument("--out"); a.add_argument("--beat")
-    a.add_argument("--title", default="zsh"); a.add_argument("--from-file", help="lines starting with `$ ` are commands, the rest output"); a.add_argument("--scale", type=int, default=1, choices=[1, 2])
+    a.add_argument("--title", default="zsh"); a.add_argument("--from-file", help="lines starting with `$ ` are commands, the rest output"); a.add_argument("--scale", type=int, default=1, choices=[1, 2]); a.add_argument("--size", default="1600x1000", help="WxH of the card; a smaller card has relatively bigger text (900x700 reads well in a Short)")
     a = sp.add_parser("logo"); a.add_argument("project"); a.add_argument("brand"); a.add_argument("--color", default="brand")
     a = sp.add_parser("icon"); a.add_argument("project"); a.add_argument("q"); a.add_argument("--color"); a.add_argument("-n", type=int, default=12)
     a = sp.add_parser("emoji"); a.add_argument("project"); a.add_argument("emoji"); a.add_argument("--set", dest="eset", default="openmoji", choices=["openmoji", "twemoji"])
@@ -1128,7 +1151,7 @@ def cli(argv=None) -> int:
     elif ns.cmd == "github":
         github(ns.project, ns.repo, ns.beat, ns.shot)
     elif ns.cmd == "terminal":
-        terminal(ns.project, ns.cmds, ns.line, ns.out, ns.beat, ns.title, ns.from_file, scale=ns.scale)
+        terminal(ns.project, ns.cmds, ns.line, ns.out, ns.beat, ns.title, ns.from_file, size=tuple(int(v) for v in ns.size.lower().split("x")), scale=ns.scale)
     elif ns.cmd in ("logo", "icon", "emoji"):
         import icons
         if ns.cmd == "logo":

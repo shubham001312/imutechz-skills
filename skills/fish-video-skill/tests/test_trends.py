@@ -106,8 +106,9 @@ def test_recent_separates_shorts_from_long_and_widens_when_thin(tmp_path, monkey
 
     def fake_search(q, n=20, recent_days=None, shorts=False):
         calls.append((q, recent_days, shorts))
-        base = [{"id": "L1", "title": "long one", "channel": "c", "views": 500, "upload_date": "20260101", "duration": 600, "views_per_day": 5.0, "is_short": False, "url": "https://youtu.be/L1"}]
-        return base + ([{"id": f"S{i}", "title": f"short {i}", "channel": "c", "views": 100 * i, "upload_date": "20260101", "duration": 20, "views_per_day": 10.0 * i, "is_short": True, "url": f"https://youtu.be/S{i}"} for i in range(1, 4)] if recent_days == 90 else [])
+        base = [{"id": "X1", "title": "#love #feelings spam", "channel": "c", "views": 9e6, "upload_date": "20260101", "duration": 15, "views_per_day": 9e5, "is_short": True, "url": "https://youtu.be/X1"},
+                {"id": "L1", "title": "some topic long one", "channel": "c", "views": 500, "upload_date": "20260101", "duration": 600, "views_per_day": 5.0, "is_short": False, "url": "https://youtu.be/L1"}]
+        return base + ([{"id": f"S{i}", "title": f"some topic short {i}", "channel": "c", "views": 100 * i, "upload_date": "20260101", "duration": 20, "views_per_day": 10.0 * i, "is_short": True, "url": f"https://youtu.be/S{i}"} for i in range(1, 4)] if recent_days == 90 else [])
     monkeypatch.setattr(youtube, "search", fake_search)
     monkeypatch.setattr(youtube, "search_hashtag_shorts", lambda *a, **k: [])
     monkeypatch.setattr(trends, "contact_sheet", lambda rows, out, k=12: None)

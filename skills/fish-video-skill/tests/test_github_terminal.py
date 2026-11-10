@@ -106,3 +106,29 @@ def test_find_brand_does_not_turn_openai_into_openai_gym():
     assert icons.find_brand("openai", data) is None
     assert icons.find_brand("vue", data)["slug"] == "vuedotjs"
     assert icons.find_brand("node", data)["slug"] == "nodedotjs"
+
+
+def test_cutout_inherits_the_source_credit(tmp_path, monkeypatch):
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import assets, fvnet
+    proj = tmp_path / "p"
+    (proj / "assets" / "photo").mkdir(parents=True)
+    (proj / "brief.yaml").write_text("title: t\n")
+    src = proj / "assets" / "photo" / "x.jpg"; src.write_bytes(b"x")
+    dst = proj / "assets" / "cutout" / "x.png"; dst.parent.mkdir(parents=True); dst.write_bytes(b"y")
+    fvnet.add_credit(proj, {"provider": "wikimedia", "id": "1", "file": "assets/photo/x.jpg", "license": "CC BY-SA 4.0", "author": "A"})
+    assets._credit_derivative(src, dst, "background removed (rembg isnet-general-use)")
+    rec = [c for c in fvnet.load_credits(proj) if c["file"] == "assets/cutout/x.png"][0]
+    assert rec["license"] == "CC BY-SA 4.0" and rec["author"] == "A" and rec["modified"].startswith("background removed")
+    assert rec["derived_from"] == "assets/photo/x.jpg"
+
+
+def test_terminal_size_option_changes_the_canvas():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import assets
+    im = assets.render_terminal([("cmd", "echo hi")], size=(820, 640), scale=1)
+    assert im.size[0] < 1600 and im.size[1] < 1000

@@ -55,7 +55,13 @@ FORMULAS = [
 
 
 def _words(text: str) -> list[str]:
-    return [w for w in re.findall(r"[a-z0-9][a-z0-9'+#.-]*", text.lower()) if w not in STOP and len(w) > 2 and not w.isdigit()]
+    acr = [w.lower() for w in re.findall(r"\b[A-Z][A-Z0-9]\b", text)]    # AI, VR, UI, 3D: short but they ARE the topic
+    return acr + [w for w in re.findall(r"[a-z0-9][a-z0-9'+#.-]*", text.lower()) if w not in STOP and len(w) > 2 and not w.isdigit() and w not in acr]
+
+
+def _mentions(blob: str, w: str) -> bool:
+    """Whole-word match (so 'ai' does not match 'said'); longer words may be a prefix ('emotion' in 'emotional')."""
+    return re.search(rf"\b{re.escape(w)}" + (r"\b" if len(w) <= 3 else ""), blob) is not None
 
 
 def title_patterns(titles: list[str]) -> dict:
@@ -243,7 +249,10 @@ def format_of(brief: dict) -> str:
 
 def topic_of(brief: dict) -> str:
     ans = (brief.get("interview") or {}).get("answers") or {}
-    t = ans.get("topic") or brief.get("title") or brief.get("prompt") or ""
+    title = brief.get("title")
+    if title in (None, "", "Untitled video"):           # the placeholder from `new` is not a topic: the prompt is
+        title = None
+    t = ans.get("topic") or title or brief.get("prompt") or ""
     return re.split(r"[\n]", str(t))[0][:120].strip()
 
 
@@ -255,12 +264,13 @@ def _fetch_recent(topic: str, fmt: str, days: int, n: int) -> tuple[list[dict], 
         found = []
         for q in queries:
             found += youtube.search(q, n, recent_days=window, shorts=(fmt == "shorts"))
+        ws = _words(topic)
+        need = min(2, len(set(ws)))                           # keep only results that mention the topic: hashtag spam (#emotions) is not the topic
+        def on_topic(v):
+            blob = " ".join([v.get("title") or "", " ".join(v.get("tags") or []), (v.get("description") or "")[:400]]).lower()
+            return sum(1 for w in set(ws) if _mentions(blob, w)) >= need
+        found = [v for v in found if on_topic(v)]
         if fmt == "shorts":                                   # the results page lists few real Shorts: add the hashtag Shorts feeds
-            ws = _words(topic)
-            need = 2 if len(ws) >= 3 else 1                   # a hashtag feed is broad: keep only results that mention the topic's words
-            def on_topic(v):
-                blob = (v["title"] + " " + " ".join(v.get("tags") or [])).lower()
-                return sum(1 for w in set(ws) if w in blob) >= need
             joined = "".join(ws[:2])
             feeds = [joined] + [w for w in ws if len(w) >= 4 and w != joined][:3]
             got = 0

@@ -197,3 +197,17 @@ def test_subtitle_fetch_retries_429_with_backoff(monkeypatch):
     monkeypatch.setattr(youtube.time, "sleep", lambda s: sleeps.append(s))
     r = youtube.subs("https://youtu.be/x")
     assert len(calls) == 3 and sleeps == [2, 4] and r["text"] == "Hello there friends."
+
+
+def test_trends_topic_ignores_the_untitled_placeholder():
+    import trends
+    assert trends.topic_of({"title": "Untitled video", "prompt": "What if AI had emotions?"}) == "What if AI had emotions?"
+    assert trends.topic_of({"title": "Real title", "prompt": "x"}) == "Real title"
+
+
+def test_trends_keeps_acronyms_and_matches_whole_words():
+    import trends
+    ws = trends._words("What if AI had emotions?")
+    assert "ai" in ws and "emotions" in ws
+    assert trends._mentions("is ai alive", "ai") and not trends._mentions("she said so", "ai")
+    assert trends._mentions("emotional robot", "emotion")

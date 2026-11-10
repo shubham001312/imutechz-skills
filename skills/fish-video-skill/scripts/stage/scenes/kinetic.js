@@ -13,7 +13,8 @@
              A line with no key word is a calm lead-in line ("Third is", "It's called").
      number  string    a list label ("First", "Second") as the first, huge, accent-coloured line (number_color: ink)
      element card | pill | orbit | hero | none   (default: whichever of card/pill/orbit/hero is given, else none)
-       card   {src, ar (1.5), chrome (browser dots), drift (zoom|none), word|at}      rounded shadow card holding a real picture
+       card   {src | clip+frames(+fps, speed), ar (1.5), chrome (browser dots), drift (zoom|none), word|at}   rounded shadow card holding a real picture,
+              or a real video clip played from build/clips/<clip> (made by `fishvideo assets clip`; pictures only)
        pill   {name, logo {slug|src|d|glyph}, word|at}                                 icon tile + UPPERCASE name
        orbit  {center {slug|src|d|glyph}, items [{slug|src|d|glyph}] (5 to 8), rings (2), word|at}   logos orbiting on faint rings
        hero   {src, kind: "cutout", shape (burst|circle), side (left|center|right), word|at}  grey cut-out over a big accent shape
@@ -62,6 +63,7 @@
     const t = new Array(n).fill(null);
     let ptr = 0;
     toks.forEach((tk, i) => {
+      if (tk.kind === "num") { t[i] = 0; return; }   /* the list label is not spoken: it lands with the cut, so the beat never opens on an empty canvas */
       const key = norm(tk.text);
       if (!key) return;
       for (let j = ptr; j < Math.min(ws.length, ptr + 7); j++) if (norm(ws[j].w) === key) { t[i] = ws[j].lt; ptr = j + 1; break; }
@@ -142,7 +144,12 @@
     inner.style.cssText = "position:absolute;inset:0;overflow:hidden";
     const img = el("img", "", inner);
     img.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 40%";
-    if (o.src) L.setImg(img, L.projUrl(o.src));
+    const clipN = (t, t0) => {                         /* the clip frame for time t: plays from the card's entrance, loops */
+      const n = Math.max(1, +o.frames || 1), fps = +o.fps || L.FPS || 30;
+      return 1 + (Math.floor(Math.max(0, t - t0) * fps * (+o.speed || 1)) % n);
+    };
+    if (o.clip) L.setImg(img, L.clipUrl(o.clip, 1));
+    else if (o.src) L.setImg(img, L.projUrl(o.src));
     else {
       img.remove();
       inner.style.background = L.mix("#ffffff", C.ink, 0.04);
@@ -162,7 +169,8 @@
         const sy = Math.sin(t * 0.9) * 5 * u, rot = Math.sin(t * 0.55 + 1) * 0.45;
         L.show(box, clamp(e * 1.6), `translateY(${((1 - e) * 120 * u + sy).toFixed(2)}px) scale(${(0.9 + 0.1 * pp).toFixed(4)}) rotate(${rot.toFixed(3)}deg)`);
         box.style.filter = e < 1 ? `blur(${((1 - e) * 8).toFixed(2)}px)` : "";
-        if (o.drift !== "none" && o.src) img.style.transform = `scale(${(1.02 + 0.075 * life).toFixed(4)}) translate(${((life - 0.5) * -2.2).toFixed(3)}%, ${((0.5 - life) * 1.4).toFixed(3)}%)`;
+        if (o.clip) L.setImg(img, L.clipUrl(o.clip, clipN(t, t0)));
+        if (o.drift !== "none" && (o.src || o.clip)) img.style.transform = `scale(${(1.02 + 0.075 * life).toFixed(4)}) translate(${((life - 0.5) * -2.2).toFixed(3)}%, ${((0.5 - life) * 1.4).toFixed(3)}%)`;
       },
     };
   }
@@ -246,9 +254,12 @@
     const side = o.side || "left";
     const asp = info ? (info.h * info.nh) / (info.w * info.nw) : 1.15;
     let w = Math.min(z.w * 0.86, (z.h * 1.02) / asp), h = w * asp;
+    const bottom = z.y + z.h + z.h * 0.02;
+    if (o.top != null && bottom - h < o.top) { h = Math.max(z.h * 0.45, bottom - o.top); w = h / asp; }   /* never under the type */
     const x = side === "center" ? z.x + (z.w - w) / 2 : side === "right" ? z.x + z.w - w : z.x;
-    const y = z.y + z.h - h + z.h * 0.02;
-    const r = Math.min(z.w, z.h) * 0.66;
+    const y = bottom - h;
+    let r = Math.min(z.w, z.h) * 0.66;
+    if (o.top != null) r = Math.min(r, Math.max(h * 0.42, y + h * 0.4 - o.top));
     const sh = el("div", "", parent);
     const shx = x + w * (side === "right" ? 0.3 : side === "center" ? 0.62 : 0.66), shy = y + h * 0.4;
     sh.style.cssText = `position:absolute;left:${shx - r}px;top:${shy - r}px;width:${r * 2}px;height:${r * 2}px`;
@@ -321,6 +332,12 @@
       if (fit < 1) rowsEl.forEach((r) => { r.spans.forEach((s) => { s.sp.style.fontSize = s.base * r.k * fit + "px"; }); r.row.style.columnGap = r.gap * fit + "px"; });
       box.style.rowGap = lineGap * fit + "px";
       st.times = schedule(lines, c.words, c.dur);
+      /* the element takes ALL the room under the finished stack (every word is laid out from frame 0), so a short stack
+         never leaves the lower third empty */
+      if (c.P && Z.el && elKind !== "pill") {
+        const top = tz.y + stackH() + 56 * u, bot = c.safe.y + c.safe.h * 0.97;
+        if (bot - top > Z.el.h) Z.el = { x: Z.el.x, w: Z.el.w, y: top, h: bot - top };
+      }
       /* the element */
       const eo_ = p[elKind] || {};
       const tKey = st.tokens.findIndex((t) => t.tk.kind === "key" || t.tk.kind === "acc");
@@ -337,7 +354,7 @@
         st.el = buildPill(wrap, c, Z.el, { ...eo_, top: top + stackH() + 70 * u });
       }
       else if (elKind === "orbit") st.el = buildOrbit(wrap, c, Z.el, eo_);
-      else if (elKind === "hero") st.el = buildHero(wrap, c, Z.el, eo_);
+      else if (elKind === "hero") st.el = buildHero(wrap, c, Z.el, { ...eo_, top: tz.y + stackH() + 24 * u });
       if (p.handle) {
         const h = (st.handle = el("div", "", wrap, L.esc(p.handle)));
         h.style.cssText = `position:absolute;left:${c.safe.x}px;width:${c.safe.w}px;top:${c.safe.y + c.safe.h - 54 * u}px;text-align:center;font:500 ${30 * u}px/1 var(--display);letter-spacing:.04em;color:${C.ink};opacity:.34`;

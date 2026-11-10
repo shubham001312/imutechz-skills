@@ -10,7 +10,10 @@ engines:
     python: "3.12"            # Tested 2026-11-10 on a 16-core CPU (no GPU): ~5 s of compute per 1 s of speech. On an NVIDIA GPU it uses bf16.
     packages: ["qwen-tts==0.1.1", "soundfile", "faster-whisper==1.2.1"]
     torch: ["torch", "torchaudio"]
-    model: Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice      # ~1.8 GB of weights; the 1.7B model is better but needs ~6 GB+ VRAM
+    model: Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice      # follows the per-line `instruct` (measured 2026-11-10: "calm" 4.4 s vs "panic" 5.8 s, different audio).
+                                                     # The 0.6B CustomVoice IGNORES instruct (byte-identical audio for different instructions): use it only
+                                                     # when speed matters more than direction (voice.studio.model). 1.7B: ~3.5 GB of weights, ~7x real time on
+                                                     # a 16-core CPU; on a 4 GB GPU it may not fit in bf16 (untested): the worker falls back to the CPU.
   chatterbox:                 # MIT. English. Emotion control. Every file carries the PerTh watermark.
     python: "3.11"
     packages: ["chatterbox-tts==0.1.7", "setuptools<81", "faster-whisper==1.2.1"]
@@ -47,7 +50,7 @@ paces:
 # so these bands (observed range plus 4 dB) catch a broken chain or a drifting line. They cannot say that a voice sounds airy or hissy: listen.
 styles:
   storyteller:                      # qwen3: the RECOMMENDED Shorts narrator (energetic facts/insider storyteller)
-    instruct: "A gripping, energetic YouTube Shorts storyteller with natural emphasis on key words and real emotional range."
+    instruct: "A gripping, energetic YouTube Shorts storyteller with natural emphasis on key words and real emotional range. Always the same adult male voice at a steady low-to-mid pitch: show emotion through energy and emphasis, never by raising the pitch."
     exaggeration: 0.6               # used if this style runs on chatterbox
     pause: 0.22
     edges: {head: 0.03, tail: 0.2}

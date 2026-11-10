@@ -171,7 +171,10 @@ def tts_qwen3(job: dict) -> list[dict]:
     from qwen_tts import Qwen3TTSModel
     _threads()
     cuda = torch.cuda.is_available() and job.get("device") != "cpu"
-    model_id = job.get("model") or "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+    items = job.get("items") or []
+    model_id = job.get("model") or next((i["model"] for i in items if i.get("model")), None) or "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+    log_ = sys.stderr.write
+    log_(f"qwen3: model {model_id}\n")
     model = Qwen3TTSModel.from_pretrained(model_id, device_map="cuda:0" if cuda else "cpu",
                                           dtype=torch.bfloat16 if cuda else torch.float32)
     out = []
