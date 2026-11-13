@@ -1,7 +1,7 @@
 ---
 name: fish-video-skill
-description: Make a premium, upload-ready Short, Reel, TikTok, YouTube or LinkedIn video on any topic, with any model on any device. Use it when someone asks for a video, explainer, roadmap video, story Short, promo, product or app tour, screen-recorded tutorial, or "a video like this one". It starts from a recipe (roadmap-explainer, story-short, news-short for real people in the news, bold-short, kinetic-explainer for tool and tech Shorts) and one of 15 themes, runs one strict interview (it always asks the length; Shorts default to under 30 s), collects licensed real images, footage, logos, GitHub repo cards, terminal cards, screenshots and screen recordings, narrates with the recommended expressive Qwen3-TTS voice (Ryan, paced to about 3 words per second), renders deterministic motion graphics, then enforces measured gates: image coverage, a frame-sheet sign-off, and a required designed thumbnail (headline plus logo or picture tiles on a glowing road). It packages videos, thumbnails, titles, descriptions and credits, and after the user approves, keeps only the final video, thumbnail, metadata and post texts.
-version: 2.7.0
+description: Make a premium, upload-ready Short, Reel, TikTok, YouTube or LinkedIn video on any topic, with any model on any device. Use it when someone asks for a video, explainer, roadmap video, story Short, promo, product or app tour, screen-recorded tutorial, or "a video like this one". It starts from a recipe (roadmap-explainer, story-short, news-short for real people in the news, bold-short, kinetic-explainer for tool and tech Shorts; `fishvideo footage` for Shorts cut from real footage) and one of 15 themes, runs one strict interview (it always asks the length; Shorts default to under 30 s), collects licensed real images, footage, logos, GitHub repo cards, terminal cards, screenshots and screen recordings, narrates with the recommended expressive Qwen3-TTS voice (Ryan, paced to about 3 words per second), renders deterministic motion graphics, then enforces measured gates: image coverage, a frame-sheet sign-off, and a required designed thumbnail (headline plus logo or picture tiles on a glowing road). It packages videos, thumbnails, titles, descriptions and credits, and after the user approves, keeps only the final video, thumbnail, metadata and post texts.
+version: 2.8.0
 license: MIT
 author: ImuTechz
 compatibility: Python 3.10+ (3.12 recommended), Node 18+, a Chromium browser (Brave/Chrome/Edge/Chromium), ffmpeg (bundled via npm). Windows, macOS, Linux. Qwen3-TTS voice (one command; an NVIDIA GPU with 4 GB is enough, CPU works and is slower), and keys ELEVENLABS_API_KEY, PEXELS_API_KEY, PIXABAY_API_KEY, FREESOUND_API_KEY, YOUTUBE_API_KEY; every key has a key-less fallback.
@@ -12,6 +12,15 @@ compatibility: Python 3.10+ (3.12 recommended), Node 18+, a Chromium browser (Br
 You make one video from one conversation. Quality comes from the tools, not from your taste: follow the numbered path, run each command, and stop where it says STOP. Every frame needs a real image, footage or drawn graphic, never only words.
 
 Run commands with the skill's venv: `.venv/bin/python scripts/fishvideo.py <cmd>` (Windows: `.venv/Scripts/python`). Below, `fv` means that.
+
+## Real-footage Shorts: `fishvideo footage`
+
+When the proof is something the viewer can SEE (a launch video, a lab demo, a phone trick, data-centre footage, "free tools that replace X"), cut it from real footage instead of drawing it. Use `fv footage new projects/<slug>`, then `yt search` / `yt get` / `sheet` to choose clips, then `fv footage all projects/<slug>` (fish.audio voice, render, QA, insider thumbnail, post texts). The full path and the spec format: [footage shorts](references/footage-shorts.md).
+
+- Visuals are the hook, not words: a new real shot on every beat, logos and objects over it, at most a big number or a 1-2 word label on screen.
+- No burned-in captions (`captions: false`): platforms have CC; upload `out/captions.srt`.
+- QA fails a static 0.5 s window; open `build/sheets/final.jpg` before delivering.
+- The voice is the fish.audio "calm storyteller" (sample: `assets/voices/fish-calm-storyteller.mp3`); the thumbnail is the insider cover from `fishvideo thumbnail`.
 
 ## The path (do not skip, do not reorder)
 
@@ -47,7 +56,7 @@ Run commands with the skill's venv: `.venv/bin/python scripts/fishvideo.py <cmd>
 - `examples/` are past outputs and a quality bar, not templates; the skill does not need them to run. Set the direction from live `trends` first; open an example only afterwards, to compare quality. Never copy its structure, words, images or look because it is there.
 - Explainers need a diagram (`diagram`, `whiteboard`, `neonline`, `flow`, `roadmap` or a `split` reveal).
 - Never invent facts, numbers, quotes or logos; every number is in `brief.facts` with a source.
-- Licences: never NC or ND, never a non-CC YouTube video, never a reference video's footage. Memes and viral sounds only with the user's opt-in (`memes.policy`). Every asset is in `assets/credits.json`.
+- Licences: never NC or ND, never a reference video's footage; in the stage recipes never a non-CC YouTube video. `fishvideo footage` cuts third-party clips only when the channel owner asks for real footage, and credits every clip and track in `meta.sources`; say in the delivery which music is likely to be Content-ID claimed. Memes and viral sounds only with the user's opt-in (`memes.policy`). Every asset is in `assets/credits.json`.
 - Film websites read-only. Keys live in `.env` only; never print or commit them.
 - Renders run at low priority under a CPU cap; run heavy jobs one at a time. Scene code is deterministic (no `Math.random`, `Date`, CSS animation).
 - Do not upload or publish. Never clean before the user approves the final video. `--no-gate` and `--no-thumbnail` are for tests and explicit user requests only.
@@ -65,6 +74,7 @@ Run commands with the skill's venv: `.venv/bin/python scripts/fishvideo.py <cmd>
 - Frames and thumbnails: [frame design](references/frame-design.md)
 - A website or app on screen: [website-tour capture](references/website-tour-capture.md)
 - A reference video to match: [reference breakdowns](references/reference-breakdowns.md), [reference-video analysis](references/reference-video-analysis.md)
+- A Short cut from real footage (clips, logos, counters, no burned captions): [footage shorts](references/footage-shorts.md)
 - Platform sizes: [platform specs](references/platform-specs.md). Tools: [field guide](references/open-source-field-guide.md)
 
 ## Files

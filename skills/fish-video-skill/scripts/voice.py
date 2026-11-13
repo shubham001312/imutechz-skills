@@ -1,6 +1,6 @@
 """Narration: text-to-speech with word timings, cached per line.
 
-    python scripts/voice.py <project> [--provider elevenlabs|edge-tts] [--force]
+    python scripts/voice.py <project> [--provider elevenlabs|fish|edge-tts] [--force]
     python scripts/voice.py voices [--locale en-IN]          list voices (edge-tts; ElevenLabs if a key is set)
     python scripts/voice.py say "Hello {GGUF|G G U F}" --out hello.mp3 [--provider edge-tts]
 
@@ -10,6 +10,8 @@ Providers
               ELEVENLABS_API_KEY in the environment or a gitignored .env in
               the project or skill folder. It is never printed or written.
               Default voice: fydPJq00SigRIaPxWgiS (English, India).
+  fish        fish.audio cloud TTS + voice cloning (scripts/fishaudio.py). FISH_API_KEY; no fallback voice.
+              Config: voice.fish.reference_id (or voice.fish.sample to clone once), target_wps (default 2.7).
   edge-tts    free fallback (Microsoft neural voices, needs internet), used
               automatically when no ElevenLabs key is present or the API call
               fails. Default en-IN-NeerjaNeural, rate -6%.
@@ -203,6 +205,9 @@ def pick_provider(cfg: dict, project: Path | None, want: str | None = None) -> t
         except ImportError:
             warn(f"kokoro is not installed: using the fallback voice {v['fallback'].get('voice')} (edge-tts)")
             return "edge-tts", ""
+    if prov == "fish":                              # cloud, no silent substitution: a missing key stops the run
+        import fishaudio
+        return "fish", fishaudio.need_key(project)
     key = secret("ELEVENLABS_API_KEY", project) if prov == "elevenlabs" else ""
     if prov == "elevenlabs" and not key:
         warn(f"ELEVENLABS_API_KEY is not set (env or .env): using the free fallback voice {v['fallback'].get('voice')} (edge-tts) as a stand-in")
@@ -226,6 +231,12 @@ def voice_settings_summary(cfg: dict, provider: str) -> dict:
         e = v["elevenlabs"]
         return {"provider": "elevenlabs", "voice_id": e["voice_id"], "voice_url": e.get("voice_url"), "model_id": e.get("model_id"),
                 "language": v.get("language"), "voice_settings": e.get("voice_settings")}
+    if provider == "fish":
+        fc = v.get("fish") or {}
+        return {"provider": "fish", "reference_id": fc.get("reference_id"), "model": fc.get("model", "s2.1-pro"), "format": fc.get("format", "mp3"),
+                "speed": fc.get("speed", 1.0), "target_wps": fc.get("target_wps", 2.7), "tolerance": fc.get("tolerance", 0.2),
+                "temperature": fc.get("temperature", 0.6), "emotion": fc.get("emotion", True), "tags": fc.get("tags"), "base_tag": fc.get("base_tag"),
+                "language": v.get("language")}
     if provider == "edge-tts":
         f = v["fallback"]
         return {"provider": "edge-tts", "voice": f.get("voice"), "rate": f.get("rate"), "pitch": f.get("pitch"), "language": v.get("language"),
@@ -330,9 +341,34 @@ def _mood_cfg(cfg: dict, mood: str | None) -> dict:
     return c
 
 
-def synth_line(say: str, provider: str, key: str, cfg: dict, outdir: Path, line_id: str, ctx=("", ""), force=False) -> dict:
+def _fish_take(say: str, tag: str | None, cfg: dict, key: str, mp3: Path, wav: Path, max_gap) -> tuple[list[dict], float]:
+    """One fish line: tagged request, estimated word times, tighten, and at most one regeneration at a corrected speed."""
+    import fishaudio
+    fc = fishaudio.fish_cfg(cfg["voice"])
+    text = fishaudio.tag_text(say, tag, fc)
+    speed = float(fc.get("speed", 1.0))
+    n = len(say.split())
+    for attempt in range(2):
+        mp3.write_bytes(fishaudio.tts(text, fc, key, speed))
+        dur = decode_wav(mp3, wav)
+        words = fishaudio.word_times(say, wav)
+        if max_gap and words:
+            try:
+                words, dur = tighten(wav, words, float(max_gap))
+            except ImportError:
+                warn("numpy is missing: pauses inside lines were not tightened")
+        ns = fishaudio.next_speed(speed, n, (words[-1]["end"] - words[0]["start"]) if words else 0, fc) if attempt == 0 else None
+        if ns is None:
+            break
+        speed = ns
+    return words, dur
+
+
+def synth_line(say: str, provider: str, key: str, cfg: dict, outdir: Path, line_id: str, ctx=("", ""), force=False, tag: str | None = None) -> dict:
     """Synthesize one line (cached by text + settings). Returns the clip record."""
     setting = {"say": say, **voice_settings_summary(cfg, provider)}
+    if provider == "fish":
+        setting["tag"] = tag
     if provider == "elevenlabs" and cfg["voice"]["elevenlabs"].get("use_context"):
         setting["ctx"] = list(ctx)
     max_gap = (cfg.get("pacing") or {}).get("max_word_gap")
@@ -342,22 +378,29 @@ def synth_line(say: str, provider: str, key: str, cfg: dict, outdir: Path, line_
     stem = outdir / f"{line_id}-{h}"
     mp3, wav, js = stem.with_suffix(".mp3"), stem.with_suffix(".wav"), stem.with_suffix(".json")
     if force or not js.exists():
-        if provider == "elevenlabs":
+        if provider == "fish":
+            words, dur = _fish_take(say, tag, cfg, key, mp3, wav, max_gap)
+            if not words:
+                raise FishError(f"{line_id}: the TTS returned no word timings")
+            js.write_text(json.dumps({"setting": setting, "duration": dur, "words": words}, indent=1, ensure_ascii=False), encoding="utf-8")
+            audio = None
+        elif provider == "elevenlabs":
             audio, words = elevenlabs(say, cfg["voice"], key, ctx[0], ctx[1])
         elif provider == "kokoro":
             audio, words = kokoro(say, cfg["voice"].get("kokoro") or {})
         else:
             audio, words = edge(say, cfg["voice"]["fallback"])
-        if not words:
-            raise FishError(f"{line_id}: the TTS returned no word timings")
-        mp3.write_bytes(audio)
-        dur = decode_wav(mp3, wav)
-        if max_gap:
-            try:
-                words, dur = tighten(wav, words, float(max_gap))
-            except ImportError:
-                warn("numpy is missing: pauses inside lines were not tightened")
-        js.write_text(json.dumps({"setting": setting, "duration": dur, "words": words}, indent=1, ensure_ascii=False), encoding="utf-8")
+        if audio is not None:
+            if not words:
+                raise FishError(f"{line_id}: the TTS returned no word timings")
+            mp3.write_bytes(audio)
+            dur = decode_wav(mp3, wav)
+            if max_gap:
+                try:
+                    words, dur = tighten(wav, words, float(max_gap))
+                except ImportError:
+                    warn("numpy is missing: pauses inside lines were not tightened")
+            js.write_text(json.dumps({"setting": setting, "duration": dur, "words": words}, indent=1, ensure_ascii=False), encoding="utf-8")
     meta = json.loads(js.read_text(encoding="utf-8"))
     w = meta["words"]
     return {"say": say, "provider": provider, "hash": h, "wav": str(wav), "mp3": str(mp3), "duration": round(meta["duration"], 3),
@@ -379,6 +422,9 @@ def synthesize(project: Path, provider: str | None = None, force: bool = False) 
         log("voice: none (music only)")
         return {"provider": "none", "clips": {}}
     pron = (cfg["brief"].get("voice") or {}).get("pronunciations") or {}
+    if prov == "fish":                              # voice.fish.sample without an id: clone once, write the id back
+        import fishaudio
+        fishaudio.ensure_reference(project, cfg, key)
     lines, moods = [], {}
     for s in sb["scenes"]:
         for ln in scene_lines(s, pron):
@@ -390,7 +436,7 @@ def synthesize(project: Path, provider: str | None = None, force: bool = False) 
         pdir = out / used
         pdir.mkdir(parents=True, exist_ok=True)
         try:
-            clip = synth_line(ln["say"], used, key, _mood_cfg(cfg, moods.get(ln["id"])), pdir, ln["id"], ctx, force)
+            clip = synth_line(ln["say"], used, key, _mood_cfg(cfg, moods.get(ln["id"])), pdir, ln["id"], ctx, force, ln.get("tag"))
         except FishError as e:
             if used == "elevenlabs":
                 warn(f"{e}; falling back to edge-tts for the rest of this run")
@@ -459,7 +505,7 @@ def cli(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("target", help="<project> | voices | say")
     ap.add_argument("text", nargs="?")
-    ap.add_argument("--provider", choices=["elevenlabs", "edge-tts", "none"])
+    ap.add_argument("--provider", choices=["elevenlabs", "fish", "edge-tts", "none"])
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--locale", default=None)
     ap.add_argument("--out", default="say.mp3")

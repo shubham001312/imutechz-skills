@@ -449,6 +449,8 @@ def insider_params(project: Path, th: dict, brief: dict, sb: dict) -> tuple[dict
         params["chip"] = _strip_marks(th["sub"])
     if not params.get("lead") and th.get("tag"):
         params["lead"] = _strip_marks(th["tag"]).lower()
+    if th.get("logo_fill"):
+        params["logo_fill"] = float(th["logo_fill"])
     params.setdefault("title", brief.get("title", ""))
     params["chip"] = _strip_marks(params.get("chip", "")) or None
     if not params["chip"]:
