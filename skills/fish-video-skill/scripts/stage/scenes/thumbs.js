@@ -358,8 +358,9 @@
     grid.style.cssText += `;background-image:linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.035) 1px,transparent 1px);background-size:${72 * u}px ${72 * u}px;background-position:${W / 2}px 0`;
     const bl = el("div", "abs", root); L.pos(bl, 0, 0, W, Hh);              /* the scattered asterisks, under everything else */
     /* zones */
-    const hz = P ? { x: s.x, y: s.y + s.h * 0.04, w: s.w, h: s.h * 0.6 } : { x: s.x, y: s.y + s.h * 0.04, w: s.w * 0.46, h: s.h * 0.92 };
     const tz = P ? { x: s.x, y: s.y + s.h * 0.67, w: s.w, h: s.h * 0.33 } : { x: s.x + s.w * 0.49, y: s.y, w: s.w * 0.51, h: Math.min(s.h, 0.84 * Hh - s.y) };
+    /* 9:16: the hero is the hook, so it takes the whole upper part (above the safe top too: no words go there), not a small band */
+    const hz = P ? { x: s.x, y: Hh * 0.05, w: s.w, h: tz.y - 40 * u - Hh * 0.05 } : { x: s.x, y: s.y + s.h * 0.04, w: s.w * 0.46, h: s.h * 0.92 };
     const heroRects = [];
     /* ---- hero */
     const hero = p.hero || {};
@@ -380,7 +381,7 @@
       spots.forEach((q) => {
         const e = el("div", "abs", root); L.pos(e, q.x - d / 2, q.y - d / 2, d, d); e.dataset.tile = "1";
         e.style.cssText += `;border-radius:50%;background:#fff;box-shadow:${shadow(0.2)};display:flex;align-items:center;justify-content:center;overflow:hidden`;
-        const ic = d * 0.5, t = q.t;
+        const ic = d * (+p.logo_fill || 0.5), t = q.t;
         if (t.src) { const im = el("img", "", e); im.style.cssText = `width:${ic}px;height:${ic}px;object-fit:contain`; L.setImg(im, L.projUrl(t.src)); }
         else { const hex = String(t.hex || "0e0e10").replace("#", ""), light = !L.isDark("#" + hex) && parseInt(hex.slice(0, 2), 16) * 0.299 + parseInt(hex.slice(2, 4), 16) * 0.587 + parseInt(hex.slice(4, 6), 16) * 0.114 > 200;
           e.innerHTML = `<svg viewBox="0 0 24 24" width="${ic}" height="${ic}" role="img" aria-label="${L.esc(t.title || "")}"><path fill="${light ? INK : "#" + hex}" d="${t.d}"/></svg>`; }
@@ -403,9 +404,10 @@
       heroRects.push({ x, y, w, h });
     } else if (hero.src) {
       /* a rounded, shadowed card holding a picture */
-      const ar = +hero.ar || 1.6;
-      let w = hz.w * (P ? 0.86 : 0.92), h = w / ar; if (h > hz.h * 0.86) { h = hz.h * 0.86; w = h * ar; }
-      const x = hz.x + (hz.w - w) / 2, y = hz.y + (hz.h - h) / 2 + (P ? hz.h * 0.06 : 0);
+      /* hero.ar sets the card's shape (picture cropped to fill); on 9:16 a squarer card (default 1.0) fills the hero zone */
+      const ar = +hero.ar || (P ? 1.0 : 1.6);
+      let w = hz.w * (P ? 0.96 : 0.92), h = w / ar; if (h > hz.h * 0.92) { h = hz.h * 0.92; w = h * ar; }
+      const x = hz.x + (hz.w - w) / 2, y = hz.y + (hz.h - h) / 2;
       const cd = el("div", "abs", root); L.pos(cd, x, y, w, h); cd.dataset.tile = "1";
       cd.style.cssText += `;border-radius:${26 * u}px;overflow:hidden;background:#fff;border:${6 * u}px solid #fff;box-shadow:${shadow(0.3)};transform:rotate(${P ? -1.5 : -2}deg)`;
       const im = el("img", "", cd); im.style.cssText = `width:100%;height:100%;object-fit:cover;border-radius:${20 * u}px`; L.setImg(im, L.projUrl(hero.src));

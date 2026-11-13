@@ -1,0 +1,45 @@
+# fishvideo footage: one Short cut from real footage. Narration drives time: every {anchor} in the script is the moment
+# the next word is spoken, and shots, overlays and sfx start `at:` an anchor (anchor+0.4 = 0.4 s later).
+# Visuals are the hook: a new real shot on every beat, logos and objects over it, almost no words on screen.
+title: "TODO the working title"
+speed: 1.12                 # fish.audio prosody speed (1.1-1.12 lands about 3 words per second)
+tone: confident             # the bracket cue before the whole read: calm, confident, excited, serious
+script: >-
+  {hook}TODO first line, under 10 words. {two}TODO the next beat...
+  {three}TODO a number spoken as words: [eighteen percent|18%] (spoken|shown in captions.srt).{end}
+
+music: {file: assets/music/track.mp3, start: 40, gain: -20, duck: -7}   # start at the drop; ducked under the voice
+vignette: 0.35
+contrast: 1.05
+captions: false             # platforms have CC; captions.srt is written for upload either way
+
+shots:                      # one per beat; cover-crop (fx/fy focus, z0->z1 push) or a floating card over blur
+  - {at: hook, src: assets/yt-ID.mp4, in: 12.0, rate: 0.9, fx: 0.5, fy: 0.5, z0: 1.1, z1: 1.4}
+  - {at: two, src: assets/yt-ID.mp4, in: 40.0, fx: 0.5, fy: 0.5, z0: 1.1, z1: 1.35, trans: whip, look: cool}
+  - {at: three, src: assets/yt-ID2.mp4, in: 5.0, card: [0.1, 0.1, 0.9, 0.9], card_w: 1000, card_y: 0.45, bg: blur, float: 3, z0: 1.0, z1: 1.3, trans: flash}
+
+overlays:                   # visuals first: logos (image), arrows, rings, one counter for the key number; no sentence stamps
+  - {type: image, at: hook, until: two, src: assets/logo.png, w: 240, y: 330, anim: pop, plate: true, plate_color: "#FFFFFFE6"}
+  - {type: counter, at: three+0.2, until: end, from: 0, to: 18, suffix: "%", y: 600, size: 260, color: "#00E676", dur: 1.0}
+
+sfx:                        # synthesised set: s-whoosh s-boom s-hit s-riser s-tick s-glitch s-pop s-sweepdown s-heartbeat s-zap s-thunder
+  - {at: hook, file: sfx/s-hit.wav, gain: -6}
+  - {at: two, file: sfx/s-whoosh.wav, gain: -10}
+
+thumbnail:                  # the insider cover via `fishvideo thumbnail`: ONE big real picture + a huge keyword
+  lead: "TODO small line"
+  title: "TODO KEYWORD"
+  chip: "TODO SHORT CHIP"
+  hero: {video: assets/yt-ID.mp4, t: 12.0, kind: card}
+
+meta:
+  titles: ["TODO title 1", "TODO title 2", "TODO title 3", "TODO title 4", "TODO title 5"]
+  description: |
+    TODO the facts, with numbers and dates.
+  hashtags: ["#shorts", "#tech"]
+  tags: [TODO]
+  pinned_comment: "TODO a question that invites a reply"
+  sources:
+    - "TODO the source of every fact (publisher, title, url)"
+    - "Footage: TODO channel names"
+    - "Music: TODO artist - track (url)"

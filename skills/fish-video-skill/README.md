@@ -6,6 +6,20 @@ It is an agent skill: `SKILL.md` is what an AI agent reads. It also works as a p
 
 Videos are rendered from code. Every frame is a pure function of time, drawn in headless Chromium and encoded with ffmpeg, so renders are deterministic and parallel. Real assets can be mixed in: licensed photos, b-roll, music and SFX, plus your own screen recordings, each one logged with its licence. No number appears on screen without a source.
 
+## What's new in 2.8: real-footage Shorts
+
+- `fishvideo footage`: a second pipeline for Shorts cut from real footage (launch videos, news and lab clips, b-roll, screen recordings). It has:
+  - narration-anchored shots, cover-crop pushes and floating cards, with whip, flash, glitch and zoom cuts;
+  - visual overlays: logos, counters, rings, arrows and comparisons;
+  - synthesised SFX, and a music bed ducked under the voice at -14 LUFS;
+  - QA that fails any static half-second, checks loudness and checks the transcript.
+
+  The thumbnail is the insider cover, through `fishvideo thumbnail`. See [references/footage-shorts.md](references/footage-shorts.md); tests are in `tests/test_footage.py`.
+- fish.audio voice provider (`--provider fish`, `fishvideo voice clone`). The house voice is "calm storyteller"; a sample is in `assets/voices/fish-calm-storyteller.mp3`.
+- Insider 9:16 cover: the hero now fills the upper part of the frame (above the safe top too), and cards default to a square on 9:16. A small band of picture is not a hook.
+- Footage Shorts default to no burned-in captions (platform CC; `captions.srt` is still written) and minimal on-screen text: the visuals are the hook.
+- Fixes: `gates` counts words in tagged `say: {text, tag}` lines; `thumbnail.logo_fill` is passed to the insider network.
+
 ## What's new in 2.6: people, news and fact Shorts
 
 - **`news-short` recipe and `newsstory` scene** for two-part Shorts about real people and recent news (actresses, actors, celebrity stories, fact series), under 25 s each. Every frame is a real photo or real footage, with layered headline lines, quote cards, stamps, chips and real meme stickers that land on spoken words. Splits, polaroid collages and a "which one?" mystery blur for Part 1 endings.

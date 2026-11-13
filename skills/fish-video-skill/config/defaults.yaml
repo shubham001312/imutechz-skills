@@ -57,6 +57,18 @@ voice:
       speed: 0.96
     use_context: true
     max_speed: 1.12
+  fish:                          # provider: fish (FISH_API_KEY). Deep, calm documentary narration; docs.fish.audio
+    reference_id: null           # a voice model id; or set `sample: path/to/voice.wav` + `sample_consent: true` to clone on first run
+    sample: null
+    model: s2.1-pro              # sent as the `model` header (s1 is deprecated)
+    format: mp3
+    speed: 1.0                   # prosody.speed start; the closed loop corrects it once per line
+    target_wps: 2.7              # words per second (2.6-2.8 documentary; Shorts default elsewhere is ~3.3)
+    tolerance: 0.2
+    temperature: 0.6
+    emotion: true                # prefix a subtle [cue] per line tag
+    base_tag: calm               # for lines without a tag
+    tags: {hook: confident, setup: calm, reveal: determined, punchline: slightly satisfied, beat: calm}
   fallback:
     provider: edge-tts
     voice: en-IN-NeerjaNeural

@@ -89,7 +89,7 @@ def scene_times(project: Path, platform: str | None) -> tuple[list[dict], str]:
     out, t = [], 0.0
     for s in sb["scenes"]:
         say = s.get("say") or ""
-        words = len(" ".join(say if isinstance(say, list) else [say]).split())
+        words = _spoken_words(say)
         d = float(s["dur"]) if s.get("dur") else float(s["bars"]) * bar if s.get("bars") else max(float(s.get("bars_min") or 0) * bar, words / 2.8, 2.0)
         out.append({"id": s["id"], "type": s["type"], "params": s.get("params") or {}, "t0": t, "t1": t + d})
         t += d
@@ -455,8 +455,14 @@ def sharp_failures(project: Path, video: Path, recipe: str | None = None) -> tup
 WPS = 2.3                      # words per second the chatterbox-soft preset really delivers once pauses are counted
 
 
+def _say_text(say) -> str:
+    """A scene's narration as plain text; `say` may be a string, a {text, tag} line, or a list of either."""
+    items = say if isinstance(say, list) else [say]
+    return " ".join(str(i.get("text", "")) if isinstance(i, dict) else str(i or "") for i in items)
+
+
 def _spoken_words(say) -> int:
-    text = " ".join(say) if isinstance(say, list) else str(say or "")
+    text = _say_text(say)
     text = re.sub(r"\{[^|}]*\|([^}]*)\}", r"\1", text)
     return len(re.findall(r"[\w'-]+", text))
 

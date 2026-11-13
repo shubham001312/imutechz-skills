@@ -7,8 +7,9 @@
     fishvideo storyboard <dir> [--table youtube]
     fishvideo factcheck <dir>
     fishvideo capture <dir> [shot ...]
-    fishvideo voice <dir> [--provider elevenlabs|edge-tts|qwen3|chatterbox|kokoro|none] [--force]
+    fishvideo voice <dir> [--provider elevenlabs|fish|edge-tts|qwen3|chatterbox|kokoro|none] [--force]
     fishvideo voice setup|engines|say|audition|check|redo|measure ...   free local voices (references/local-voices.md)
+    fishvideo footage new|yt|sheet|voice|render|qa|thumb|package|all ...   a Short cut from real footage (references/footage-shorts.md)
     fishvideo music <dir> [--platform youtube]
     fishvideo music source <dir> [--q "style words"]    licensed CC0 / CC BY track for the trend, else the synthesised score
     fishvideo captions <dir>
@@ -318,6 +319,7 @@ def cmd_doctor(keys: bool = False) -> int:
     lib = SKILL / "sfx" / "library" / "index.json"
     log(f"  {'ok  ' if lib.exists() else 'info'}  sfx library    {'present' if lib.exists() else 'not fetched: fishvideo assets sfx-pack (Kenney CC0); synth SFX used until then'}")
     KEYS = [("ELEVENLABS_API_KEY", "premium voices", "elevenlabs.io > Profile > API keys (paid plan for commercial use)", "edge-tts / Kokoro voices"),
+            ("FISH_API_KEY", "fish.audio cloud voice + cloning (optional)", "fish.audio > Dashboard > API keys", "any other voice provider"),
             ("PEXELS_API_KEY", "stock photos + video", "pexels.com/api (free, instant)", "Openverse / Wikimedia / NASA (key-less)"),
             ("PIXABAY_API_KEY", "stock photos + video", "pixabay.com/api/docs (free, log in to see the key)", "Pexels or key-less sources"),
             ("FREESOUND_API_KEY", "CC0 sound effects", "freesound.org/apiv2/apply (free)", "Kenney CC0 packs + synth SFX"),
@@ -354,7 +356,7 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--scale", type=float, default=1.0)
             p.add_argument("--workers", type=int, default=4)
             p.add_argument("--fast", action="store_true")
-            p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"])
+            p.add_argument("--provider", default=None, choices=["elevenlabs", "fish", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"])
             p.add_argument("--recapture", action="store_true")
             p.add_argument("--skip-reference", action="store_true")
             p.add_argument("--no-lint", action="store_true")
@@ -367,7 +369,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = proj("storyboard"); p.add_argument("--table", default=None)
     proj("factcheck")
     p = proj("capture"); p.add_argument("shots", nargs="*")
-    p = proj("voice"); p.add_argument("--provider", default=None, choices=["elevenlabs", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"]); p.add_argument("--force", action="store_true")
+    p = proj("voice"); p.add_argument("--provider", default=None, choices=["elevenlabs", "fish", "edge-tts", "qwen3", "chatterbox", "kokoro", "none"]); p.add_argument("--force", action="store_true")
     p = proj("music"); p.add_argument("--platform", default=None)
     proj("captions")
     p = proj("stills"); p.add_argument("--platform", default=None); p.add_argument("--at", default=None); p.add_argument("--scenes", action="store_true"); p.add_argument("--every", default=None)
@@ -396,6 +398,12 @@ def cli(argv=None) -> int:
         return assets.cli(["music-source", *argv[2:]]) or 0
     if argv and argv[0] == "interview":
         return ivmod.cli(argv[1:])
+    if argv and argv[0] == "footage":                 # real-footage Shorts (references/footage-shorts.md)
+        import footage
+        return footage.cli(argv[1:])
+    if argv[:2] == ["voice", "clone"]:                # fish.audio voice cloning: writes voice.fish.reference_id into the brief
+        import fishaudio
+        return fishaudio.cli_clone(argv[2:])
     if argv and argv[0] == "voice" and len(argv) > 1 and argv[1] in ("setup", "engines", "say", "audition", "check", "redo", "measure", "words"):
         import voicelab                            # local voice studio (references/local-voices.md)
         return voicelab.cli(argv[1:])
