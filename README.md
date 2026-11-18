@@ -10,7 +10,7 @@ Each one is a tested method with its own tools, not just a prompt.
 [Skills](#skills) · [Install](#install) · [Add a skill](CONTRIBUTING.md) · [imutechz.in/skills](https://www.imutechz.in/skills)
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-black)
-![Skills: 2](https://img.shields.io/badge/skills-2-d63a1f)
+![Skills: 3](https://img.shields.io/badge/skills-3-d63a1f)
 [![Validate](https://github.com/shubham001312/imutechz-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/shubham001312/imutechz-skills/actions/workflows/validate.yml)
 
 </div>
@@ -54,6 +54,30 @@ Vanilla JS or React · no build step · reduced-motion support
 
 </td>
 </tr>
+<tr>
+<td width="34%" valign="top"><img src="docs/previews/project-report.jpg" alt="Three pages of a sample project report: a front page with a placeholder college logo and candidate details, an index with a teacher's signature column, and the first page of the introduction" width="100%"></td>
+<td valign="top">
+
+### [Project Report](skills/project-report)
+
+**Make a college project report as a Word file and a PDF.**
+
+It asks for the college, student details, guide, topic and any special requirements, then finds the college logo. It builds:
+
+- a front page with the logo centred and a candidate-details box
+- an index with page numbers and a column for the teacher's signature
+- an introduction with objectives and methodology, then the topics, conclusion, learning outcomes and references
+
+Every page gets a border. The index page numbers are read back from Word, and the agent checks every page of the PDF before it hands it over.
+
+Plain academic styling · certificate and acknowledgement pages · says which sections it drafted
+
+`Node` `Microsoft Word`
+
+[**Read the skill →**](skills/project-report/SKILL.md)
+
+</td>
+</tr>
 </table>
 
 ## Install
@@ -64,6 +88,7 @@ Vanilla JS or React · no build step · reduced-motion support
 /plugin marketplace add shubham001312/imutechz-skills
 /plugin install fish-video-skill@imutechz-skills
 /plugin install scroll-motion-graphics@imutechz-skills
+/plugin install project-report@imutechz-skills
 ```
 
 **Any agent: copy the folder**

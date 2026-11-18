@@ -1,0 +1,167 @@
+{
+  "college": {
+    "name": "SAMPLE UNIVERSITY",
+    "location": "City, State",
+    "department": "Department of Geography"
+  },
+  "logo": "placeholder-logo.png",
+  "logoAspect": 1.0,
+  "session": "2025–26",
+  "title": [
+    "Economic Geography: Concepts, Resources,",
+    "Economic Sectors and Industrial Corridors"
+  ],
+  "subtitle": "A summary of recent journal articles and official sources, 2025–2026",
+  "student": [
+    [
+      "Name",
+      "Student Name"
+    ],
+    [
+      "Roll No.",
+      "00000"
+    ],
+    [
+      "Department",
+      "Geography"
+    ],
+    [
+      "Semester",
+      "1"
+    ],
+    [
+      "Session",
+      "2025–26"
+    ],
+    [
+      "Guided by",
+      "Prof. Guide Name"
+    ]
+  ],
+  "guide": "Prof. Guide Name",
+  "guideLine": "Department of Geography, Sample University",
+  "font": "Times New Roman",
+  "fontSize": 12,
+  "paper": "A4",
+  "border": "double",
+  "frontPages": [
+    {
+      "title": "Certificate",
+      "blocks": [
+        {
+          "p": "This is to certify that **Student Name**, a student of Semester 1 (Session 2025–26), has completed this project under my guidance."
+        }
+      ],
+      "signature": {
+        "title": "Signature of the Guide",
+        "name": "Prof. Guide Name",
+        "line": "Department of Geography, Sample University"
+      }
+    }
+  ],
+  "body": [
+    {
+      "h1": "1. Introduction"
+    },
+    {
+      "h2": "1.1 Background"
+    },
+    {
+      "p": "Geography is not only about where places are, but also about why people live and work the way they do in those places. Economic geography looks at this question through the lens of production, trade and employment. It helps explain why some regions become industrial hubs while others remain largely agricultural, and why incomes and opportunities differ so widely from one place to another."
+    },
+    {
+      "p": "In a country as large and varied as India, these differences are easy to see. Some states are rich in minerals, others in fertile land, and others in skilled labour or good transport links. Understanding how these factors shape economic activity is an important part of studying geography at the undergraduate level."
+    },
+    {
+      "h2": "1.2 Objectives of the Project"
+    },
+    {
+      "bullets": [
+        "To understand the meaning, nature and scope of economic geography.",
+        "To classify resources and compare renewable and non-renewable energy sources.",
+        "To describe the primary, secondary, tertiary and quaternary sectors of the economy.",
+        "To explain how industrial regions and industrial corridors develop, with examples from India."
+      ]
+    },
+    {
+      "h2": "1.3 Methodology"
+    },
+    {
+      "p": "This project is based on secondary data. Information was collected from recent journal articles in economic geography, published in 2025–2026, and from official sources of the Government of India such as the Press Information Bureau. The material was studied, summarised and arranged topic-wise. A full list of sources is given in the References section."
+    },
+    {
+      "h1": "2. Economic Geography"
+    },
+    {
+      "p": "**Economic geography** studies where economic activities are located, why they cluster in some places and not others, and how these patterns shape regional development. It is both spatial and interdisciplinary, drawing on economics, sociology, planning and data science to explain differences in production, trade, employment and income across places. Its scope covers location theory, regional disparities, industrial organisation, global production networks, labour geographies and the role of infrastructure."
+    },
+    {
+      "p": "Recent work in the *Journal of Economic Geography* and *Economic Geography* points to new directions: digital economic geography, the use of GIS, big data and AI, and growing attention to care, inequality and sustainability. Current studies also test the spatial effects of road networks, crowdfunding and university restructuring, and a 2025 review in the *Geographical Research Bulletin* traces how the field’s theories and paradigms have evolved."
+    },
+    {
+      "h1": "3. Resources"
+    },
+    {
+      "p": "**Resources** are elements of the environment that people can use to meet their needs, provided the technology and demand exist. They are classified by origin (biotic and abiotic), by renewability, and by ownership and stage of development. For energy, the central division is between renewable and non-renewable sources."
+    },
+    {
+      "p": "Renewable resources such as solar, wind, hydro, biomass and geothermal energy are replenished naturally within human timescales. Non-renewable resources, including coal, petroleum, natural gas, nuclear fuels and minerals, are finite and take millions of years to form. Neither group is free of impact: fossil fuels bring extraction damage and emissions, while dams and large renewable projects can displace communities. India reported about 288.6 GW of installed renewable capacity in June 2026, showing a rapid shift alongside continued coal dependence."
+    },
+    {
+      "h1": "4. Economic Sectors"
+    },
+    {
+      "p": "**The economy** is grouped by stage of production. The primary sector extracts or grows raw materials (agriculture, mining, fishing, forestry); the secondary sector converts them into goods through manufacturing and construction; the tertiary sector provides services such as trade, transport, banking and health care; and the quaternary sector covers knowledge-intensive services, including research, IT, consulting and education."
+    },
+    {
+      "p": "As countries develop, employment and output move from the primary and secondary sectors towards the tertiary and quaternary sectors. A 2026 study of Czech NUTS-3 regions found that employment in science and research is the strongest predictor of quaternary-sector growth, while in India services made up about 55 per cent of gross value added in FY26."
+    },
+    {
+      "h1": "5. Industrial Regions and Corridors"
+    },
+    {
+      "p": "**An industrial region** is an area with a high concentration of manufacturing and related activity, supported by resources, labour, markets and transport. Such regions grow through agglomeration, where firms benefit from shared suppliers, skills and infrastructure."
+    },
+    {
+      "p": "**An industrial corridor** is a multi-node development zone along a transport route, with industrial centres, supporting infrastructure and urban amenities on both sides. A comparison of India and China shows that corridors depend on local and geographical factors but share transport links and urban amenities. India is developing 11 national corridors, Budget 2026-27 announced an East Coast Industrial Corridor, and in October 2026 the Jabalpur–Indore corridor received approval for a special purpose vehicle."
+    },
+    {
+      "h1": "6. Conclusion"
+    },
+    {
+      "p": "The four topics covered in this project are closely linked. The resources a region has, and the technology available to use them, shape which economic sectors develop there. As economies grow, activity shifts from the primary sector towards services and knowledge-based work, and industries tend to gather where infrastructure, labour and markets already exist. Industrial regions and corridors are the visible result of this process on the map."
+    },
+    {
+      "p": "India’s present situation shows these ideas at work: a fast-growing renewable energy sector alongside continued use of coal, a services sector that now accounts for more than half of gross value added, and a national programme of industrial corridors. Studying economic geography therefore helps us understand not only how the economy is organised across space, but also how planning decisions can reduce or widen regional inequality in the years ahead."
+    },
+    {
+      "h1": "7. Learning Outcomes"
+    },
+    {
+      "p": "After completing this project, I was able to:"
+    },
+    {
+      "bullets": [
+        "Define economic geography and explain why it is an interdisciplinary subject.",
+        "Classify resources by origin, renewability, ownership and stage of development.",
+        "Distinguish between the four sectors of the economy and explain how employment shifts between them as a country develops.",
+        "Explain the role of agglomeration in the growth of industrial regions.",
+        "Describe the purpose of industrial corridors and identify recent corridor projects in India.",
+        "Read journal articles and government sources, and write references in a standard academic format."
+      ]
+    },
+    {
+      "h1": "References"
+    },
+    {
+      "refs": [
+        "Cruz, R. et al. (2026). *Journal of Economic Geography*, lbag048. https://doi.org/10.1093/jeg/lbag048",
+        "Glacová, K., Nevima, J., & Turečková, K. (2026). The role of science and research in shaping the quaternary sector. *Politická ekonomie*, 71(2), 37–48. https://doi.org/10.48128/pisg-2026-71.2-03",
+        "McGrath, S., Castaldi, C., Gibson, C., & Lai, K. P. Y. (2026). Economic geography for the next century. *Economic Geography*, 102(1). https://doi.org/10.1080/00130095.2026.2632333",
+        "Yang, & Wang. (2025). Theoretical evolution, research paradigms and frontier issues in economic geography. *Geographical Research Bulletin*.",
+        "*Global Journal of Enterprise Information System*, 17(2), 2025. Evaluating the role of industrial corridors: a comparison of India and China.",
+        "Press Information Bureau. (2026, February 26). *Travelling across the industrial corridors of India*. Government of India."
+      ]
+    }
+  ]
+}
