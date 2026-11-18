@@ -1,0 +1,9 @@
+{
+  "name": "project-report-builder",
+  "private": true,
+  "description": "Builds the project report .docx for the project-report skill.",
+  "license": "MIT",
+  "dependencies": {
+    "docx": "^9.5.1"
+  }
+}
